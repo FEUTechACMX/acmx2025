@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String         @id @default(cuid())
+  supabaseUserId String?         @unique
+  studentId      String         @unique
+  firstName      String
+  middleName     String
+  lastName       String
+  suffix         String?  
+  yearLevel      Int
+  degreeProgram  String
+  personalEmail  String         @unique
+  schoolEmail    String         @unique
+  contactNumber  String
+  facebookLink   String
+  discordName    String?
+  points         Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  registration   Registration[]
+  schedules      Schedule[]
+  transactions   Transaction[]
+}
+
+model Event {
+  eventId       String         @id @default(cuid())
+  name          String
+  description   String
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  registrations Registration[]
+}
+
+model Schedule {
+  id        String   @id @default(cuid())
+  section   String
+  time      String
+  day       String
+  professor String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  transaction_id String          @id @default(cuid())
+  user_id        String
+  type           TransactionType
+  points         Int
+  description    String
+  created_at     DateTime        @default(now())
+  user           User            @relation(fields: [user_id], references: [id])
+}
+
+model Registration {
+  id            String           @id @default(cuid())
+  userId        String?
+  eventId       String
+  fullName      String
+  studentNumber String
+  schoolEmail   String
+  contactNumber String
+  facebookLink  String
+  yearLevel     Int
+  section       String
+  professor     String
+  degreeProgram String
+  role          RegistrationRole
+  createdAt     DateTime         @default(now())
+  attendance    Attendance?
+  event         Event            @relation(fields: [eventId], references: [eventId])
+  user          User?            @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+}
+
+model Attendance {
+  id             String       @id @default(cuid())
+  registrationId String       @unique
+  timeIn         DateTime
+  timeOut        DateTime?
+  createdAt      DateTime     @default(now())
+  registration   Registration @relation(fields: [registrationId], references: [id])
+}
+
+enum RegistrationRole {
+  MEMBER
+  NON_MEMBER
+}
+
+enum TransactionType {
+  ATTENDANCE
+  REWARDS
+  TASKS
+  PURCHASE
+}
