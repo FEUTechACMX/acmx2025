@@ -34,7 +34,10 @@ model Event {
   eventId       String         @id @default(cuid())
   name          String
   description   String
+  venue         String
   startDate     DateTime?
+  dayOfWeek     String
+  Price         String  
   endDate       DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
