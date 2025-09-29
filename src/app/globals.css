@@ -42,3 +42,9 @@ body {
   src: url("/fonts/FjallaOne.ttf") format("truetype");
   font-weight: 400;
 }
+
+@font-face {
+  font-family: "Trochut";
+  src: url("/fonts/Trochut.ttf") format("truetype");
+  font-weight: 400;
+}
