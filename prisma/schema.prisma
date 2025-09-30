@@ -33,14 +33,15 @@ model User {
 model Event {
   eventId       String         @id @default(cuid())
   name          String
-  description   String
+  description   String?
+  eventSemester EventSemester  @default(FIRST)  
   venue         String
-  startDate     DateTime?
   dayOfWeek     String
-  Price         String  
-  endDate       DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  startDate     DateTime
+  endDate       DateTime       @default(now()) 
+  price         Float          @default(0)      
+  image         String?
+
   registrations Registration[]
 }
 
@@ -95,6 +96,12 @@ model Attendance {
   timeOut        DateTime?
   createdAt      DateTime     @default(now())
   registration   Registration @relation(fields: [registrationId], references: [id])
+}
+
+enum EventSemester {
+  FIRST  @map("1st")
+  SECOND @map("2nd")
+  THIRD  @map("3rd")
 }
 
 enum RegistrationRole {
