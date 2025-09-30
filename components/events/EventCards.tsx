@@ -1,12 +1,6 @@
-// components/events/components/EventCards.tsx
 import React from "react";
 import Link from "next/link";
-import type { Event as PrismaEvent } from "@prisma/client";
-
-// Extend the type so we can use registration count
-interface EventWithCount extends PrismaEvent {
-  _count: { registrations: number };
-}
+import type { EventWithCount } from "../../types/events";
 
 interface EventCardProps {
   event: EventWithCount;

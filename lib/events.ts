@@ -1,7 +1,8 @@
 import { Event as PrismaEvent, EventSemester } from "@prisma/client"; //import Prisma client from local prisma.ts
 import { prisma } from "./prisma";
+import type { EventWithCount } from "../types/events";
 
-//Helper to clean up semester input
+// Helper to clean up semester input
 function normalizeSemesterInput(
   input: string | EventSemester | null | undefined
 ): EventSemester | null {
@@ -17,9 +18,7 @@ function normalizeSemesterInput(
 }
 
 // Get all events
-export async function getEvents(): Promise<
-  (PrismaEvent & { _count: { registrations: number } })[]
-> {
+export async function getEvents(): Promise<EventWithCount[]> {
   return prisma.event.findMany({
     include: { _count: { select: { registrations: true } } },
     orderBy: { startDate: "asc" },
@@ -27,7 +26,9 @@ export async function getEvents(): Promise<
 }
 
 // Get events by semester
-export async function getEventsBySemester(semester: string | EventSemester) {
+export async function getEventsBySemester(
+  semester: string | EventSemester
+): Promise<EventWithCount[]> {
   const normalized = normalizeSemesterInput(semester);
   if (!normalized) throw new Error(`Invalid semester: ${semester}`);
 
@@ -39,7 +40,9 @@ export async function getEventsBySemester(semester: string | EventSemester) {
 }
 
 // Get single event by ID
-export async function getEventById(eventId: string) {
+export async function getEventById(
+  eventId: string
+): Promise<EventWithCount | null> {
   return prisma.event.findUnique({
     where: { eventId },
     include: { _count: { select: { registrations: true } } },

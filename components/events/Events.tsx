@@ -1,12 +1,19 @@
 // components/events/Events.tsx
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import EventsList from "./EventsList";
+import EventSelector from "./EventSelector";
 
 export default function Events() {
+  const [semester, setSemester] = useState("1st");
+
   return (
-    <div className="min-h-screen bg-black flex flex-col gap-10 items-center justify-around p-10">
-      {/* Show 1st semester events */}
-      <EventsList semester="2nd" />
+    <div className="min-h-screen bg-black flex flex-col items-center p-10">
+      <EventSelector onChange={setSemester} />
+
+      {/* Pass selected semester into the list */}
+      <EventsList semester={semester} />
     </div>
   );
 }
