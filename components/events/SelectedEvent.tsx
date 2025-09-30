@@ -1,5 +1,6 @@
-// components/events/SelectedEvent.tsx
+import { useState } from "react";
 import { EventWithCount } from "../../types/events"; // <-- type we defined earlier
+import AttendButton from "./AttendButton";
 
 interface SelectedEventProps {
   event: EventWithCount;
@@ -80,9 +81,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
               <button className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md">
                 Share
               </button>
-              <button className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md">
-                Attend
-              </button>
+              <AttendButton eventId={event.eventId} />
             </div>
           </div>
         </div>
