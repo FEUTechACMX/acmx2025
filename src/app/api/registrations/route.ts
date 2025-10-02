@@ -1,15 +1,16 @@
 // app/api/registrations/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import { RegistrationRole } from "@prisma/client";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const {
       eventId,
-      studentNumber,
+      userId, // null if non-member
       fullName,
+      studentNumber,
       schoolEmail,
       contactNumber,
       facebookLink,
@@ -17,65 +18,62 @@ export async function POST(req: NextRequest) {
       section,
       professor,
       degreeProgram,
-      // optional
-      userId: incomingUserId,
     } = body;
 
-    if (!eventId || !studentNumber || !fullName || !schoolEmail) {
-      return NextResponse.json(
-        {
-          error:
-            "Missing required fields (eventId, studentNumber, fullName, schoolEmail).",
+    // 🔍 1. Check if already registered
+    if (userId) {
+      // member duplicate check
+      const existing = await prisma.registration.findUnique({
+        where: { eventId_userId: { eventId, userId } },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: "You are already registered for this event." },
+          { status: 409 }
+        );
+      }
+    } else {
+      // non-member duplicate check → use schoolEmail OR studentNumber
+      const existing = await prisma.registration.findFirst({
+        where: {
+          eventId,
+          OR: [{ schoolEmail }, { studentNumber }],
         },
-        { status: 400 }
-      );
+      });
+      if (existing) {
+        return NextResponse.json(
+          {
+            error:
+              "This email/student number is already registered for this event.",
+          },
+          { status: 409 }
+        );
+      }
     }
 
-    // If userId is present → MEMBER, otherwise NON_MEMBER
-    const userId: string | null = incomingUserId ?? null;
-    const role = userId ? "MEMBER" : "NON_MEMBER";
-
-    // Duplicate check
-    const existing = await prisma.registration.findFirst({
-      where: {
-        eventId,
-        OR: [
-          userId ? { userId } : undefined,
-          !userId ? { schoolEmail } : undefined,
-        ].filter(Boolean) as any[],
-      },
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: "You are already registered for this event." },
-        { status: 409 }
-      );
-    }
-
-    // Create registration
+    // 2. Create registration
     const registration = await prisma.registration.create({
       data: {
-        userId,
+        userId: userId || null,
         eventId,
         fullName,
         studentNumber,
         schoolEmail,
-        contactNumber: contactNumber ?? null,
-        facebookLink: facebookLink ?? null,
-        yearLevel: Number(yearLevel) || null,
-        section: section ?? null,
-        professor: professor ?? null,
-        degreeProgram: degreeProgram ?? null,
-        role, // always MEMBER or NON_MEMBER
+        contactNumber,
+        facebookLink,
+        yearLevel: parseInt(yearLevel, 10),
+        section,
+        professor,
+        degreeProgram,
+        role: userId ? RegistrationRole.MEMBER : RegistrationRole.NON_MEMBER,
       },
     });
 
     return NextResponse.json(registration, { status: 201 });
-  } catch (err: any) {
-    console.error("POST /api/registrations error:", err);
+  } catch (error: any) {
+    console.error("Error creating registration:", error);
     return NextResponse.json(
-      { error: err?.message ?? "Unknown error" },
+      { error: "Something went wrong while registering." },
       { status: 500 }
     );
   }

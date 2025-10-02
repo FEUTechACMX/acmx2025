@@ -86,8 +86,12 @@ model Registration {
   event         Event            @relation(fields: [eventId], references: [eventId])
   user          User?            @relation(fields: [userId], references: [id])
 
-  @@unique([eventId, userId])
+  // Prevent duplicates
+  @@unique([eventId, userId])          // prevents members double-registering
+  @@unique([eventId, schoolEmail])     // prevents non-members registering twice by email
+  @@unique([eventId, studentNumber])   // prevents non-members registering twice by student no.
 }
+
 
 model Attendance {
   id             String       @id @default(cuid())

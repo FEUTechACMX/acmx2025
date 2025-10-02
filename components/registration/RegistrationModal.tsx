@@ -51,30 +51,29 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
 
     try {
       const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          yearLevel: Number(formData.yearLevel),
-        }),
+        body: JSON.stringify(formData),
       });
 
-      if (!res.ok) {
+      if (res.status === 409) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to register");
+        alert(data.error); // ⚡ replace with a toast/snackbar later
+        return;
       }
 
+      if (!res.ok) {
+        throw new Error("Failed to register.");
+      }
+
+      alert("✅ Registered successfully!");
       onClose();
-      alert("Successfully registered for the event ✅");
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Something went wrong.");
     }
   };
 
