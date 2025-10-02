@@ -1,62 +1,82 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+// app/api/registrations/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  if (req.method === "POST") {
-    try {
-      const {
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    const {
+      eventId,
+      studentNumber,
+      fullName,
+      schoolEmail,
+      contactNumber,
+      facebookLink,
+      yearLevel,
+      section,
+      professor,
+      degreeProgram,
+      // optional
+      userId: incomingUserId,
+    } = body;
+
+    if (!eventId || !studentNumber || !fullName || !schoolEmail) {
+      return NextResponse.json(
+        {
+          error:
+            "Missing required fields (eventId, studentNumber, fullName, schoolEmail).",
+        },
+        { status: 400 }
+      );
+    }
+
+    // If userId is present → MEMBER, otherwise NON_MEMBER
+    const userId: string | null = incomingUserId ?? null;
+    const role = userId ? "MEMBER" : "NON_MEMBER";
+
+    // Duplicate check
+    const existing = await prisma.registration.findFirst({
+      where: {
         eventId,
+        OR: [
+          userId ? { userId } : undefined,
+          !userId ? { schoolEmail } : undefined,
+        ].filter(Boolean) as any[],
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "You are already registered for this event." },
+        { status: 409 }
+      );
+    }
+
+    // Create registration
+    const registration = await prisma.registration.create({
+      data: {
         userId,
+        eventId,
         fullName,
         studentNumber,
         schoolEmail,
-        contactNumber,
-        facebookLink,
-        yearLevel,
-        section,
-        professor,
-        degreeProgram,
-        role,
-      } = req.body;
+        contactNumber: contactNumber ?? null,
+        facebookLink: facebookLink ?? null,
+        yearLevel: Number(yearLevel) || null,
+        section: section ?? null,
+        professor: professor ?? null,
+        degreeProgram: degreeProgram ?? null,
+        role, // always MEMBER or NON_MEMBER
+      },
+    });
 
-      // Optional: Validate required fields
-      if (
-        !eventId ||
-        !fullName ||
-        !studentNumber ||
-        !schoolEmail ||
-        !yearLevel
-      ) {
-        return res.status(400).json({ error: "Missing required fields" });
-      }
-
-      const registration = await prisma.registration.create({
-        data: {
-          eventId,
-          userId: userId || null,
-          fullName,
-          studentNumber,
-          schoolEmail,
-          contactNumber: contactNumber || "",
-          facebookLink: facebookLink || "",
-          yearLevel: Number(yearLevel),
-          section: section || "",
-          professor: professor || "",
-          degreeProgram: degreeProgram || "",
-          role: role || "NON_MEMBER", // Default role
-        },
-      });
-
-      res.status(201).json(registration);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Failed to create registration" });
-    }
-  } else {
-    res.setHeader("Allow", ["POST"]);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    return NextResponse.json(registration, { status: 201 });
+  } catch (err: any) {
+    console.error("POST /api/registrations error:", err);
+    return NextResponse.json(
+      { error: err?.message ?? "Unknown error" },
+      { status: 500 }
+    );
   }
 }

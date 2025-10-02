@@ -1,4 +1,6 @@
-import React, { useState, ReactNode, ChangeEvent, FormEvent } from "react";
+"use client";
+
+import React, { useState, ChangeEvent, FormEvent } from "react";
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -8,7 +10,7 @@ interface RegistrationModalProps {
 
 interface FormData {
   eventId: string;
-  schoolId: string;
+  studentNumber: string; // 🔹 mapped to DB
   fullName: string;
   schoolEmail: string;
   contactNumber: string;
@@ -26,7 +28,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<FormData>({
     eventId,
-    schoolId: "",
+    studentNumber: "",
     fullName: "",
     schoolEmail: "",
     contactNumber: "",
@@ -37,6 +39,9 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
     degreeProgram: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -44,17 +49,40 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("Submitted Data:", formData);
-    onClose();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/registrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          yearLevel: Number(formData.yearLevel),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to register");
+      }
+
+      onClose();
+      alert("Successfully registered for the event ✅");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-opacity-50 flex justify-center items-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
       onClick={onClose}
     >
       <div
@@ -68,12 +96,13 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
           &times;
         </button>
         <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
+
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="text"
-            name="schoolId"
-            placeholder="School ID"
-            value={formData.schoolId}
+            name="studentNumber"
+            placeholder="Student Number"
+            value={formData.studentNumber}
             onChange={handleChange}
             className="w-full border p-2 rounded"
             required
@@ -149,11 +178,15 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
             onChange={handleChange}
             className="w-full border p-2 rounded"
           />
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded mt-3"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded mt-3 disabled:opacity-50"
           >
-            Submit
+            {loading ? "Submitting..." : "Submit"}
           </button>
         </form>
       </div>
