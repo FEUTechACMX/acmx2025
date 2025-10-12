@@ -51,6 +51,8 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch("/api/registrations", {
@@ -59,21 +61,29 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
         body: JSON.stringify(formData),
       });
 
+      const data = await res.json();
+
       if (res.status === 409) {
-        const data = await res.json();
-        alert(data.error); // ⚡ replace with a toast/snackbar later
+        alert(data.error);
+        setLoading(false);
         return;
       }
 
-      if (!res.ok) {
-        throw new Error("Failed to register.");
+      if (data.checkout_url) {
+        // 🔹 Redirect non-member to GCash checkout
+        window.location.href = data.checkout_url;
+        return;
       }
+
+      if (!res.ok) throw new Error("Failed to register.");
 
       alert("✅ Registered successfully!");
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("❌ Something went wrong.");
+      setError("❌ Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 

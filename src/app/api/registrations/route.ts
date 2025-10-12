@@ -1,5 +1,5 @@
-// app/api/registrations/route.ts
 import { NextResponse } from "next/server";
+import axios from "axios";
 import { prisma } from "../../../../lib/prisma";
 import { RegistrationRole } from "@prisma/client";
 
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const {
       eventId,
-      userId, // null if non-member
+      userId,
       fullName,
       studentNumber,
       schoolEmail,
@@ -20,9 +20,8 @@ export async function POST(req: Request) {
       degreeProgram,
     } = body;
 
-    // 🔍 1. Check if already registered
+    // 1️⃣ Duplicate check
     if (userId) {
-      // member duplicate check
       const existing = await prisma.registration.findUnique({
         where: { eventId_userId: { eventId, userId } },
       });
@@ -33,7 +32,6 @@ export async function POST(req: Request) {
         );
       }
     } else {
-      // non-member duplicate check → use schoolEmail OR studentNumber
       const existing = await prisma.registration.findFirst({
         where: {
           eventId,
@@ -51,7 +49,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Create registration
+    // 2️⃣ Create registration record
     const registration = await prisma.registration.create({
       data: {
         userId: userId || null,
@@ -69,11 +67,53 @@ export async function POST(req: Request) {
       },
     });
 
+    // 3️⃣ If non-member → generate PayMongo GCash link
+    if (!userId) {
+      const response = await axios.post(
+        "https://api.paymongo.com/v1/sources",
+        {
+          data: {
+            attributes: {
+              amount: 10000, // ₱100 in centavos
+              currency: "PHP",
+              type: "gcash",
+              redirect: {
+                success: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?registrationId=${registration.id}`,
+                failed: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-failed?registrationId=${registration.id}`,
+              },
+              metadata: {
+                registrationId: registration.id,
+                fullName,
+                schoolEmail,
+              },
+            },
+          },
+        },
+        {
+          auth: {
+            username: process.env.PAYMONGO_SECRET_KEY || "",
+            password: "",
+          },
+        }
+      );
+
+      const checkoutUrl = response.data.data.attributes.redirect.checkout_url;
+
+      return NextResponse.json({ checkout_url: checkoutUrl }, { status: 200 });
+    }
+
+    // 4️⃣ For members (no payment required)
     return NextResponse.json(registration, { status: 201 });
   } catch (error: any) {
-    console.error("Error creating registration:", error);
+    console.error(
+      "Error creating registration:",
+      error.response?.data || error
+    );
     return NextResponse.json(
-      { error: "Something went wrong while registering." },
+      {
+        error: "Something went wrong while registering.",
+        details: error.response?.data || error.message,
+      },
       { status: 500 }
     );
   }
