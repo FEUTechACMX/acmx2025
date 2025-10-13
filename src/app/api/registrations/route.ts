@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       degreeProgram,
     } = body;
 
-    // 1️⃣ Duplicate check
+    // 🔹 1. Duplicate check
     if (userId) {
       const existing = await prisma.registration.findUnique({
         where: { eventId_userId: { eventId, userId } },
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2️⃣ Create registration record
+    // 🔹 2. Create registration record
     const registration = await prisma.registration.create({
       data: {
         userId: userId || null,
@@ -67,14 +67,14 @@ export async function POST(req: Request) {
       },
     });
 
-    // 3️⃣ If non-member → generate PayMongo GCash link
+    // 🔹 3. Non-member → create GCash link
     if (!userId) {
       const response = await axios.post(
         "https://api.paymongo.com/v1/sources",
         {
           data: {
             attributes: {
-              amount: 10000, // ₱100 in centavos
+              amount: 10000,
               currency: "PHP",
               type: "gcash",
               redirect: {
@@ -98,22 +98,38 @@ export async function POST(req: Request) {
       );
 
       const checkoutUrl = response.data.data.attributes.redirect.checkout_url;
-
       return NextResponse.json({ checkout_url: checkoutUrl }, { status: 200 });
     }
 
-    // 4️⃣ For members (no payment required)
+    // 🔹 4. Members → just register (no payment)
     return NextResponse.json(registration, { status: 201 });
-  } catch (error: any) {
-    console.error(
-      "Error creating registration:",
-      error.response?.data || error
-    );
+  } catch (error: unknown) {
+    // ✅ Type-safe error handling
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Axios error (registrations):",
+        error.response?.data || error.message
+      );
+      return NextResponse.json(
+        {
+          error: "PayMongo API request failed.",
+          details: error.response?.data,
+        },
+        { status: error.response?.status || 500 }
+      );
+    }
+
+    if (error instanceof Error) {
+      console.error("Unexpected error (registrations):", error.message);
+      return NextResponse.json(
+        { error: "Unexpected server error.", details: error.message },
+        { status: 500 }
+      );
+    }
+
+    console.error("Unknown error (registrations):", error);
     return NextResponse.json(
-      {
-        error: "Something went wrong while registering.",
-        details: error.response?.data || error.message,
-      },
+      { error: "Unknown error occurred." },
       { status: 500 }
     );
   }

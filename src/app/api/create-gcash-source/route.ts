@@ -1,30 +1,12 @@
-import axios, { AxiosResponse } from "axios";
+import { NextResponse } from "next/server";
+import axios from "axios";
 
-interface PayMongoSourceResponse {
-  data: {
-    id: string;
-    type: string;
-    attributes: {
-      amount: number;
-      currency: string;
-      redirect: {
-        checkout_url: string;
-        success: string;
-        failed: string;
-      };
-      status: string;
-      type: string;
-    };
-  };
-}
-
-export async function POST(req: Request): Promise<Response> {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { amount } = body as { amount: number }; // amount in centavos (₱1.00 = 100)
+    const { amount } = body;
 
-    // ✅ Fix: redirect URLs must be string URLs, not console.log calls
-    const response: AxiosResponse<PayMongoSourceResponse> = await axios.post(
+    const response = await axios.post(
       "https://api.paymongo.com/v1/sources",
       {
         data: {
@@ -33,8 +15,8 @@ export async function POST(req: Request): Promise<Response> {
             currency: "PHP",
             type: "gcash",
             redirect: {
-              success: "https://example.com/success",
-              failed: "https://example.com/failed",
+              success: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success`,
+              failed: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-failed`,
             },
           },
         },
@@ -48,20 +30,34 @@ export async function POST(req: Request): Promise<Response> {
     );
 
     const checkoutUrl = response.data.data.attributes.redirect.checkout_url;
+    return NextResponse.json({ checkout_url: checkoutUrl }, { status: 200 });
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Axios error (create-gcash-source):",
+        error.response?.data || error.message
+      );
+      return NextResponse.json(
+        {
+          error: "Failed to create GCash source",
+          details: error.response?.data,
+        },
+        { status: error.response?.status || 500 }
+      );
+    }
 
-    return new Response(JSON.stringify({ checkout_url: checkoutUrl }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error: any) {
-    console.error("PayMongo API Error:", error.response?.data || error.message);
+    if (error instanceof Error) {
+      console.error("Unexpected error (create-gcash-source):", error.message);
+      return NextResponse.json(
+        { error: "Unexpected server error", details: error.message },
+        { status: 500 }
+      );
+    }
 
-    return new Response(
-      JSON.stringify({
-        error: "Failed to create GCash source",
-        details: error.response?.data || error.message,
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    console.error("Unknown error (create-gcash-source):", error);
+    return NextResponse.json(
+      { error: "Unknown error occurred." },
+      { status: 500 }
     );
   }
 }

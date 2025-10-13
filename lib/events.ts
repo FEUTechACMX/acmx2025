@@ -1,4 +1,4 @@
-import { Event as PrismaEvent, EventSemester } from "@prisma/client"; //import Prisma client from local prisma.ts
+import { EventSemester } from "@prisma/client"; //import Prisma client from local prisma.ts
 import { prisma } from "./prisma";
 import type { EventWithCount } from "../types/events";
 

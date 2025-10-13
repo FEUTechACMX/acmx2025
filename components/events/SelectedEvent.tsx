@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { EventWithCount } from "../../types/events"; // <-- type we defined earlier
 import AttendButton from "./AttendButton";
 

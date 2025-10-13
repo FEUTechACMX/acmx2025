@@ -52,36 +52,23 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
-      const res = await fetch("/api/registrations", {
+      const res = await fetch("/api/checkout-initiate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
       const data = await res.json();
-
-      if (res.status === 409) {
-        alert(data.error);
-        setLoading(false);
-        return;
-      }
-
       if (data.checkout_url) {
-        // 🔹 Redirect non-member to GCash checkout
-        window.location.href = data.checkout_url;
-        return;
+        window.location.href = data.checkout_url; // 🔹 Redirect to GCash
+      } else {
+        throw new Error("Payment initialization failed.");
       }
-
-      if (!res.ok) throw new Error("Failed to register.");
-
-      alert("✅ Registered successfully!");
-      onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError("❌ Something went wrong.");
+      setError("Something went wrong while starting the payment.");
     } finally {
       setLoading(false);
     }
