@@ -9,8 +9,9 @@ datasource db {
 
 model User {
   id             String         @id @default(cuid())
-  supabaseUserId String?         @unique
+  supabaseUserId String?        @unique
   studentId      String         @unique
+  password       String         // 🔒 Hashed password for login
   firstName      String
   middleName     String
   lastName       String
@@ -29,6 +30,7 @@ model User {
   schedules      Schedule[]
   transactions   Transaction[]
 }
+
 
 model Event {
   eventId       String         @id @default(cuid())
