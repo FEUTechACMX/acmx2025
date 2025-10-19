@@ -23,11 +23,12 @@ model User {
   contactNumber  String
   facebookLink   String
   discordName    String?
+  role           UserRole       @default(MEMBER)
   points         Int            @default(0)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registration   Registration[]
-  schedules      Schedule[]
+  schedules      Schedule[] 
   transactions   Transaction[]
 }
 
@@ -102,6 +103,11 @@ model Attendance {
   timeOut        DateTime?
   createdAt      DateTime     @default(now())
   registration   Registration @relation(fields: [registrationId], references: [id])
+}
+
+enum UserRole {
+  MEMBER
+  ADMIN
 }
 
 enum EventSemester {

@@ -17,25 +17,31 @@ export async function POST(req: NextRequest) {
     const key = process.env.QR_SECRET_KEY || "";
     if (!key) {
       return NextResponse.json(
-        { error: "Server is missing QR_SECRET_KEY" },
+        { error: "Server missing QR_SECRET_KEY" },
         { status: 500 }
       );
     }
 
-    // Decrypt QR and parse
     const decrypted = decryptAES(encrypted, key);
     const payload = parseQrPayload(decrypted);
 
     if (!payload.studentID) {
       return NextResponse.json(
-        { error: "QR is missing studentID" },
+        { error: "QR missing studentID" },
         { status: 400 }
       );
     }
 
-    // ✅ Just check if user exists
+    // 💡 ADDED: explicitly select role along with name and ID
     const user = await prisma.user.findUnique({
       where: { studentId: payload.studentID },
+      select: {
+        id: true,
+        studentId: true,
+        firstName: true,
+        lastName: true,
+        role: true, // ✅ new
+      },
     });
 
     if (!user) {
@@ -45,20 +51,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      {
-        ok: true,
-        message: "User verified",
-        user: {
-          id: user.id,
-          studentId: user.studentId,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        },
-      },
-      { status: 200 }
-    );
-  } catch (err: unknown) {
+    // 💡 CLEANED: simplified return — no need to restructure user
+    return NextResponse.json({
+      ok: true,
+      message: "User verified",
+      user,
+    });
+  } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to verify QR";
     return NextResponse.json({ error: message }, { status: 500 });
   }
