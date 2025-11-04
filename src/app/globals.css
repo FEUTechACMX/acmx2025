@@ -12,11 +12,25 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+}
+
+h1,
+h2 {
+  font-family: "Fjalla-One";
+  font-weight: 400;
+}
+
+h3,
+h4,
+h5 {
+  font-family: "Arapey";
+}
+
+p {
+  font-family: "Arapey";
 }
 
 body {
