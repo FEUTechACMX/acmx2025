@@ -3,7 +3,7 @@ import Events from "../../../components/events/Events";
 
 export default function page() {
   return (
-    <div>
+    <div className="min-h-screen bg-white flex items-start">
       <Events />
     </div>
   );

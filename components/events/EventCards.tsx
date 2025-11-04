@@ -9,11 +9,16 @@ interface EventCardProps {
 export default function EventCards({ event }: EventCardProps) {
   return (
     <Link href={`/events/${event.eventId}`} passHref>
-      <div className="w-[409px] h-[578px] bg-white relative text-black overflow-hidden">
+      <div className="w-[409px] h-[578px] bg-white relative text-black overflow-hidden border border-[#CD78EC] rounded">
+        {/* Card Design */}
+        <div className="absolute h-[438px] w-[315px] right-0">
+          <img className="h-full w-full" src="/eventCard/cardBG.png" alt="cardImage" />
+        </div>
+
         {/* Semester Info */}
         <div className="headers font-['Montserrat'] text-[12px] absolute rotate-270 text-right w-[123px] origin-top-left h-[36px] left-[30px] top-[153px]">
-          <p className="m-0">{event.eventSemester} Semester</p>
-          <p className="m-0 -mt-1 font-bold">ACM Event Series</p>
+          <p className="m-0">{event.eventSemester} SEMESTER</p>
+          <p className="m-0 -mt-1 font-bold">ACM EVENT SERIES</p>
         </div>
 
         {/* Title */}

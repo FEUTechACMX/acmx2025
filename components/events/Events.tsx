@@ -9,10 +9,14 @@ export default function Events() {
   const [semester, setSemester] = useState("1st");
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center p-10">
+    <div className="flex flex-col justify-center items-center w-full max-w-6xl mx-auto px-4 relative before:absolute before:top-0 before:left-0 before:w-full
+     before:h-full before:content-[''] before:opacity-[0.05] before:z-10 before:pointer-events-none
+     before:bg-[url('https://www.ui-layouts.com/noise.gif')]">
+      <div className="text-center mb-12 md:h-[96px]">
+        <h1 className="text-4xl mt-[66px] md:text-[96px] font-['Fjalla-One'] text-[#CF78EC]">ACM EVENTS</h1>
+      </div>
+      
       <EventSelector onChange={setSemester} />
-
-      {/* Pass selected semester into the list */}
       <EventsList semester={semester} />
     </div>
   );
