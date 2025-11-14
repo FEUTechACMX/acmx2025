@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import { gsap } from "gsap";
 
-export default function Animation() {
+export default function Animation({ onComplete }: { onComplete?: () => void }) {
   const base = useRef<HTMLDivElement>(null);
   const layer1 = useRef<HTMLDivElement>(null);
   const layer2 = useRef<HTMLDivElement>(null);
@@ -13,10 +13,7 @@ export default function Animation() {
   const layer5 = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // -----------------------------
-    // Entrance: blink-in one by one
-    // -----------------------------
-    const entranceTimeline = gsap.timeline();
+    const tl = gsap.timeline();
 
     const layers = [
       base.current,
@@ -27,31 +24,17 @@ export default function Animation() {
       layer5.current,
     ];
 
-    // Start all invisible
     gsap.set(layers, { opacity: 0 });
 
-    // Blink-in sequentially
-    entranceTimeline.to(layers, {
+    tl.to(layers, {
       opacity: 1,
       duration: 0.2,
       stagger: 0.1,
     });
 
-    // -----------------------------
-    // Spinning (exactly as before)
-    // -----------------------------
     const spins = 2;
-    const layer5Duration = 8;
-
-    const rotations = [
-      spins * 3, // layer1 - clockwise
-      -spins * 2, // layer2 - counter-clockwise
-      -spins * 1.5, // layer3 - counter-clockwise
-      -spins * 1.2, // layer4 - counter-clockwise
-      spins, // layer5 - clockwise
-    ];
-
-    const spinningLayers = [
+    const rotations = [3, -2, -1.5, -1.2, 1].map((v) => v * spins * 360);
+    const spinLayers = [
       layer1.current,
       layer2.current,
       layer3.current,
@@ -59,34 +42,27 @@ export default function Animation() {
       layer5.current,
     ];
 
-    entranceTimeline.to(
-      spinningLayers.map((l) => l!),
+    tl.to(
+      spinLayers,
       {
-        rotation: (i, target) => rotations[i] * 360,
-        duration: layer5Duration,
+        rotation: (i) => rotations[i],
+        duration: 8,
         ease: "linear",
       },
       ">0"
-    ); // Start after entrance finishes
+    );
 
-    // -----------------------------
-    // End glitch blink (all together)
-    // -----------------------------
     const glitchDuration = 0.05;
-    const totalBlinks = 3;
-    for (let i = 0; i < totalBlinks; i++) {
-      entranceTimeline.to(
-        layers,
-        { opacity: 0, duration: glitchDuration },
-        ">0"
-      );
-      entranceTimeline.to(
-        layers,
-        { opacity: 1, duration: glitchDuration },
-        ">0"
-      );
+
+    for (let i = 0; i < 3; i++) {
+      tl.to(layers, { opacity: 0, duration: glitchDuration }, ">0");
+      tl.to(layers, { opacity: 1, duration: glitchDuration }, ">0");
     }
-  }, []);
+
+    if (onComplete) {
+      tl.eventCallback("onComplete", onComplete);
+    }
+  }, [onComplete]);
 
   return (
     <div className="h-[840px] w-[840px] relative overflow-hidden rotate-270 select-none">
