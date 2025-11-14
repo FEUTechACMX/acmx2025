@@ -4,7 +4,12 @@ import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import { gsap } from "gsap";
 
-export default function Animation({ onComplete }: { onComplete?: () => void }) {
+type AnimationProps = {
+  size?: number; // width = height = size in px, default 840
+  onComplete?: () => void;
+};
+
+export default function Animation({ size = 840, onComplete }: AnimationProps) {
   const base = useRef<HTMLDivElement>(null);
   const layer1 = useRef<HTMLDivElement>(null);
   const layer2 = useRef<HTMLDivElement>(null);
@@ -32,8 +37,13 @@ export default function Animation({ onComplete }: { onComplete?: () => void }) {
       stagger: 0.1,
     });
 
-    const spins = 2;
-    const rotations = [3, -2, -1.5, -1.2, 1].map((v) => v * spins * 360);
+    // Calculate rotations for layer 5 to do exactly 1 rotation in 3 seconds
+    // Then scale all other rotations proportionally to complete in 3 seconds
+    const layer5Rotations = 1; // Layer 5 does exactly 1 rotation
+    const targetDuration = 3; // All layers complete in 3 seconds
+
+    const baseRotations = [3, -2, -1.5, -1.2, 1]; // Original rotation multipliers
+    const rotations = baseRotations.map((v) => v * layer5Rotations * 360);
     const spinLayers = [
       layer1.current,
       layer2.current,
@@ -46,7 +56,7 @@ export default function Animation({ onComplete }: { onComplete?: () => void }) {
       spinLayers,
       {
         rotation: (i) => rotations[i],
-        duration: 8,
+        duration: targetDuration, // Set all rotations to complete in 3 seconds
         ease: "linear",
       },
       ">0"
@@ -65,7 +75,10 @@ export default function Animation({ onComplete }: { onComplete?: () => void }) {
   }, [onComplete]);
 
   return (
-    <div className="h-[840px] w-[840px] relative overflow-hidden rotate-270 select-none">
+    <div
+      className="relative overflow-visible rotate-270 select-none"
+      style={{ width: size, height: size }}
+    >
       <div
         ref={layer1}
         className="h-[40%] w-[40%] bottom-[33%] right-[29%] absolute"
