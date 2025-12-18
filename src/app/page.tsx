@@ -1,5 +1,3 @@
-import Page from "./hero/page";
-
 export default function Home() {
-  return <Page />;
+  return <div>Home</div>;
 }
