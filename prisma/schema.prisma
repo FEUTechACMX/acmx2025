@@ -99,8 +99,18 @@ model Registration {
 model Attendance {
   id             String       @id @default(cuid())
   registrationId String       @unique
+  userId         String?
+  eventId        String
+  fullName       String
+  studentNumber  String
+  schoolEmail    String
+  yearLevel      Int
+  degreeProgram  String
+  section        String
+  professor      String
   timeIn         DateTime
   timeOut        DateTime?
+  role           RegistrationRole
   createdAt      DateTime     @default(now())
   registration   Registration @relation(fields: [registrationId], references: [id])
 }
