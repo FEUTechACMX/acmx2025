@@ -11,11 +11,11 @@ model User {
   id             String         @id @default(cuid())
   supabaseUserId String?        @unique
   studentId      String         @unique
-  password       String         // 🔒 Hashed password for login
+  password       String
   firstName      String
   middleName     String
   lastName       String
-  suffix         String?  
+  suffix         String?
   yearLevel      Int
   degreeProgram  String
   personalEmail  String         @unique
@@ -28,23 +28,21 @@ model User {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registration   Registration[]
-  schedules      Schedule[] 
-  transactions   Transaction[]
+  schedules      Schedule[]
+  Transaction    Transaction[]
 }
-
 
 model Event {
   eventId       String         @id @default(cuid())
   name          String
   description   String?
-  eventSemester EventSemester  @default(FIRST)  
+  eventSemester EventSemester  @default(FIRST)
   venue         String
   dayOfWeek     String
   startDate     DateTime
-  endDate       DateTime       @default(now()) 
-  price         Float          @default(0)      
+  endDate       DateTime       @default(now())
+  price         Float          @default(0)
   image         String?
-
   registrations Registration[]
 }
 
@@ -63,11 +61,16 @@ model Schedule {
 model Transaction {
   transaction_id String          @id @default(cuid())
   user_id        String
+  fullName       String
+  schoolEmail    String
+  imageURL     String?
+  
   type           TransactionType
-  points         Int
+  points         Int?
   description    String
+  status         TransactionStatus @default(PENDING)
   created_at     DateTime        @default(now())
-  user           User            @relation(fields: [user_id], references: [id])
+  User           User?            @relation(fields: [user_id], references: [id])
 }
 
 model Registration {
@@ -89,16 +92,14 @@ model Registration {
   event         Event            @relation(fields: [eventId], references: [eventId])
   user          User?            @relation(fields: [userId], references: [id])
 
-  // Prevent duplicates
-  @@unique([eventId, userId])          // prevents members double-registering
-  @@unique([eventId, schoolEmail])     // prevents non-members registering twice by email
-  @@unique([eventId, studentNumber])   // prevents non-members registering twice by student no.
+  @@unique([eventId, userId])
+  @@unique([eventId, schoolEmail])
+  @@unique([eventId, studentNumber])
 }
 
-
 model Attendance {
-  id             String       @id @default(cuid())
-  registrationId String       @unique
+  id             String           @id @default(cuid())
+  registrationId String           @unique
   userId         String?
   eventId        String
   fullName       String
@@ -111,8 +112,8 @@ model Attendance {
   timeIn         DateTime
   timeOut        DateTime?
   role           RegistrationRole
-  createdAt      DateTime     @default(now())
-  registration   Registration @relation(fields: [registrationId], references: [id])
+  createdAt      DateTime         @default(now())
+  registration   Registration     @relation(fields: [registrationId], references: [id])
 }
 
 enum UserRole {
@@ -136,4 +137,9 @@ enum TransactionType {
   REWARDS
   TASKS
   PURCHASE
+}
+enum TransactionStatus{
+  PENDING
+  ACCEPTED
+  REJECTED
 }

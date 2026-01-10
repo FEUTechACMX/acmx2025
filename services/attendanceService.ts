@@ -68,10 +68,3 @@ export async function recordTimeOut(
     );
   }
 }
-
-//4. Points Reward System
-// Logic: Time out - Time in must be greater than or equal to 1 hour to receive point rewards
-
-//4. Offline Mode
-//Fetch Attendance Logs database and save it as a state. State of attendance log should be downloadable an excel file.
-//Offline mode would switch to locally saved database
