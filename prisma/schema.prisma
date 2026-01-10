@@ -30,6 +30,14 @@ model User {
   registration   Registration[]
   schedules      Schedule[]
   Transaction    Transaction[]
+  sessions       Session[] 
+}
+
+model Session {
+  id            String @id @default(cuid())
+  userId        String
+  user      User   @relation(fields: [userId], references: [id])
+  expiresAt     DateTime
 }
 
 model Event {
@@ -118,6 +126,8 @@ model Attendance {
 
 enum UserRole {
   MEMBER
+  JUNIOR_OFFICER
+  EXECUTIVES
   ADMIN
 }
 
