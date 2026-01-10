@@ -11,7 +11,7 @@ interface Transaction {
   user_id: string;
   fullName: string;
   schoolEmail: string;
-  receipt_image_url?: File;
+  receipt_image_url?: string;
   description: string;
   points?: number;
   created_at: Date;
@@ -24,19 +24,18 @@ export async function createPurchaseRequest(transactionRecord: Transaction) {
     throw new Error(
       "This Type of Transaction Requires an Image Receipt File Upload"
     );
-  } else {
-    await prisma.transaction.create({
-      data: {
-        user_id: transactionRecord.user_id,
-        fullName: transactionRecord.fullName,
-        schoolEmail: transactionRecord.schoolEmail,
-        imageURL: transactionRecord.receipt_image_url,
-        type: "PURCHASE",
-        description: transactionRecord.description,
-        status: "PENDING",
-      },
-    });
   }
+  await prisma.transaction.create({
+    data: {
+      user_id: transactionRecord.user_id,
+      fullName: transactionRecord.fullName,
+      schoolEmail: transactionRecord.schoolEmail,
+      imageURL: transactionRecord.receipt_image_url,
+      type: TransactionType.PURCHASE,
+      description: transactionRecord.description,
+      status: TransactionStatus.PENDING,
+    },
+  });
 }
 
 //Attendance Points Reward System
