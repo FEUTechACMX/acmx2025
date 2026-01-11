@@ -1,6 +1,6 @@
 //imports
 import { cookies } from "next/headers";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
 import bcrypt from "bcryptjs";
 
 //To Do:
@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 
 //Member verification
 //Check if QR details have a match in the User Model.
-export async function UserVerification(
+export async function userVerification(
   studentNumber: string,
   studentFirstName: string,
   studentLastName: string

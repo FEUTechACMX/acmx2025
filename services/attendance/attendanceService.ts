@@ -4,7 +4,7 @@
 //3. Members with less than 1 hour of attendance won't be receiving points
 //4. Offline Mode is a Must.
 
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 //1. Check if User Details Exists in Registration Table
 // Parameters taken are Student ID and Current Event ID
@@ -14,7 +14,7 @@ import { prisma } from "../lib/prisma";
 // If validation is true, fetch all details of user + current time and insert them to the attendance logs.
 // Timeout value would be currently sent to null
 
-export async function logAttendance(
+export async function recordTimeIn(
   studentNumber: string,
   currentEventID: string
 ) {
@@ -31,7 +31,7 @@ export async function logAttendance(
     throw new Error("User is not Registered");
   }
 
-  await prisma.attendance.create({
+  const attendance = await prisma.attendance.create({
     data: {
       eventId: registrant.eventId,
       fullName: registrant.fullName,
@@ -48,6 +48,8 @@ export async function logAttendance(
       timeIn: new Date(),
     },
   });
+
+  return attendance;
 }
 
 //3. Time Out
@@ -67,4 +69,6 @@ export async function recordTimeOut(
       "User has no Attendance record. Must first record a Time In"
     );
   }
+
+  return result;
 }
