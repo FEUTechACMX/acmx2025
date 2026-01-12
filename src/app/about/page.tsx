@@ -56,20 +56,25 @@ export default function AboutPage() {
       if (Math.abs(deltaY) < 15) return; // Further reduced threshold for easier scrolling
 
       // Get the container and calculate scroll progress
-      const container = document.querySelector('.w-full.h-screen.overflow-y-auto');
+      const container = document.querySelector(
+        ".w-full.h-screen.overflow-y-auto"
+      );
       if (!container) return;
 
       // Use scroll position more effectively
-      const scrollPercentage = container.scrollTop / (container.scrollHeight - container.clientHeight);
+      const scrollPercentage =
+        container.scrollTop / (container.scrollHeight - container.clientHeight);
       const sectionHeight = container.scrollHeight / sectionsRef.current.length;
       const currentIndex = Math.floor(container.scrollTop / sectionHeight);
 
       // Only move to next section if clearly moving in that direction
-      if (deltaY > 30 && currentIndex < sectionsRef.current.length - 1) { // Reduced from 40 to 30
+      if (deltaY > 30 && currentIndex < sectionsRef.current.length - 1) {
+        // Reduced from 40 to 30
         isScrolling = true;
         scrollToSection(currentIndex + 1);
         setTimeout(() => (isScrolling = false), 600);
-      } else if (deltaY < -30 && currentIndex > 0) { // Reduced from -40 to -30
+      } else if (deltaY < -30 && currentIndex > 0) {
+        // Reduced from -40 to -30
         isScrolling = true;
         scrollToSection(currentIndex - 1);
         setTimeout(() => (isScrolling = false), 600);
@@ -100,7 +105,11 @@ export default function AboutPage() {
           {[StudentChapter, Mission, Vision].map((Component, i) => (
             <div
               key={i}
-              ref={(el) => el && (sectionsRef.current[i] = el)}
+              ref={(el) => {
+                if (el) {
+                  sectionsRef.current[i] = el;
+                }
+              }}
               className="h-screen flex items-center justify-center snap-start snap-always"
             >
               <Component />
