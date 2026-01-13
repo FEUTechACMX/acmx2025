@@ -12,8 +12,9 @@ export default function NavBar() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("/api/me");
+        const res = await fetch("/api/get");
         const data: { user?: User } = await res.json();
+        console.log(data.user);
         setUser(data.user);
       } catch {
         setUser(undefined);

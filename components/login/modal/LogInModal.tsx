@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Modal from "../../Modal/Modal";
+import type { User } from "../../../types/auth";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -21,22 +22,26 @@ export default function LoginModal({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     try {
-      const res = await fetch("api/login", {
+      const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ studentId, password }),
       });
 
-      const data: { success: boolean; message?: string } = await res.json();
+      const data: { success: boolean; user?: User; message?: string } =
+        await res.json();
 
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Login failed");
       }
 
-      onLoginSuccess();
-      onClose();
+      // ✅ THIS IS THE IMPORTANT LINE
+      onLoginSuccess(); // <- triggers Navbar to refetch /api/me and update user state
+      onClose(); // <- closes the modal
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
