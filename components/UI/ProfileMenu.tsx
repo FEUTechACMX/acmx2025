@@ -1,13 +1,21 @@
 "use client";
 import React, { useState } from "react";
-import type { User } from "../../types/auth";
+import type { safeUser } from "../../types/auth";
 
 type ProfileMenuProps = {
-  user: User;
+  user: safeUser;
 };
 
 export default function ProfileMenu({ user }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleLogOut = async () => {
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    window.location.reload();
+  };
 
   return (
     <div className="relative">
@@ -37,7 +45,10 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
               </button>
             </li>
             <li>
-              <button className="w-full text-left px-4 py-2 hover:bg-gray-100">
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                onClick={handleLogOut}
+              >
                 Logout
               </button>
             </li>

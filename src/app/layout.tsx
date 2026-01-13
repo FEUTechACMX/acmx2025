@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "../../components/UI/NavBar";
+import { getCurrentUser } from "../../lib/auth";
+import { toSafeUser } from "../../lib/userMapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,18 +20,20 @@ export const metadata: Metadata = {
   description: "ACM's Website",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const dbUser = await getCurrentUser();
+  const user = dbUser ? toSafeUser(dbUser) : null;
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {" "}
-        <NavBar />
+        <NavBar user={user} />
         {children}
       </body>
     </html>

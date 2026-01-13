@@ -1,32 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import type { User } from "../../types/auth";
+import type { safeUser } from "../../types/auth";
 import LoginModal from "../login/modal/LogInModal";
 import ProfileMenu from "./ProfileMenu";
 
-export default function NavBar() {
-  const [user, setUser] = useState<User | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+type NavBarProps = {
+  user: safeUser | null;
+};
+
+export default function NavBar({ user }: NavBarProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch("/api/get");
-        const data: { user?: User } = await res.json();
-        console.log(data.user);
-        setUser(data.user);
-      } catch {
-        setUser(undefined);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  if (loading) return null;
 
   return (
     <>
@@ -137,10 +121,9 @@ export default function NavBar() {
       <LoginModal
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
-        onLoginSuccess={async () => {
-          const res = await fetch("/api/me");
-          const data: { user?: User } = await res.json();
-          setUser(data.user);
+        onLoginSuccess={() => {
+          setIsLoginOpen(false);
+          window.location.reload(); // simplest & reliable
         }}
       />
     </>

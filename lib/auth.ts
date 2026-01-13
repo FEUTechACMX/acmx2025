@@ -2,9 +2,13 @@
 import { prisma } from "./prisma";
 import { cookies } from "next/headers";
 
+export const dynamic = "force-dynamic";
+
 export async function getCurrentUser() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("session")?.value;
+
+  console.log("Session cookie", sessionId);
 
   if (!sessionId) return null;
 
