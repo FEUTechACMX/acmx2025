@@ -81,7 +81,7 @@ export default function NavBar() {
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={async () => {
           const res = await fetch("/api/me");
-          const data: { user?: SafeUser } = await res.json();
+          const data: { user?: User } = await res.json();
           setUser(data.user);
         }}
       />
