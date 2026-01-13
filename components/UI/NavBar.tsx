@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import type { User } from "../../types/auth";
 import LoginModal from "../login/modal/LogInModal";
+import ProfileMenu from "./ProfileMenu";
 
 export default function NavBar() {
   const [user, setUser] = useState<User | undefined>(undefined);
@@ -68,7 +69,7 @@ export default function NavBar() {
         {/* Desktop Login / Profile */}
         <div className="hidden lg:block">
           {user ? (
-            <button>Profile ({user.name})</button>
+            <ProfileMenu user={user} />
           ) : (
             <button
               className="bg-green-500 text-white px-4 py-2 rounded"
@@ -116,7 +117,7 @@ export default function NavBar() {
 
           <div className="mt-4">
             {user ? (
-              <button className="w-full">Profile ({user.name})</button>
+              <ProfileMenu user={user} />
             ) : (
               <button
                 className="w-full bg-green-500 text-white px-4 py-2 rounded"
