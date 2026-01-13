@@ -8,10 +8,11 @@ export async function POST(req: Request) {
   try {
     const user = await login(studentId, password);
     return NextResponse.json({ success: true, user });
-  } catch (err: any) {
-    return NextResponse.json(
-      { success: false, message: err.message },
-      { status: 401 }
-    );
+  } catch (err) {
+    let message = "Unable to Log In. Please try again later.";
+    if (err instanceof Error) {
+      message = err.message;
+    }
+    return NextResponse.json({ success: false, message }, { status: 401 });
   }
 }

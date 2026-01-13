@@ -2,10 +2,12 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import type { User } from "../../types/auth";
+import LoginModal from "../login/modal/LogInModal";
 
 export default function NavBar() {
   const [user, setUser] = useState<User | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -61,8 +63,28 @@ export default function NavBar() {
 
       {/* Log-In + User Options */}
       <div>
-        {user ? <button>Profile ({user.name})</button> : <button>LogIn</button>}
+        {user ? (
+          <button>Profile ({user.name})</button>
+        ) : (
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded"
+            onClick={() => setIsLoginOpen(true)}
+          >
+            LogIn
+          </button>
+        )}
       </div>
+
+      {/* Log In Modal */}
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onLoginSuccess={async () => {
+          const res = await fetch("/api/me");
+          const data: { user?: SafeUser } = await res.json();
+          setUser(data.user);
+        }}
+      />
     </nav>
   );
 }
