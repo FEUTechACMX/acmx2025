@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import NavBar from "../../components/UI/NavBar";
+import NavBar from "../../components/ui/NavBar";
 import { getCurrentUser } from "../../lib/auth";
 import { toSafeUser } from "../../lib/userMapper";
 
