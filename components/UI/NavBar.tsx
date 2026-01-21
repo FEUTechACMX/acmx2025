@@ -95,8 +95,13 @@ export default function NavBar({ user }: NavBarProps) {
               <a href="committee">Committee</a>
             </li>
             <li>
-              <a href="#">Officers</a>
+              <a href="#">Officer</a>
             </li>
+            {user?.role === "ADMIN" && (
+              <li>
+                <a href="/scanner">Scanner</a>
+              </li>
+            )}
           </ul>
 
           <div className="mt-4">

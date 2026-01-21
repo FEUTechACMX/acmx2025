@@ -1,15 +1,20 @@
 //Single source of truth
-import { safeUser } from "../types/auth";
+import { NextRequest } from "next/server";
 import { prisma } from "./prisma";
-import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-export async function getCurrentUser(req?: safeUser) {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session")?.value;
+export async function getCurrentUser(req?: NextRequest) {
+  let sessionId: string | undefined;
 
-  console.log("Session cookie", sessionId);
+  if (req) {
+    // middleware /API route
+    const cookie = req.cookies.get("session");
+    sessionId = cookie?.value;
+  } else {
+    const cookieStore = await import("next/headers").then((m) => m.cookies());
+    sessionId = cookieStore.get("session")?.value;
+  }
 
   if (!sessionId) return null;
 
