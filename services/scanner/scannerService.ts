@@ -35,7 +35,7 @@ export async function verifyUserFromQr(payload: QrPayload) {
   const user = await userVerification(
     payload.studentID,
     payload.firstName,
-    payload.lastName
+    payload.lastName,
   );
 
   if (!user) throw new Error("User not found");
@@ -53,6 +53,7 @@ export async function TimeIn(payload: QrPayload, eventId: string) {
       message: "Time-in recorded successfully",
       attendanceId: attendanceRecord.id,
       timeIn: attendanceRecord.timeIn,
+      eventId: eventId,
     };
   } catch (err: unknown) {
     const message = (err as Error)?.message ?? "Unknown error";
