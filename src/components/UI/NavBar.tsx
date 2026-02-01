@@ -1,14 +1,8 @@
 "use client";
-<<<<<<< HEAD:components/UI/NavBar.tsx
 import React, { useState } from "react";
 import Link from "next/link";
-import type { safeUser } from "../../types/auth";
-import LoginModal from "../login/modal/LogInModal";
-=======
-import React, { useState, useEffect } from "react";
 import type { safeUser } from "@/types/auth";
 import LoginModal from "@/components/login/modal/LogInModal";
->>>>>>> cc7bd1b3b9fe62ea502f3768768e3b96c1bcca66:src/components/UI/NavBar.tsx
 import ProfileMenu from "./ProfileMenu";
 
 type NavBarProps = {
