@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import QrScanner from "../../../components/qr/QrScanner";
+import QrScanner from "@/components/qr/QrScanner";
 
 export default function ScanPage() {
   const [result, setResult] = useState<any>(null);

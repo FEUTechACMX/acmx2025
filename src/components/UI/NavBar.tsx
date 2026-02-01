@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import type { safeUser } from "../../types/auth";
-import LoginModal from "../login/modal/LogInModal";
+import type { safeUser } from "@/types/auth";
+import LoginModal from "@/components/login/modal/LogInModal";
 import ProfileMenu from "./ProfileMenu";
 
 type NavBarProps = {

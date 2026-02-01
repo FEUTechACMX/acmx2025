@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Modal from "../../Modal/Modal";
-import type { User } from "../../../types/auth";
+import Modal from "@/components/Modal/Modal";
+import type { User } from "@/types/auth";
 
 interface LoginModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import type { safeUser } from "../../types/auth";
+import type { safeUser } from "@/types/auth";
 
 type ProfileMenuProps = {
   user: safeUser;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getEventsBySemester } from "../../../../../lib/events";
+import { getEventsBySemester } from "@/lib/events";
 
 // ✅ Route handler for /api/events/[semester]
 export async function GET(
