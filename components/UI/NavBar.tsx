@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import type { safeUser } from "../../types/auth";
 import LoginModal from "../login/modal/LogInModal";
 import ProfileMenu from "./ProfileMenu";
@@ -11,6 +12,8 @@ type NavBarProps = {
 export default function NavBar({ user }: NavBarProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAcmDropdownOpen, setIsAcmDropdownOpen] = useState(false);
+  const [isMobileAcmOpen, setIsMobileAcmOpen] = useState(false);
 
   return (
     <>
@@ -22,33 +25,63 @@ export default function NavBar({ user }: NavBarProps) {
         </div>
 
         {/* Desktop Nav Links */}
-        <ul className="hidden lg:flex font-[Arian-light] justify-around w-[40vw]">
-          <li>
-            <a href="about" className="hover:text-[#CF78EC]">
-              About
-            </a>
-          </li>
-          <li>
-            <a href="merchandise" className="hover:text-[#CF78EC]">
-              Merchandise
-            </a>
-          </li>
-          <li>
-            <a href="events" className="hover:text-[#CF78EC]">
-              Events
-            </a>
-          </li>
-          <li>
-            <a href="committee" className="hover:text-[#CF78EC]">
-              Committee
-            </a>
-          </li>
-          <li>
-            <a href="#" className="hover:text-[#CF78EC]">
-              Officers
-            </a>
-          </li>
-        </ul>
+        <div className="hidden lg:flex font-[Arian-light] items-center gap-8">
+          <Link href="/" className="hover:text-[#CF78EC] transition-colors">
+            Home
+          </Link>
+          <Link href="/about" className="hover:text-[#CF78EC] transition-colors">
+            About
+          </Link>
+          <Link href="/merchandise" className="hover:text-[#CF78EC] transition-colors">
+            Merchandise
+          </Link>
+          <Link href="/events" className="hover:text-[#CF78EC] transition-colors">
+            Events
+          </Link>
+          
+          {/* ACM Dropdown */}
+          <div 
+            className="relative"
+            onMouseEnter={() => setIsAcmDropdownOpen(true)}
+            onMouseLeave={() => setIsAcmDropdownOpen(false)}
+          >
+            <button className="flex items-center gap-1 hover:text-[#CF78EC] transition-colors cursor-pointer">
+              ACM
+              <svg 
+                className={`w-4 h-4 transition-transform duration-200 ${isAcmDropdownOpen ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Dropdown Menu */}
+            {isAcmDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-40 bg-white shadow-lg rounded-md py-2 border border-gray-100">
+                <Link 
+                  href="/committee" 
+                  className="block px-4 py-2 text-gray-700 hover:bg-[#CF78EC]/10 hover:text-[#CF78EC] transition-colors"
+                >
+                  Committee
+                </Link>
+                <Link 
+                  href="/officers" 
+                  className="block px-4 py-2 text-gray-700 hover:bg-[#CF78EC]/10 hover:text-[#CF78EC] transition-colors"
+                >
+                  Officers
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {user?.role === "ADMIN" && (
+            <Link href="/scanner" className="hover:text-[#CF78EC] transition-colors">
+              Scanner
+            </Link>
+          )}
+        </div>
 
         {/* Desktop Login / Profile */}
         <div className="hidden lg:block">
@@ -56,10 +89,10 @@ export default function NavBar({ user }: NavBarProps) {
             <ProfileMenu user={user} />
           ) : (
             <button
-              className="bg-green-500 text-white px-4 py-2 rounded"
+              className="px-5 py-2 text-[#CF78EC] font-['Supermolot'] text-sm tracking-wide border border-[#CF78EC] hover:bg-[#CF78EC] hover:text-white transition-all duration-200 cursor-pointer"
               onClick={() => setIsLoginOpen(true)}
             >
-              LogIn
+              Log In
             </button>
           )}
         </div>
@@ -81,41 +114,73 @@ export default function NavBar({ user }: NavBarProps) {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="fixed top-[70px] left-[7vw] w-[86vw] bg-white shadow-lg z-40 lg:hidden rounded-md p-4">
-          <ul className="flex flex-col gap-4 font-[Arian-light]">
-            <li>
-              <a href="about">About</a>
-            </li>
-            <li>
-              <a href="merchandise">Merchandise</a>
-            </li>
-            <li>
-              <a href="events">Events</a>
-            </li>
-            <li>
-              <a href="committee">Committee</a>
-            </li>
-            <li>
-              <a href="#">Officer</a>
-            </li>
+          <div className="flex flex-col gap-4 font-[Arian-light]">
+            <Link href="/" className="hover:text-[#CF78EC] transition-colors">
+              Home
+            </Link>
+            <Link href="/about" className="hover:text-[#CF78EC] transition-colors">
+              About
+            </Link>
+            <Link href="/merchandise" className="hover:text-[#CF78EC] transition-colors">
+              Merchandise
+            </Link>
+            <Link href="/events" className="hover:text-[#CF78EC] transition-colors">
+              Events
+            </Link>
+            
+            {/* Mobile ACM Dropdown */}
+            <div>
+              <button 
+                className="flex items-center gap-1 hover:text-[#CF78EC] transition-colors w-full cursor-pointer"
+                onClick={() => setIsMobileAcmOpen(!isMobileAcmOpen)}
+              >
+                ACM
+                <svg 
+                  className={`w-4 h-4 transition-transform duration-200 ${isMobileAcmOpen ? 'rotate-180' : ''}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isMobileAcmOpen && (
+                <div className="ml-4 mt-2 flex flex-col gap-2">
+                  <Link 
+                    href="/committee" 
+                    className="text-gray-600 hover:text-[#CF78EC] transition-colors"
+                  >
+                    Committee
+                  </Link>
+                  <Link 
+                    href="/officers" 
+                    className="text-gray-600 hover:text-[#CF78EC] transition-colors"
+                  >
+                    Officers
+                  </Link>
+                </div>
+              )}
+            </div>
+
             {user?.role === "ADMIN" && (
-              <li>
-                <a href="/scanner">Scanner</a>
-              </li>
+              <Link href="/scanner" className="hover:text-[#CF78EC] transition-colors">
+                Scanner
+              </Link>
             )}
-          </ul>
+          </div>
 
           <div className="mt-4">
             {user ? (
               <ProfileMenu user={user} />
             ) : (
               <button
-                className="w-full bg-green-500 text-white px-4 py-2 rounded"
+                className="w-full py-2.5 text-[#CF78EC] font-['Supermolot'] text-sm tracking-wide border border-[#CF78EC] hover:bg-[#CF78EC] hover:text-white transition-all duration-200 cursor-pointer"
                 onClick={() => {
                   setIsMenuOpen(false);
                   setIsLoginOpen(true);
                 }}
               >
-                LogIn
+                Log In
               </button>
             )}
           </div>
@@ -128,7 +193,7 @@ export default function NavBar({ user }: NavBarProps) {
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={() => {
           setIsLoginOpen(false);
-          window.location.reload(); // simplest & reliable
+          window.location.reload();
         }}
       />
     </>
