@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import {
   login,
   createSession,
-} from "../../../../services/identity/identityService";
+} from "@/services/identity/identityService";
 
 export async function POST(req: Request) {
   const { studentId, password } = await req.json();

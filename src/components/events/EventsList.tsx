@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import EventCards from "./EventCards";
-import type { EventWithCount } from "../../types/events";
+import type { EventWithCount } from "@/types/events";
 
 export default function EventsList({ semester }: { semester: string }) {
   const [events, setEvents] = useState<EventWithCount[]>([]);

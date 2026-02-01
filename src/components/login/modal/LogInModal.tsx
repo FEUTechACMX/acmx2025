@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
+<<<<<<< HEAD:components/login/modal/LogInModal.tsx
 import type { safeUser } from "../../../types/auth";
+=======
+import Modal from "@/components/Modal/Modal";
+import type { User } from "@/types/auth";
+>>>>>>> cc7bd1b3b9fe62ea502f3768768e3b96c1bcca66:src/components/login/modal/LogInModal.tsx
 
 interface LoginModalProps {
   isOpen: boolean;

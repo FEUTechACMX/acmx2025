@@ -1,11 +1,11 @@
 // Imports
-import { decryptAES } from "../../lib/crypto";
-import { parseQrPayload, QrPayload } from "../../lib/qrParser";
+import { decryptAES } from "@/lib/crypto";
+import { parseQrPayload, QrPayload } from "@/lib/qrParser";
 
 //Services Import
-import { userVerification } from "../identity/identityService";
-import { recordTimeIn } from "../attendance/attendanceService";
-import { recordTimeOut } from "../attendance/attendanceService";
+import { userVerification } from "@/services/identity/identityService";
+import { recordTimeIn } from "@/services/attendance/attendanceService";
+import { recordTimeOut } from "@/services/attendance/attendanceService";
 
 // Take QR payload
 // Decrypt/parse

@@ -1,6 +1,6 @@
 //imports
 import { cookies } from "next/headers";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 //To Do:
@@ -60,7 +60,7 @@ export async function createSession(userId: string) {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     },
   });
-  return sessionId; // just return, don't set cookie here
+  return sessionId;
 }
 
 //Log Out

@@ -4,7 +4,7 @@
 //3. Members with less than 1 hour of attendance won't be receiving points
 //4. Offline Mode is a Must.
 
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 //1. Check if User Details Exists in Registration Table
 // Parameters taken are Student ID and Current Event ID

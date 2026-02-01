@@ -1,5 +1,5 @@
 import React from "react";
-import { ScanType } from "../../types/scantTypes";
+import { ScanType } from "@/types/scantTypes";
 
 type ScanTypeSelectorProps = {
   value: ScanType;

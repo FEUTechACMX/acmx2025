@@ -1,6 +1,6 @@
-import { EventSemester } from "@prisma/client"; //import Prisma client from local prisma.ts
+import { EventSemester } from "@prisma/client";
 import { prisma } from "./prisma";
-import type { EventWithCount } from "../types/events";
+import type { EventWithCount } from "@/types/events";
 
 // Helper to clean up semester input
 function normalizeSemesterInput(
@@ -14,7 +14,7 @@ function normalizeSemesterInput(
   if (key === "2ND" || key === "SECOND") return EventSemester.SECOND;
   if (key === "3RD" || key === "THIRD") return EventSemester.THIRD;
 
-  return null; // return null if invalid
+  return null;
 }
 
 // Get all events

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
-import Animation from "../UI/Animation";
+import Animation from "@/components/UI/Animation";
 
 interface AboutHeroProps {
   onComplete: () => void;

@@ -1,4 +1,4 @@
-import { EventWithCount } from "../../types/events"; // <-- type we defined earlier
+import { EventWithCount } from "@/types/events";
 import AttendButton from "./AttendButton";
 
 interface SelectedEventProps {
