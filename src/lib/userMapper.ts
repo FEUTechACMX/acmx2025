@@ -1,5 +1,5 @@
 import { User } from "@prisma/client";
-import { safeUser } from "../types/auth";
+import { safeUser } from "@/types/auth";
 
 export function toSafeUser(user: User): safeUser {
   return {

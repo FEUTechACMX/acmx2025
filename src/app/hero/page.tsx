@@ -1,10 +1,10 @@
 "use client";
 import Image from "next/image";
 import React from "react";
-import WithPreloader from "../../../components/UI/WithPreLoader";
+import WithPreloader from "@/components/UI/WithPreLoader";
 import { useRouter } from "next/navigation";
-import ContinuosAnimation from "../../../components/UI/ContinousAnimation";
-import Button from "../../../components/UI/Button";
+import ContinuosAnimation from "@/components/UI/ContinousAnimation";
+import Button from "@/components/UI/Button";
 
 export default function Page() {
   const router = useRouter();

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "../../../../lib/auth"; // your auth.ts logic
-import type { safeUser } from "../../../../types/auth";
+import { getCurrentUser } from "@/lib/auth";
+import type { safeUser } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
 

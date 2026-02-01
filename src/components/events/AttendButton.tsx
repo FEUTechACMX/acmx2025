@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import RegistrationModal from "../registration/RegistrationModal";
+import RegistrationModal from "@/components/registration/RegistrationModal";
 
 interface AttendButtonProps {
   eventId: string;

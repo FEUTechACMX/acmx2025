@@ -1,7 +1,7 @@
 //Payment Service Logic
 
 //imports
-import { prisma } from "../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { TransactionType, TransactionStatus } from "@prisma/client";
 
 //To Do:

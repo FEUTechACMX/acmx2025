@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import type { EventWithCount } from "../../types/events";
+import type { EventWithCount } from "@/types/events";
 
 interface EventCardProps {
   event: EventWithCount;

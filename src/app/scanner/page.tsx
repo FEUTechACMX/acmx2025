@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import QRScanner from "../../../components/scanner/QRScanner";
-import ScanDetailsForm from "../../../components/scanner/ScanDetailsForm";
-import ScanTypeSelector from "../../../components/scanner/ScanTypeSelector";
+import QRScanner from "@/components/scanner/QRScanner";
+import ScanDetailsForm from "@/components/scanner/ScanDetailsForm";
+import ScanTypeSelector from "@/components/scanner/ScanTypeSelector";
 import {
   verifyScannedQR,
   verifyUserFromQr,
   TimeIn,
   TimeOut,
-} from "../../../services/scanner/scannerService";
-import { ScanType } from "../../../types/scantTypes";
+} from "@/services/scanner/scannerService";
+import { ScanType } from "@/types/scantTypes";
 
 export default function Page() {
   const [loading, setLoading] = useState(false);
