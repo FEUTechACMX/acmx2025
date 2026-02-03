@@ -1,1 +1,1 @@
-export type ScanType = "TimeIn" | "TimeOut" | "UserVerification";
+export type ScanType = "TimeIn" | "TimeOut" | "UserVerification" | "Payment";

@@ -5,6 +5,7 @@
 //4. Offline Mode is a Must.
 
 import { prisma } from "@/lib/prisma";
+import { getPhilippineTime } from "@/lib/timezone";
 
 //1. Check if User Details Exists in Registration Table
 // Parameters taken are Student ID and Current Event ID
@@ -45,7 +46,7 @@ export async function recordTimeIn(
       registration: {
         connect: { id: registrant.id },
       },
-      timeIn: new Date(),
+      timeIn: getPhilippineTime(),
     },
   });
 
@@ -61,7 +62,7 @@ export async function recordTimeOut(
 ) {
   const result = await prisma.attendance.updateMany({
     where: { studentNumber: memberStudentNumber, eventId: currentEventId },
-    data: { timeOut: new Date() },
+    data: { timeOut: getPhilippineTime() },
   });
 
   if (result.count === 0) {
