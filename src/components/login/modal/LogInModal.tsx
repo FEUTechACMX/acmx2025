@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { gsap } from "gsap";
 import type { safeUser } from "@/types/auth";
 
 interface LoginModalProps {
@@ -19,6 +20,44 @@ export default function LoginModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // GSAP Glitch animation on modal open
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const modal = modalRef.current;
+      const glitchElements = modal.querySelectorAll(".glitch-target");
+
+      // Initial state
+      gsap.set(modal, { opacity: 0, y: -20, scale: 0.95 });
+      gsap.set(glitchElements, { opacity: 0 });
+
+      // Glitch timeline
+      const tl = gsap.timeline();
+
+      // Rapid flicker effect
+      tl.to(modal, { opacity: 1, duration: 0.05 })
+        .to(modal, { opacity: 0, duration: 0.03 })
+        .to(modal, { opacity: 1, duration: 0.05 })
+        .to(modal, { opacity: 0, duration: 0.02 })
+        .to(modal, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.25,
+          ease: "power2.out",
+        })
+        .to(
+          glitchElements,
+          {
+            opacity: 1,
+            duration: 0.15,
+            stagger: 0.02,
+          },
+          "-=0.1"
+        );
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -60,7 +99,8 @@ export default function LoginModal({
 
       {/* Modal Container */}
       <div
-        className="relative w-full max-w-md transform transition-all duration-300 ease-out animate-[modalSlideIn_0.3s_ease-out]"
+        ref={modalRef}
+        className="relative w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Glow effect */}
@@ -94,7 +134,7 @@ export default function LoginModal({
           {/* Content */}
           <div className="p-8 pt-6">
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 glitch-target">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-[#CF78EC]/20 to-[#a855f7]/20 mb-4">
                 <svg
                   className="w-8 h-8 text-[#CF78EC]"
@@ -119,7 +159,7 @@ export default function LoginModal({
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 glitch-target">
               {/* Student ID Field */}
               <div className="space-y-2">
                 <label
