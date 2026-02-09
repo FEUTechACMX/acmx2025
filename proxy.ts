@@ -1,30 +1,42 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/proxy'
 
-export async function proxy(req: NextRequest) {
-  const url = req.nextUrl.clone();
+export async function proxy(request: NextRequest) {
+  const { user, supabaseResponse } = await updateSession(request)
+  const url = request.nextUrl.clone()
 
-  // Protect specific paths
+  // Protect admin-only routes
   if (
-    url.pathname.startsWith("/scanner") ||
-    url.pathname.startsWith("/admin")
+    url.pathname.startsWith('/scanner') ||
+    url.pathname.startsWith('/admin')
   ) {
-    // getCurrentUser may need to accept the request cookies
-    const user = await getCurrentUser(req);
+    if (!user) {
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
 
-    if (!user || user.role !== "ADMIN") {
-      // redirect to home if not admin
-      url.pathname = "/";
-      return NextResponse.redirect(url);
+    // Check admin role from user metadata
+    const role = user.user_metadata?.role
+    if (role !== 'ADMIN') {
+      url.pathname = '/'
+      return NextResponse.redirect(url)
     }
   }
 
-  // All other routes allowed
-  return NextResponse.next();
+  // Protect authenticated routes
+  if (url.pathname.startsWith('/settings')) {
+    if (!user) {
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  return supabaseResponse
 }
 
-// Tell Next.js which routes to run middleware on
 export const config = {
-  matcher: ["/scanner/:path*", "/admin/:path*"],
-};
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}

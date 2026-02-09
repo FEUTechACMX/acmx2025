@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
+import { registerForEvent } from "@/app/actions/registration";
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -52,20 +53,34 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      const res = await fetch("/api/checkout-initiate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const serverFormData = new FormData();
+      serverFormData.set("eventId", formData.eventId);
+      serverFormData.set("studentNumber", formData.studentNumber);
+      serverFormData.set("fullName", formData.fullName);
+      serverFormData.set("schoolEmail", formData.schoolEmail);
+      serverFormData.set("contactNumber", formData.contactNumber);
+      serverFormData.set("facebookLink", formData.facebookLink);
+      serverFormData.set("yearLevel", formData.yearLevel);
+      serverFormData.set("section", formData.section);
+      serverFormData.set("professor", formData.professor);
+      serverFormData.set("degreeProgram", formData.degreeProgram);
 
-      const data = await res.json();
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url; // 🔹 Redirect to GCash
-      } else {
-        throw new Error("Payment initialization failed.");
+      const result = await registerForEvent(serverFormData);
+
+      if (!result.success) {
+        setError(result.error || "Something went wrong while starting the payment.");
+        return;
       }
+
+      if (result.checkoutUrl) {
+        window.location.href = result.checkoutUrl;
+        return;
+      }
+
+      onClose();
     } catch (err: unknown) {
       console.error(err);
       setError("Something went wrong while starting the payment.");

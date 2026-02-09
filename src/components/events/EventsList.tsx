@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import EventCards from "./EventCards";
 import type { EventWithCount } from "@/types/events";
+import { getEventsBySemesterAction } from "@/app/actions/events";
 
 export default function EventsList({ semester }: { semester: string }) {
   const [events, setEvents] = useState<EventWithCount[]>([]);
@@ -11,9 +12,7 @@ export default function EventsList({ semester }: { semester: string }) {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const res = await fetch(`/api/events/${semester}`);
-        if (!res.ok) throw new Error("Failed to fetch events");
-        const data: EventWithCount[] = await res.json();
+        const data = await getEventsBySemesterAction(semester);
         setEvents(data);
       } catch (err) {
         console.error(err);
