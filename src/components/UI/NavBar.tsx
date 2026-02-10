@@ -1,13 +1,13 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import type { SafeUser } from "@/lib/auth";
+import { usePathname } from "next/navigation";
+import type { safeUser } from "@/types/auth";
 import LoginModal from "@/components/login/modal/LogInModal";
 import ProfileMenu from "./ProfileMenu";
 
 type NavBarProps = {
-  user: SafeUser | null;
+  user: safeUser | null;
 };
 
 export default function NavBar({ user }: NavBarProps) {
@@ -16,7 +16,6 @@ export default function NavBar({ user }: NavBarProps) {
   const [isAcmDropdownOpen, setIsAcmDropdownOpen] = useState(false);
   const [isMobileAcmOpen, setIsMobileAcmOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Helper function to check if a link is active
@@ -265,7 +264,7 @@ export default function NavBar({ user }: NavBarProps) {
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={() => {
           setIsLoginOpen(false);
-          router.refresh();
+          window.location.reload();
         }}
       />
     </>

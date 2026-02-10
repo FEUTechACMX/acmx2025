@@ -103,7 +103,6 @@ export default function ScanDetailsForm({
   // Result display
   const { payload, user } = result || {};
   const displayData = user || payload;
-  const studentId = user?.studentId ?? payload?.studentID;
 
   if (!displayData) {
     return (
@@ -134,7 +133,7 @@ export default function ScanDetailsForm({
         <div className="grid grid-cols-2 gap-4">
           <DetailItem
             label="Student ID"
-            value={studentId}
+            value={displayData.studentId || payload?.studentID}
           />
           <DetailItem
             label="Name"

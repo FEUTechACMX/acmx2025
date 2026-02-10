@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { loginAction, type AuthResult } from "@/app/actions/auth";
-import { useRouter } from "next/navigation";
+import type { safeUser } from "@/types/auth";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -16,13 +15,12 @@ export default function LoginModal({
   onClose,
   onLoginSuccess,
 }: LoginModalProps) {
-  const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
 
   // GSAP Glitch animation on modal open
   useEffect(() => {
@@ -67,19 +65,23 @@ export default function LoginModal({
     setLoading(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const result: AuthResult = await loginAction(formData);
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId, password }),
+      });
 
-      if (!result.success) {
-        setError(result.error || "Login failed");
-        return;
+      const data: { success: boolean; user?: safeUser; message?: string } =
+        await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Login failed");
       }
 
-      router.refresh();
       onLoginSuccess();
       onClose();
-    } catch {
-      setError("An unexpected error occurred");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -158,13 +160,13 @@ export default function LoginModal({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-5 glitch-target">
-              {/* School Email Field */}
+              {/* Student ID Field */}
               <div className="space-y-2">
                 <label
-                  htmlFor="email"
+                  htmlFor="studentId"
                   className="block text-sm font-medium text-gray-700 font-['Arian-light']"
                 >
-                  School Email
+                  Student ID
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -183,12 +185,11 @@ export default function LoginModal({
                     </svg>
                   </div>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Enter your school email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="studentId"
+                    type="text"
+                    placeholder="Enter your Student ID"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CF78EC]/50 focus:border-[#CF78EC] transition-all duration-200 text-gray-700 placeholder-gray-400"
                   />
                 </div>
@@ -220,7 +221,6 @@ export default function LoginModal({
                   </div>
                   <input
                     id="password"
-                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={password}
