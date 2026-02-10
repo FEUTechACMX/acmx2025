@@ -1,16 +1,8 @@
-import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import { toSafeUser } from "@/lib/userMapper";
+import { requireAuth } from "@/lib/auth";
 import SettingsContent from "@/components/settings/SettingsContent";
 
 export default async function SettingsPage() {
-  const dbUser = await getCurrentUser();
-  
-  if (!dbUser) {
-    redirect("/");
-  }
-
-  const user = toSafeUser(dbUser);
+  const user = await requireAuth();
 
   return <SettingsContent user={user} />;
 }

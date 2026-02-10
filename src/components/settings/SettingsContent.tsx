@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { gsap } from "gsap";
-import type { safeUser } from "@/types/auth";
+import type { SafeUser } from "@/lib/auth";
 
 type SettingsContentProps = {
-  user: safeUser;
+  user: SafeUser;
 };
 
 export default function SettingsContent({ user }: SettingsContentProps) {
