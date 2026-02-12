@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import type { safeUser } from "@/types/auth";
+import { toSafeUser } from "@/lib/userMapper";
 
 export const dynamic = "force-dynamic";
 
@@ -12,22 +12,7 @@ export async function GET() {
       return NextResponse.json({}); // no user logged in
     }
 
-    const safeUser: safeUser = {
-      studentId: dbUser.studentId,
-      name: [
-        dbUser.firstName,
-        dbUser.middleName,
-        dbUser.lastName,
-        dbUser.suffix,
-      ]
-        .filter(Boolean)
-        .join(" "),
-      email: dbUser.schoolEmail,
-      role: dbUser.role,
-      points: dbUser.points,
-    };
-
-    return NextResponse.json({ user: safeUser });
+    return NextResponse.json({ user: toSafeUser(dbUser) });
   } catch (err) {
     console.error("Error in /api/me:", err);
     return NextResponse.json({}, { status: 500 });
