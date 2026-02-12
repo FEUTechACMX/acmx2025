@@ -7,8 +7,8 @@ export async function POST() {
   const session = cookieStore.get("session");
 
   if (session) {
-    //Delete session from DB
-    await prisma.session.delete({
+    //Delete session from DB (deleteMany won't throw if already expired/removed)
+    await prisma.session.deleteMany({
       where: { id: session.value },
     });
   }

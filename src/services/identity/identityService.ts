@@ -1,5 +1,4 @@
 //imports
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -14,19 +13,19 @@ export async function userVerification(
   studentFirstName: string,
   studentLastName: string
 ) {
-  const verify = await prisma.user.findUnique({
-    where: {
-      studentId: studentNumber,
-      firstName: studentFirstName,
-      lastName: studentLastName,
-    },
+  const user = await prisma.user.findUnique({
+    where: { studentId: studentNumber },
   });
 
-  if (!verify) {
-    throw new Error("User Does not exist in our system");
-  } else {
-    return verify;
+  if (!user) {
+    throw new Error("User does not exist in our system");
   }
+
+  if (user.firstName !== studentFirstName || user.lastName !== studentLastName) {
+    throw new Error("Name does not match records");
+  }
+
+  return user;
 }
 
 //Log-In logic
@@ -46,12 +45,19 @@ export async function login(studentId: string, password: string) {
   const valid = await verifyPassword(password, user.password);
   if (!valid) throw new Error("Invalid Password");
 
-  return user;
+  // Strip password before returning
+  const { password: _, ...safeUser } = user;
+  return safeUser;
 }
 
 //Create session
 // services/identityService.ts
 export async function createSession(userId: string) {
+  // Clean up expired sessions to prevent table bloat
+  await prisma.session.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+
   const sessionId = crypto.randomUUID();
   await prisma.session.create({
     data: {
@@ -63,16 +69,3 @@ export async function createSession(userId: string) {
   return sessionId;
 }
 
-//Log Out
-export async function logOut() {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session")?.value;
-
-  if (sessionId) {
-    await prisma.session.delete({
-      where: { id: sessionId },
-    });
-  }
-
-  cookieStore.delete("session");
-}
