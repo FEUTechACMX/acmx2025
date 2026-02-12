@@ -4,11 +4,11 @@ import { getEventsBySemester } from "@/lib/events";
 // ✅ Route handler for /api/events/[semester]
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { semester: string } }
+  { params }: { params: Promise<{ semester: string }> }
 ) {
   try {
-    // semester is already typed as string
-    const events = await getEventsBySemester(params.semester);
+    const { semester } = await params;
+    const events = await getEventsBySemester(semester);
 
     return NextResponse.json(events, { status: 200 });
   } catch (error) {

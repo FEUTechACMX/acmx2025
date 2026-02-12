@@ -133,7 +133,7 @@ export default function ScanDetailsForm({
         <div className="grid grid-cols-2 gap-4">
           <DetailItem
             label="Student ID"
-            value={displayData.studentId || payload?.studentID}
+            value={user?.studentId || payload?.studentID}
           />
           <DetailItem
             label="Name"
