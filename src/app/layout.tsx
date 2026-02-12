@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/UI/NavBar";
+import ContactFooter from "@/components/about/ContactFooter";
 import { getCurrentUser } from "@/lib/auth";
 import { toSafeUser } from "@/lib/userMapper";
 
@@ -35,6 +36,7 @@ export default async function RootLayout({
         {" "}
         <NavBar user={user} />
         {children}
+        <ContactFooter />
       </body>
     </html>
   );
