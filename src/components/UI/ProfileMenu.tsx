@@ -1,12 +1,11 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { gsap } from "gsap";
-import type { SafeUser } from "@/lib/auth";
-import { logoutAction } from "@/app/actions/auth";
+import type { safeUser } from "@/types/auth";
 
 type ProfileMenuProps = {
-  user: SafeUser;
+  user: safeUser;
 };
 
 export default function ProfileMenu({ user }: ProfileMenuProps) {
@@ -62,7 +61,11 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
   }, [isOpen]);
 
   const handleLogOut = async () => {
-    await logoutAction();
+    await fetch("/api/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+    window.location.reload();
   };
 
   // Get role badge styling
