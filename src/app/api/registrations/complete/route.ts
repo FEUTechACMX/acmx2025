@@ -18,6 +18,20 @@ export async function POST(req: Request) {
       degreeProgram,
     } = body;
 
+    // Duplicate check — prevent same student from registering twice
+    const existing = await prisma.registration.findFirst({
+      where: {
+        eventId,
+        OR: [{ schoolEmail }, { studentNumber }],
+      },
+    });
+    if (existing) {
+      return NextResponse.json(
+        { error: "This email/student number is already registered for this event." },
+        { status: 409 }
+      );
+    }
+
     const registration = await prisma.registration.create({
       data: {
         eventId,

@@ -58,7 +58,7 @@ export async function attendanceRewardValidation(
   //2. User has been recorded in the attendance logs
   const recordValidation = await prisma.attendance.findFirst({
     where: {
-      userId: transactionRecord.user_id,
+      studentNumber: transactionRecord.user_id,
       eventId: eventId,
     },
   });
