@@ -27,11 +27,12 @@ export default function QRScanner({
     if (!active || scanned || !videoRef.current) return;
 
     const reader = new BrowserMultiFormatReader();
+    const videoEl = videoRef.current;
 
     reader
       .decodeFromVideoDevice(
         undefined,
-        videoRef.current,
+        videoEl,
         (result, err, controls) => {
           if (controls && !controlsRef.current) controlsRef.current = controls;
 
@@ -49,8 +50,16 @@ export default function QRScanner({
       .catch(() => setError("Camera access denied or unavailable"));
 
     return () => {
+      // Stop the zxing decoder
       controlsRef.current?.stop();
       controlsRef.current = null;
+
+      // Fully release the camera by stopping all media tracks
+      const stream = videoEl.srcObject as MediaStream | null;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        videoEl.srcObject = null;
+      }
     };
   }, [active, scanned, facingMode, onScan]);
 
@@ -116,7 +125,7 @@ export default function QRScanner({
       )}
 
       {/* Scanner viewport - semi-transparent dark */}
-      <div className="relative aspect-square w-full max-w-[400px] overflow-hidden border-2 border-[#CD78EC]/50 bg-black/70 backdrop-blur-sm">
+      <div className="relative aspect-square w-full max-w-[400px] overflow-hidden border-2 border-[#CD78EC]/50 bg-black/80 backdrop-blur-sm">
         <video
           ref={videoRef}
           className="h-full w-full object-cover"

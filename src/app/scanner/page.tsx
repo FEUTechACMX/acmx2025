@@ -67,7 +67,6 @@ export default function ScannerPage() {
     }
 
     if (scanType === "Payment") {
-      // TODO: Implement payment processing
       setSuccessMessage("Payment verified!");
       return;
     }
@@ -116,35 +115,74 @@ export default function ScannerPage() {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] w-full bg-black/40 backdrop-blur-sm flex flex-col md:flex-row">
-      {/* Left Section - Scanner (centered) */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-[450px] flex flex-col items-center">
-          <h2 className="text-white font-['supermolot'] text-lg uppercase tracking-wider mb-6">
-            QR Scanner
-          </h2>
-          <QRScanner
-            onScan={processQrScan}
-            onReset={handleReset}
-            active={!result && !loading}
-          />
-        </div>
-      </div>
+    <article
+      className="min-h-[100dvh] w-full bg-white text-black"
+      style={{ fontFamily: "Arian-light, sans-serif" }}
+    >
+      {/* ── Page Header ── */}
+      <header className="px-6 md:px-16 pt-28 pb-10">
+        <p
+          className="text-[#CF78EC] text-xs uppercase tracking-[0.3em] mb-3"
+          style={{ fontFamily: "supermolot, sans-serif" }}
+        >
+          Admin Tool
+        </p>
+        <h1
+          className="text-4xl md:text-5xl text-black leading-tight"
+          style={{ fontFamily: "Arian-bold, sans-serif" }}
+        >
+          QR Scanner
+        </h1>
+        <div className="w-16 h-[2px] bg-[#CF78EC] mt-5" />
+      </header>
 
-      {/* Right Section - Details (justified/full width) */}
-      <div className="flex-1 flex flex-col p-6 md:p-12 border-t md:border-t-0 md:border-l border-white/10">
-        <div className="w-full max-w-[600px] flex flex-col gap-6 flex-1">
-          {/* Scan Type Selector */}
-          <ScanTypeSelector
-            value={scanType}
-            onChange={setScanType}
-            disabled={loading || !!result}
-          />
+      {/* ── Content Grid ── */}
+      <div className="px-6 md:px-16 pb-20 flex flex-col lg:flex-row gap-12 lg:gap-16">
 
-          {/* Event Code Input (for Time In/Out) */}
+        {/* ── Left Column: Scanner ── */}
+        <section className="lg:w-[45%] flex flex-col">
+          <p
+            className="text-black/40 text-xs uppercase tracking-[0.2em] mb-4"
+            style={{ fontFamily: "supermolot, sans-serif" }}
+          >
+            Scan Area
+          </p>
+          <div className="border-t border-black/10 pt-6">
+            <QRScanner
+              onScan={processQrScan}
+              onReset={handleReset}
+              active={!result && !loading}
+            />
+          </div>
+        </section>
+
+        {/* ── Right Column: Controls & Details ── */}
+        <section className="lg:w-[55%] flex flex-col gap-8">
+
+          {/* Scan Mode */}
+          <div>
+            <p
+              className="text-black/40 text-xs uppercase tracking-[0.2em] mb-4"
+              style={{ fontFamily: "supermolot, sans-serif" }}
+            >
+              Configuration
+            </p>
+            <div className="border-t border-black/10 pt-6">
+              <ScanTypeSelector
+                value={scanType}
+                onChange={setScanType}
+                disabled={loading || !!result}
+              />
+            </div>
+          </div>
+
+          {/* Event Code */}
           {requiresEventCode && (
-            <div className="flex flex-col gap-2">
-              <label className="text-white/60 text-xs uppercase tracking-wider font-['supermolot']">
+            <div>
+              <label
+                className="text-black/40 text-xs uppercase tracking-[0.2em] block mb-3"
+                style={{ fontFamily: "supermolot, sans-serif" }}
+              >
                 Event Code
               </label>
               <input
@@ -153,37 +191,45 @@ export default function ScannerPage() {
                 onChange={(e) => setEventCode(e.target.value)}
                 placeholder="Enter event code..."
                 disabled={loading}
-                className="w-full px-4 py-3 bg-transparent border-2 border-[#CD78EC]/30 text-white placeholder:text-white/30 font-['supermolot'] text-sm uppercase tracking-wider focus:outline-none focus:border-[#CD78EC] transition-colors disabled:opacity-50"
+                className="w-full px-4 py-3 bg-transparent border border-black/20 text-black placeholder:text-black/25 text-sm tracking-wide focus:outline-none focus:border-[#CF78EC] transition-colors disabled:opacity-40"
+                style={{ fontFamily: "Arian-light, sans-serif" }}
               />
             </div>
           )}
 
           {/* Scan Details */}
-          <div className="flex-1">
-            <label className="text-white/60 text-xs uppercase tracking-wider font-['supermolot'] block mb-2">
+          <div>
+            <p
+              className="text-black/40 text-xs uppercase tracking-[0.2em] mb-4"
+              style={{ fontFamily: "supermolot, sans-serif" }}
+            >
               Scan Details
-            </label>
-            <ScanDetailsForm
-              loading={loading}
-              error={error}
-              result={result}
-              successMessage={successMessage}
-            />
+            </p>
+            <div className="border-t border-black/10 pt-6">
+              <ScanDetailsForm
+                loading={loading}
+                error={error}
+                result={result}
+                successMessage={successMessage}
+              />
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex gap-4 pt-2">
             <button
               onClick={handleCancel}
               disabled={loading || (!result && !error && !successMessage)}
-              className="flex-1 px-6 py-4 border-2 border-white/30 text-white/70 font-['supermolot'] text-sm uppercase tracking-wider hover:border-white/50 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3.5 border border-black/20 text-black/50 text-sm uppercase tracking-wider hover:border-black/40 hover:text-black transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+              style={{ fontFamily: "supermolot, sans-serif" }}
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading || !result || (requiresEventCode && !eventCode.trim())}
-              className="flex-1 px-6 py-4 bg-[#CD78EC] text-white font-['supermolot'] text-sm uppercase tracking-wider hover:bg-[#b85cd6] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3.5 bg-[#CF78EC] text-white text-sm uppercase tracking-wider hover:bg-[#b85cd6] transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+              style={{ fontFamily: "supermolot, sans-serif" }}
             >
               {scanType === "UserVerification"
                 ? "Confirm"
@@ -194,8 +240,8 @@ export default function ScannerPage() {
                     : "Record Time Out"}
             </button>
           </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </article>
   );
 }
