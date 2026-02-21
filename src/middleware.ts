@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Routes that require authentication (logged-in user)
-const authRoutes = ["/settings", "/scanner"];
+const authRoutes = ["/settings", "/scanner", "/profile", "/dashboard"];
 
 // API routes that require authentication
 const authApiRoutes = ["/api/scan"];
@@ -35,5 +35,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/settings/:path*", "/scanner/:path*", "/api/scan/:path*"],
+  matcher: ["/settings/:path*", "/scanner/:path*", "/profile/:path*", "/dashboard/:path*", "/api/scan/:path*"],
 };

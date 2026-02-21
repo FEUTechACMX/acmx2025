@@ -21,7 +21,7 @@ export default function NavBar({ user }: NavBarProps) {
   // Helper function to check if a link is active
   const isActive = (href: string) => {
     if (href === "/") {
-      return pathname === "/" || pathname === "/hero";
+      return pathname === "/" || pathname === "/hero" || pathname === "/dashboard";
     }
     return pathname.startsWith(href);
   };
@@ -129,6 +129,15 @@ export default function NavBar({ user }: NavBarProps) {
             )}
           </div>
 
+          {user && (
+            <Link href="/profile" className={getLinkClasses("/profile")}>
+              Profile
+              {isActive("/profile") && (
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+              )}
+            </Link>
+          )}
+
           {user?.role === "ADMIN" && (
             <Link href="/scanner" className={getLinkClasses("/scanner")}>
               Scanner
@@ -229,6 +238,15 @@ export default function NavBar({ user }: NavBarProps) {
                 </div>
               )}
             </div>
+
+            {user && (
+              <Link 
+                href="/profile" 
+                className={`${isActive("/profile") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+              >
+                Profile
+              </Link>
+            )}
 
             {user?.role === "ADMIN" && (
               <Link 
