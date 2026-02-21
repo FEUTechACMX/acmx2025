@@ -39,22 +39,32 @@ export default function AboutHero({ onComplete }: AboutHeroProps) {
     return tl;
   };
 
-  // Blink/glitch effect
-  const blinkContent = () => {
-    if (!mainContent.current || !borderRef.current) return;
-    const elements = [
+  // Blink/glitch — text, border, AND animation components all blink together
+  const blinkContent = (): gsap.core.Timeline => {
+    const tl = gsap.timeline();
+    if (!mainContent.current || !borderRef.current) return tl;
+
+    // Grab text + border + animation wrappers — everything on screen
+    const container = mainContent.current.closest(".fixed");
+    const animEls = container
+      ? [...container.querySelectorAll(".anim-element")]
+      : [];
+    const allEls = [
       ...mainContent.current.querySelectorAll("span"),
       borderRef.current,
+      ...animEls,
     ];
-    const tl = gsap.timeline();
+
+    // Single unified blink — 3×0.05s
     const glitchDuration = 0.05;
     for (let i = 0; i < 3; i++) {
-      tl.to(elements, { opacity: 0, duration: glitchDuration }, ">0");
-      tl.to(elements, { opacity: 1, duration: glitchDuration }, ">0");
+      tl.to(allEls, { opacity: 0, duration: glitchDuration }, ">0");
+      tl.to(allEls, { opacity: 1, duration: glitchDuration }, ">0");
     }
+    return tl;
   };
 
-  // Main typing timeline
+  // Main timeline — everything completes in 3s to match Animation component
   useEffect(() => {
     const alreadyShown = sessionStorage.getItem("aboutHeroPreloaderShown");
     if (alreadyShown) {
@@ -64,44 +74,48 @@ export default function AboutHero({ onComplete }: AboutHeroProps) {
 
     const tl = gsap.timeline({
       onComplete: () => {
-        blinkContent();
-        setTimeout(() => {
-          sessionStorage.setItem("aboutHeroPreloaderShown", "true");
-          onComplete();
-        }, 500); // small delay for blink
+        sessionStorage.setItem("aboutHeroPreloaderShown", "true");
+        onComplete();
       },
     });
 
+    // All text types simultaneously (~3s) — matches Animation's 3s spin
     tl.add(typeText(asteriaRef.current, "ASTERIA"), 0);
     tl.add(typeText(codeRiseRef.current, "CODE RISE"), 0);
     tl.add(typeText(headingLine1Ref.current, "WHERE CODES"), 0);
-    tl.add(typeText(headingLine2Ref.current, "MEET THE COSMOS"), ">0");
+    tl.add(typeText(headingLine2Ref.current, "MEET THE COSMOS"), 0);
+
+    // Pause 2s — let everything sit, matching Animation's 2s pause
+    tl.to({}, { duration: 2 });
+
+    // Synced blink — same timing as Animation's blink (3×0.05s)
     tl.call(() => setTypingCompleted(true));
+    tl.add(blinkContent());
   }, [onComplete]);
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-white z-[999]">
       {/* Desktop */}
-      <div className="absolute z-10 right-[-250px] h-[892px] w-[892px] overflow-visible hidden lg:block xl:block">
+      <div className="anim-element absolute z-10 right-[-250px] h-[892px] w-[892px] overflow-visible hidden lg:block xl:block">
         <Animation size={892} />
       </div>
-      <div className="absolute z-10 top-[-270px] left-[-270px] h-[542px] w-[542px] overflow-visible hidden lg:block xl:block">
+      <div className="anim-element absolute z-10 top-[-270px] left-[-270px] h-[542px] w-[542px] overflow-visible hidden lg:block xl:block">
         <Animation size={542} />
       </div>
 
       {/* Tablet */}
-      <div className="absolute z-10 bottom-[-272px] right-[-272px] h-[542px] w-[542px] overflow-visible hidden md:block lg:hidden xl:hidden">
+      <div className="anim-element absolute z-10 bottom-[-272px] right-[-272px] h-[542px] w-[542px] overflow-visible hidden md:block lg:hidden xl:hidden">
         <Animation size={542} />
       </div>
-      <div className="absolute z-10 top-[-272px] left-[-272px] h-[542px] w-[542px] overflow-visible hidden md:block lg:hidden xl:hidden">
+      <div className="anim-element absolute z-10 top-[-272px] left-[-272px] h-[542px] w-[542px] overflow-visible hidden md:block lg:hidden xl:hidden">
         <Animation size={542} />
       </div>
 
       {/* Mobile */}
-      <div className="absolute z-10 right-[-272px] bottom-[-272px] h-[542px] w-[542px] overflow-visible sm:block md:hidden lg:hidden xl:hidden">
+      <div className="anim-element absolute z-10 right-[-272px] bottom-[-272px] h-[542px] w-[542px] overflow-visible sm:block md:hidden lg:hidden xl:hidden">
         <Animation size={542} />
       </div>
-      <div className="absolute z-10 top-[-272px] left-[-272px] h-[542px] w-[542px] overflow-visible sm:block md:hidden lg:hidden xl:hidden">
+      <div className="anim-element absolute z-10 top-[-272px] left-[-272px] h-[542px] w-[542px] overflow-visible sm:block md:hidden lg:hidden xl:hidden">
         <Animation size={542} />
       </div>
 

@@ -61,13 +61,10 @@ export default function Animation({ size = 840, onComplete }: AnimationProps) {
       },
       ">0"
     );
+    // Pause for 2s after spin completes
+    tl.to({}, { duration: 2 });
 
-    const glitchDuration = 0.05;
-
-    for (let i = 0; i < 3; i++) {
-      tl.to(layers, { opacity: 0, duration: glitchDuration }, ">0");
-      tl.to(layers, { opacity: 1, duration: glitchDuration }, ">0");
-    }
+    // No blink here — parent (AboutHero) handles the unified blink for all elements
 
     if (onComplete) {
       tl.eventCallback("onComplete", onComplete);
