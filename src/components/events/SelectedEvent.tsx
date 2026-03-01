@@ -4,7 +4,9 @@ import { EventWithCount, getEventStatus } from "@/types/events";
 import AttendButton from "./AttendButton";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { isOfficer } from "@/types/auth";
+import { isOfficer, isEventAdmin } from "@/types/auth";
+import AttendanceLookup from "./AttendanceLookup";
+import EventGallery from "./EventGallery";
 
 interface SelectedEventProps {
   event: EventWithCount;
@@ -17,6 +19,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
   // Day 0 = the parent overview (no registration), Day 1+ = sub-events.
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [priceTier, setPriceTier] = useState<"officer" | "member" | "nonmember">("nonmember");
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
     async function fetchUserRole() {
@@ -26,6 +29,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
           const data = await res.json();
           if (data.user) {
             setPriceTier(isOfficer(data.user.role) ? "officer" : "member");
+            setShowAdminPanel(isEventAdmin(data.user.role));
           }
         }
       } catch { /* not logged in */ }
@@ -153,17 +157,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                 <h2 className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-widest mb-4">
                   Photos
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {event.gallery!.map((url: string, i: number) => (
-                    <div key={i} className="aspect-square overflow-hidden border border-gray-100 bg-gray-50">
-                      <img
-                        src={url}
-                        alt={`${event.name} photo ${i + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
+                <EventGallery images={event.gallery!} eventName={event.name} />
               </div>
             )}
 
@@ -284,6 +278,41 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
           </div>
         </div>
       </div>
+
+      {/* Admin link — only visible to event admin roles */}
+      {showAdminPanel && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
+          <div className="flex items-center gap-4 mt-10">
+            <div className="w-2 h-2 bg-[#CF78EC] shrink-0" />
+            <h2 className="text-xs font-['Arian-bold'] text-[#CF78EC] uppercase tracking-widest">
+              Admin
+            </h2>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+          <Link
+            href={`/events/${event.eventId}/admin`}
+            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-['Arian-bold'] text-white bg-gray-900 hover:bg-gray-800 transition-colors"
+          >
+            Manage Event
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="square" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      )}
+
+      {/* Proof of Attendance — visible for ongoing/finished events */}
+      {(isOngoing || isFinished) && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <AttendanceLookup
+            eventId={event.eventId}
+            subEvents={event.subEvents?.map((sub) => ({
+              eventId: sub.eventId,
+              name: sub.name,
+            }))}
+          />
+        </div>
+      )}
     </div>
   );
 };

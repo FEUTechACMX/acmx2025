@@ -53,12 +53,14 @@ model Event {
   priceMember     Float          @default(0)
   priceNonMember  Float          @default(0)
   image         String?
+  cardImage     String?
   gallery       String[]       @default([])
-  isMultiDay    Boolean        @default(false)
-  parentId      String?
-  parent        Event?         @relation("EventDays", fields: [parentId], references: [eventId])
-  subEvents     Event[]        @relation("EventDays")
-  registrations Registration[]
+  isMultiDay      Boolean        @default(false)
+  statusOverride  EventStatus?
+  parentId        String?
+  parent          Event?         @relation("EventDays", fields: [parentId], references: [eventId])
+  subEvents       Event[]        @relation("EventDays")
+  registrations   Registration[]
 }
 
 model Schedule {
@@ -134,10 +136,12 @@ model Attendance {
 enum UserRole {
   MEMBER
   JUNIOR_OFFICER
+  MEDIA_OFFICER
   FINANCE_JUNIOR_OFFICER
   SECRETARIAT_JUNIOR_OFFICER
   SECRETARIAT
   EXECUTIVES
+  EXECUTIVES_MEDIA
   ADMIN
 }
 
@@ -145,6 +149,12 @@ enum EventSemester {
   FIRST  @map("1st")
   SECOND @map("2nd")
   THIRD  @map("3rd")
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  FINISHED
 }
 
 enum RegistrationRole {

@@ -33,10 +33,11 @@ export default function EventCards({ event, priceTier }: EventCardProps) {
 
   return (
     <Link href={`/events/${event.eventId}`} passHref>
+      <div className="dark-exempt">
       <div className="w-full aspect-[409/578] bg-white relative text-black overflow-hidden border border-[#CD78EC] group hover:border-[#CF78EC] transition-colors">
         {/* Card Design */}
         <div className="absolute top-0 right-0 h-[76%] w-[77%]">
-          <img className="h-full w-full object-cover" src="/eventCard/cardBG.png" alt="cardImage" />
+          <img className="h-full w-full object-cover" src={event.cardImage || event.image || "/eventCard/cardBG.png"} alt={event.name} />
         </div>
 
         {/* Status Badge */}
@@ -82,6 +83,7 @@ export default function EventCards({ event, priceTier }: EventCardProps) {
           <p>{event._count.registrations} People Going</p>
           <p>{getPrice(event, priceTier)}</p>
         </div>
+      </div>
       </div>
     </Link>
   );

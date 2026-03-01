@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import QRScanner from "@/components/scanner/QRScanner";
 import ScanDetailsForm, {
   ScanResult,
 } from "@/components/scanner/ScanDetailsForm";
 import ScanTypeSelector from "@/components/scanner/ScanTypeSelector";
 import { ScanType } from "@/types/scantTypes";
+
+interface OngoingEvent {
+  eventId: string;
+  name: string;
+}
 
 export default function ScannerPage() {
   const [loading, setLoading] = useState(false);
@@ -16,8 +21,35 @@ export default function ScannerPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [scanType, setScanType] = useState<ScanType>("UserVerification");
   const [eventCode, setEventCode] = useState("");
+  const [ongoingEvents, setOngoingEvents] = useState<OngoingEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
 
   const requiresEventCode = scanType === "TimeIn" || scanType === "TimeOut";
+
+  // Fetch ongoing events when TimeIn/TimeOut is selected
+  useEffect(() => {
+    if (!requiresEventCode) return;
+
+    async function fetchOngoingEvents() {
+      setEventsLoading(true);
+      try {
+        const res = await fetch("/api/events/ongoing");
+        if (res.ok) {
+          const data = await res.json();
+          setOngoingEvents(data);
+          // Auto-select the first event if only one
+          if (data.length === 1) {
+            setEventCode(data[0].eventId);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch ongoing events:", err);
+      } finally {
+        setEventsLoading(false);
+      }
+    }
+    fetchOngoingEvents();
+  }, [requiresEventCode]);
 
   const processQrScan = useCallback(async (encrypted: string) => {
     try {
@@ -57,7 +89,7 @@ export default function ScannerPage() {
     }
 
     if (requiresEventCode && !eventCode.trim()) {
-      setError("Please enter an event code");
+      setError("Please select an event");
       return;
     }
 
@@ -176,24 +208,40 @@ export default function ScannerPage() {
             </div>
           </div>
 
-          {/* Event Code */}
+          {/* Event Selection */}
           {requiresEventCode && (
             <div>
               <label
                 className="text-black/40 text-xs uppercase tracking-[0.2em] block mb-3"
                 style={{ fontFamily: "supermolot, sans-serif" }}
               >
-                Event Code
+                Select Event
               </label>
-              <input
-                type="text"
-                value={eventCode}
-                onChange={(e) => setEventCode(e.target.value)}
-                placeholder="Enter event code..."
-                disabled={loading}
-                className="w-full px-4 py-3 bg-transparent border border-black/20 text-black placeholder:text-black/25 text-sm tracking-wide focus:outline-none focus:border-[#CF78EC] transition-colors disabled:opacity-40"
-                style={{ fontFamily: "Arian-light, sans-serif" }}
-              />
+              {eventsLoading ? (
+                <div className="flex items-center gap-2 py-3">
+                  <div className="w-4 h-4 border-2 border-gray-200 border-t-[#CF78EC] animate-spin" />
+                  <span className="text-sm text-black/40">Loading events...</span>
+                </div>
+              ) : ongoingEvents.length === 0 ? (
+                <p className="text-sm text-black/40 py-3">
+                  No ongoing events found.
+                </p>
+              ) : (
+                <select
+                  value={eventCode}
+                  onChange={(e) => setEventCode(e.target.value)}
+                  disabled={loading}
+                  className="w-full px-4 py-3 bg-transparent border border-black/20 text-black text-sm tracking-wide focus:outline-none focus:border-[#CF78EC] transition-colors disabled:opacity-40 cursor-pointer"
+                  style={{ fontFamily: "Arian-light, sans-serif" }}
+                >
+                  <option value="">Select an ongoing event...</option>
+                  {ongoingEvents.map((evt) => (
+                    <option key={evt.eventId} value={evt.eventId}>
+                      {evt.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 

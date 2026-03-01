@@ -5,6 +5,7 @@ import NavBar from "@/components/UI/NavBar";
 import ContactFooter from "@/components/about/ContactFooter";
 import { getCurrentUser } from "@/lib/auth";
 import { toSafeUser } from "@/lib/userMapper";
+import ThemeProvider from "@/components/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,14 +30,29 @@ export default async function RootLayout({
   const dbUser = await getCurrentUser();
   const user = dbUser ? toSafeUser(dbUser) : null;
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Prevent flash of wrong theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const t = localStorage.getItem('theme');
+                const d = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (d) document.documentElement.classList.add('dark');
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {" "}
-        <NavBar user={user} />
-        {children}
-        <ContactFooter />
+        <ThemeProvider>
+          <NavBar user={user} />
+          {children}
+          <ContactFooter />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -2,26 +2,162 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0a0a0a;
+  --surface: #ffffff;
+  --surface-hover: #f9fafb;
+  --surface-secondary: #f3f4f6;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --text-muted: #d1d5db;
+  --accent: #CF78EC;
+  --accent-hover: #b85cd6;
+  --accent-bg: rgba(207, 120, 236, 0.05);
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --surface: #141414;
+  --surface-hover: #1a1a1a;
+  --surface-secondary: #1e1e1e;
+  --border: #2a2a2a;
+  --border-light: #1e1e1e;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
+  --text-muted: #404040;
+  --accent: #CF78EC;
+  --accent-hover: #d994f0;
+  --accent-bg: rgba(207, 120, 236, 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-dm-border: var(--border);
+  --color-dm-border-light: var(--border-light);
+  --color-dm-text-primary: var(--text-primary);
+  --color-dm-text-secondary: var(--text-secondary);
+  --color-dm-text-tertiary: var(--text-tertiary);
+  --color-dm-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-bg: var(--accent-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-:root {
-  --background: #ffffff;
-  --foreground: #0a0a0a;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+/* ── Global dark mode overrides ─────────────────────────────────── */
+/* These override Tailwind's hardcoded utility classes site-wide    */
+/* so components don't need individual changes.                     */
+
+.dark .bg-white { background-color: var(--surface) !important; }
+.dark .bg-\[\#FFF\] { background-color: var(--surface) !important; }
+.dark .bg-\[\#fff\] { background-color: var(--surface) !important; }
+.dark .bg-\[\#ffffff\] { background-color: var(--surface) !important; }
+.dark .bg-gray-50 { background-color: var(--surface-secondary) !important; }
+.dark .bg-gray-100 { background-color: var(--surface-secondary) !important; }
+.dark .bg-gray-900 { background-color: #e5e5e5 !important; }
+
+/* Event cards should NOT be affected by dark mode */
+.dark-exempt, .dark-exempt * {
+  --background: #ffffff !important;
+  --foreground: #0a0a0a !important;
+  --surface: #ffffff !important;
+  --text-primary: #111827 !important;
+  --text-secondary: #6b7280 !important;
+  --border: #e5e7eb !important;
+}
+.dark .dark-exempt .bg-white { background-color: #ffffff !important; }
+.dark .dark-exempt .text-black { color: #000000 !important; }
+.dark .dark-exempt .bg-gray-900 { background-color: #111827 !important; }
+.dark .dark-exempt .bg-gray-900.text-white { background-color: #111827 !important; color: #ffffff !important; }
+.dark .dark-exempt .text-gray-900 { color: #111827 !important; }
+.dark .dark-exempt .text-gray-800 { color: #1f2937 !important; }
+.dark .dark-exempt .text-gray-700 { color: #374151 !important; }
+.dark .dark-exempt .text-gray-600 { color: #4b5563 !important; }
+.dark .dark-exempt .text-gray-500 { color: #6b7280 !important; }
+.dark .dark-exempt .text-gray-400 { color: #9ca3af !important; }
+.dark .dark-exempt .border-gray-100 { border-color: #f3f4f6 !important; }
+.dark .dark-exempt .border-gray-200 { border-color: #e5e7eb !important; }
+
+.dark .text-black { color: var(--text-primary) !important; }
+.dark .text-gray-900 { color: var(--text-primary) !important; }
+.dark .text-gray-800 { color: #d4d4d4 !important; }
+.dark .text-gray-700 { color: #a3a3a3 !important; }
+.dark .text-gray-600 { color: #a3a3a3 !important; }
+.dark .text-gray-500 { color: #737373 !important; }
+.dark .text-gray-400 { color: #737373 !important; }
+.dark .text-gray-300 { color: #525252 !important; }
+
+.dark .border-gray-100 { border-color: var(--border) !important; }
+.dark .border-gray-200 { border-color: var(--border) !important; }
+.dark .border-gray-300 { border-color: #404040 !important; }
+
+.dark .bg-white\/90 { background-color: rgba(20, 20, 20, 0.9) !important; }
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover { background-color: var(--surface-hover) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: var(--surface-secondary) !important; }
+.dark .hover\:border-gray-200:hover { border-color: #404040 !important; }
+.dark .hover\:bg-gray-800:hover { background-color: #d4d4d4 !important; }
+
+/* Border colors for dashed upload areas */
+.dark .border-dashed { border-color: #404040 !important; }
+.dark .hover\:border-\[\#CF78EC\]:hover { border-color: #CF78EC !important; }
+
+/* Shadow adjustments */
+.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important; }
+
+/* Input/select dark mode */
+.dark input, .dark select, .dark textarea {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+.dark select option {
+  background-color: var(--surface) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Table row hover */
+.dark .hover\:bg-gray-50\/50:hover { background-color: rgba(30, 30, 30, 0.5) !important; }
+
+/* Specific overrides */
+.dark .bg-\[\#CF78EC\]\/5 { background-color: rgba(207, 120, 236, 0.12) !important; }
+.dark .text-black\/40 { color: rgba(245, 245, 245, 0.4) !important; }
+.dark .text-black\/25 { color: rgba(245, 245, 245, 0.25) !important; }
+.dark .border-black\/20 { border-color: rgba(245, 245, 245, 0.15) !important; }
+.dark .border-black\/10 { border-color: rgba(245, 245, 245, 0.08) !important; }
+.dark .hover\:border-black\/40:hover { border-color: rgba(245, 245, 245, 0.3) !important; }
+.dark .hover\:text-black:hover { color: var(--text-primary) !important; }
+.dark .text-black\/50 { color: rgba(245, 245, 245, 0.5) !important; }
+.dark .bg-black\/50 { background-color: rgba(250, 250, 250, 0.5) !important; }
+
+/* Hamburger menu lines */
+.dark .bg-black { background-color: var(--text-primary) !important; }
+
+/* White text on dark bg buttons should invert */
+.dark .bg-gray-900.text-white { background-color: #e5e5e5 !important; color: #0a0a0a !important; }
+.dark .hover\:bg-gray-800:hover.text-white { background-color: #d4d4d4 !important; color: #0a0a0a !important; }
+
+/* ── Font faces ─────────────────────────────────────────────────── */
 
 @font-face {
   font-family: "Roller-Coaster";
