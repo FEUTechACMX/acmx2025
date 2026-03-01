@@ -49,8 +49,15 @@ model Event {
   dayOfWeek     String
   startDate     DateTime
   endDate       DateTime       @default(now())
-  price         Float          @default(0)
+  price           Float          @default(0)
+  priceMember     Float          @default(0)
+  priceNonMember  Float          @default(0)
   image         String?
+  gallery       String[]       @default([])
+  isMultiDay    Boolean        @default(false)
+  parentId      String?
+  parent        Event?         @relation("EventDays", fields: [parentId], references: [eventId])
+  subEvents     Event[]        @relation("EventDays")
   registrations Registration[]
 }
 
@@ -127,6 +134,9 @@ model Attendance {
 enum UserRole {
   MEMBER
   JUNIOR_OFFICER
+  FINANCE_JUNIOR_OFFICER
+  SECRETARIAT_JUNIOR_OFFICER
+  SECRETARIAT
   EXECUTIVES
   ADMIN
 }

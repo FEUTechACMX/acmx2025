@@ -17,15 +17,26 @@ function normalizeSemesterInput(
   return null;
 }
 
-// Get all events
+const eventInclude = {
+  _count: { select: { registrations: true } },
+  subEvents: {
+    include: {
+      _count: { select: { registrations: true } },
+    },
+    orderBy: { startDate: "asc" as const },
+  },
+} as const;
+
+// Get all events (top-level only)
 export async function getEvents(): Promise<EventWithCount[]> {
   return prisma.event.findMany({
-    include: { _count: { select: { registrations: true } } },
+    where: { parentId: null },
+    include: eventInclude,
     orderBy: { startDate: "asc" },
-  });
+  }) as unknown as EventWithCount[];
 }
 
-// Get events by semester
+// Get events by semester (top-level only — children shown inside parent)
 export async function getEventsBySemester(
   semester: string | EventSemester
 ): Promise<EventWithCount[]> {
@@ -33,18 +44,18 @@ export async function getEventsBySemester(
   if (!normalized) throw new Error(`Invalid semester: ${semester}`);
 
   return prisma.event.findMany({
-    where: { eventSemester: normalized },
-    include: { _count: { select: { registrations: true } } },
+    where: { eventSemester: normalized, parentId: null },
+    include: eventInclude,
     orderBy: { startDate: "asc" },
-  });
+  }) as unknown as EventWithCount[];
 }
 
-// Get single event by ID
+// Get single event by ID (includes sub-events)
 export async function getEventById(
   eventId: string
 ): Promise<EventWithCount | null> {
   return prisma.event.findUnique({
     where: { eventId },
-    include: { _count: { select: { registrations: true } } },
-  });
+    include: eventInclude,
+  }) as unknown as EventWithCount | null;
 }
