@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { prisma } from "@/lib/prisma";
-import { RegistrationRole } from "@prisma/client";
+import { Prisma, RegistrationRole } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
@@ -20,33 +19,23 @@ export async function POST(req: Request) {
       degreeProgram,
     } = body;
 
-    // 🔹 1. Duplicate check
-    if (userId) {
-      const existing = await prisma.registration.findUnique({
-        where: { eventId_userId: { eventId, userId } },
-      });
-      if (existing) {
-        return NextResponse.json(
-          { error: "You are already registered for this event." },
-          { status: 409 }
-        );
-      }
-    } else {
-      const existing = await prisma.registration.findFirst({
-        where: {
-          eventId,
-          OR: [{ schoolEmail }, { studentNumber }],
-        },
-      });
-      if (existing) {
-        return NextResponse.json(
-          {
-            error:
-              "This email/student number is already registered for this event.",
-          },
-          { status: 409 }
-        );
-      }
+    // 🔹 1. Duplicate check — covers all 3 unique constraints
+    const existing = await prisma.registration.findFirst({
+      where: {
+        eventId,
+        OR: [
+          ...(userId ? [{ userId }] : []),
+          { schoolEmail },
+          { studentNumber },
+        ],
+      },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "You are already registered for this event." },
+        { status: 409 }
+      );
     }
 
     // 🔹 2. Create registration record
@@ -67,55 +56,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // 🔹 3. Non-member → create GCash link
-    if (!userId) {
-      const response = await axios.post(
-        "https://api.paymongo.com/v1/sources",
-        {
-          data: {
-            attributes: {
-              amount: 10000,
-              currency: "PHP",
-              type: "gcash",
-              redirect: {
-                success: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-success?registrationId=${registration.id}`,
-                failed: `${process.env.NEXT_PUBLIC_BASE_URL}/payment-failed?registrationId=${registration.id}`,
-              },
-              metadata: {
-                registrationId: registration.id,
-                fullName,
-                schoolEmail,
-              },
-            },
-          },
-        },
-        {
-          auth: {
-            username: process.env.PAYMONGO_SECRET_KEY || "",
-            password: "",
-          },
-        }
-      );
-
-      const checkoutUrl = response.data.data.attributes.redirect.checkout_url;
-      return NextResponse.json({ checkout_url: checkoutUrl }, { status: 200 });
-    }
-
-    // 🔹 4. Members → just register (no payment)
     return NextResponse.json(registration, { status: 201 });
   } catch (error: unknown) {
-    // ✅ Type-safe error handling
-    if (axios.isAxiosError(error)) {
-      console.error(
-        "Axios error (registrations):",
-        error.response?.data || error.message
-      );
+    // Catch Prisma unique constraint violations as a safety net
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
       return NextResponse.json(
-        {
-          error: "PayMongo API request failed.",
-          details: error.response?.data,
-        },
-        { status: error.response?.status || 500 }
+        { error: "You are already registered for this event." },
+        { status: 409 }
       );
     }
 

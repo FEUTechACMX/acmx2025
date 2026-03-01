@@ -14,16 +14,16 @@ const AttendButton: React.FC<AttendButtonProps> = ({ eventId }) => {
   return (
     <>
       <button
-        className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md"
+        className="px-6 py-2.5 text-sm font-['Arian-bold'] text-white bg-[#CF78EC] hover:bg-[#b560d4] transition-colors cursor-pointer"
         onClick={() => setModalOpen(true)}
       >
-        Attend
+        Register Now
       </button>
 
       <RegistrationModal
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
-        eventId={eventId} // Pass the eventId prop here
+        eventId={eventId}
       />
     </>
   );

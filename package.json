@@ -14,7 +14,6 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
     "@zxing/browser": "^0.1.5",
-    "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
     "crypto-js": "^4.2.0",
     "csv-parser": "^3.2.0",
