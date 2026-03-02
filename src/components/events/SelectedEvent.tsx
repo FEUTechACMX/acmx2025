@@ -53,7 +53,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
   const displayVenue = activeEvent.venue;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Back navigation */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28">
         <Link

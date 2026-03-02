@@ -143,7 +143,7 @@ export default function ProfileContent({ user }: ProfileContentProps) {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-white pt-28 pb-20 px-6 sm:px-8"
+      className="min-h-screen pt-28 pb-20 px-6 sm:px-8"
     >
       <div className="max-w-5xl mx-auto">
         {/* Header */}

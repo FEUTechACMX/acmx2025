@@ -148,7 +148,7 @@ export default function ScannerPage() {
 
   return (
     <article
-      className="min-h-[100dvh] w-full bg-white text-black"
+      className="min-h-[100dvh] w-full text-black"
       style={{ fontFamily: "Arian-light, sans-serif" }}
     >
       {/* ── Page Header ── */}

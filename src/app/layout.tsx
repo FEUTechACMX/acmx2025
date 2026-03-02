@@ -6,6 +6,7 @@ import ContactFooter from "@/components/about/ContactFooter";
 import { getCurrentUser } from "@/lib/auth";
 import { toSafeUser } from "@/lib/userMapper";
 import ThemeProvider from "@/components/ThemeProvider";
+import DiamondScaleBackground from "@/components/UI/DiamondScaleBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,9 +50,12 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <NavBar user={user} />
-          {children}
-          <ContactFooter />
+          <DiamondScaleBackground />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <NavBar user={user} />
+            {children}
+            <ContactFooter />
+          </div>
         </ThemeProvider>
       </body>
     </html>

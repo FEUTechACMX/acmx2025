@@ -28,7 +28,7 @@ export default async function AdminEventPage({
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28">
         <Link
           href={`/events/${eventId}`}

@@ -10,7 +10,7 @@ export default function Page() {
   const router = useRouter();
   return (
     <WithPreloader>
-      <div className="relative min-h-[100dvh] w-full bg-[#FFF] flex flex-col items-center justify-center gap-5 overflow-hidden">
+      <div className="relative min-h-[100dvh] w-full flex flex-col items-center justify-center gap-5 overflow-hidden">
         {/* Animations */}
         <div className="animation1 w-[344px] h-[344px] absolute right-[-172px] bottom-[-172px] rotate-90 z-10 pointer-events-none">
           <ContinuosAnimation size={344} />

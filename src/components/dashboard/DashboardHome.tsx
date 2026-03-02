@@ -101,7 +101,7 @@ export default function DashboardHome({ user }: DashboardHomeProps) {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-white pt-28 pb-20 px-6 sm:px-8"
+      className="min-h-screen pt-28 pb-20 px-6 sm:px-8"
     >
       <div className="max-w-6xl mx-auto">
         {/* Header */}

@@ -42,7 +42,7 @@ export default function SettingsContent({ user }: SettingsContentProps) {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-white pt-28 pb-20 px-6 sm:px-8"
+      className="min-h-screen pt-28 pb-20 px-6 sm:px-8"
     >
       <div className="max-w-2xl mx-auto">
         {/* Header */}
