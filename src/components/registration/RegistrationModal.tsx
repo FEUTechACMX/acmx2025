@@ -6,6 +6,7 @@ interface RegistrationModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventId: string;
+  onRegistrationSuccess?: () => void;
 }
 
 interface FormData {
@@ -36,6 +37,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   isOpen,
   onClose,
   eventId,
+  onRegistrationSuccess,
 }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
@@ -98,7 +100,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   }, [isOpen]);
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -114,7 +116,12 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
     setError(null);
 
     // Basic validation
-    if (!formData.studentNumber || !formData.fullName || !formData.schoolEmail || !formData.yearLevel) {
+    if (
+      !formData.studentNumber ||
+      !formData.fullName ||
+      !formData.schoolEmail ||
+      !formData.yearLevel
+    ) {
       setError("Please fill in all required fields.");
       setLoading(false);
       return;
@@ -138,6 +145,9 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
       if (!res.ok) {
         throw new Error(data.error || "Registration failed.");
       }
+
+      // Call success callback to update UI optimistically
+      onRegistrationSuccess?.();
 
       onClose();
       alert("Successfully registered!");
@@ -180,8 +190,18 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M6 6l12 12M6 18L18 6" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+                strokeWidth={2}
+                d="M6 6l12 12M6 18L18 6"
+              />
             </svg>
           </button>
         </div>
@@ -200,13 +220,23 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                       isActive
                         ? "bg-[#CF78EC] text-white"
                         : isComplete
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-400"
+                          ? "bg-gray-900 text-white"
+                          : "bg-gray-100 text-gray-400"
                     }`}
                   >
                     {isComplete ? (
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="square"
+                          strokeLinejoin="miter"
+                          strokeWidth={2.5}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     ) : (
                       stepNum
@@ -214,7 +244,11 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   </div>
                   <span
                     className={`text-[10px] mt-1.5 font-['Arian-light'] ${
-                      isActive ? "text-[#CF78EC]" : isComplete ? "text-gray-900" : "text-gray-300"
+                      isActive
+                        ? "text-[#CF78EC]"
+                        : isComplete
+                          ? "text-gray-900"
+                          : "text-gray-300"
                     }`}
                   >
                     {label}
@@ -237,10 +271,17 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
         {prefilling ? (
           <div className="px-6 py-16 flex flex-col items-center justify-center">
             <div className="w-5 h-5 border-2 border-gray-200 border-t-[#CF78EC] animate-spin mb-3" />
-            <p className="text-sm text-gray-400 font-['Arian-light']">Loading your details...</p>
+            <p className="text-sm text-gray-400 font-['Arian-light']">
+              Loading your details...
+            </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}>
+          <form
+            onSubmit={handleSubmit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.preventDefault();
+            }}
+          >
             <div className="px-6 py-5">
               {/* Step 1: Personal Info */}
               {step === 1 && (
@@ -357,14 +398,36 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                   <p className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-wider mb-3">
                     Please review your details
                   </p>
-                  <ReviewRow label="Student Number" value={formData.studentNumber} />
+                  <ReviewRow
+                    label="Student Number"
+                    value={formData.studentNumber}
+                  />
                   <ReviewRow label="Full Name" value={formData.fullName} />
-                  <ReviewRow label="School Email" value={formData.schoolEmail} />
-                  <ReviewRow label="Contact Number" value={formData.contactNumber} />
-                  <ReviewRow label="Facebook Link" value={formData.facebookLink} />
-                  <ReviewRow label="Year Level" value={formData.yearLevel ? `${formData.yearLevel}${["st","nd","rd","th"][Math.min(Number(formData.yearLevel)-1,3)]} Year` : "—"} />
+                  <ReviewRow
+                    label="School Email"
+                    value={formData.schoolEmail}
+                  />
+                  <ReviewRow
+                    label="Contact Number"
+                    value={formData.contactNumber}
+                  />
+                  <ReviewRow
+                    label="Facebook Link"
+                    value={formData.facebookLink}
+                  />
+                  <ReviewRow
+                    label="Year Level"
+                    value={
+                      formData.yearLevel
+                        ? `${formData.yearLevel}${["st", "nd", "rd", "th"][Math.min(Number(formData.yearLevel) - 1, 3)]} Year`
+                        : "—"
+                    }
+                  />
                   <ReviewRow label="Section" value={formData.section} />
-                  <ReviewRow label="Degree Program" value={formData.degreeProgram} />
+                  <ReviewRow
+                    label="Degree Program"
+                    value={formData.degreeProgram}
+                  />
                   <ReviewRow label="Professor" value={formData.professor} />
                 </div>
               )}

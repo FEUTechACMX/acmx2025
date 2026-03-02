@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Animation from "./Animation";
+import DiamondScaleBackground from "./DiamondScaleBackground";
+import { gsap } from "gsap";
 
 export default function WithPreloader({
   children,
@@ -10,6 +12,7 @@ export default function WithPreloader({
 }) {
   const [showPreloader, setShowPreloader] = useState(false);
   const [isChecking, setIsChecking] = useState(true); // prevent flicker
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const hasSeenIntro = sessionStorage.getItem("hasSeenIntro"); // <- sessionStorage
@@ -23,8 +26,23 @@ export default function WithPreloader({
   }, []);
 
   const handleComplete = () => {
-    sessionStorage.setItem("hasSeenIntro", "true"); // <- sessionStorage
-    setShowPreloader(false);
+    // Glitch blink the entire overlay before dismissing (synced with Animation's 3×0.05s)
+    if (overlayRef.current) {
+      const tl = gsap.timeline({
+        onComplete: () => {
+          sessionStorage.setItem("hasSeenIntro", "true"); // <- sessionStorage
+          setShowPreloader(false);
+        },
+      });
+      const glitchDuration = 0.05;
+      for (let i = 0; i < 3; i++) {
+        tl.to(overlayRef.current, { opacity: 0, duration: glitchDuration }, ">0");
+        tl.to(overlayRef.current, { opacity: 1, duration: glitchDuration }, ">0");
+      }
+    } else {
+      sessionStorage.setItem("hasSeenIntro", "true");
+      setShowPreloader(false);
+    }
   };
 
   if (isChecking) return null; // avoid layout flash on first render
@@ -32,7 +50,11 @@ export default function WithPreloader({
   return (
     <div className="relative">
       {showPreloader && (
-        <div className="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div
+          ref={overlayRef}
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "color-mix(in srgb, var(--background) 92%, transparent)" }}
+        >
           <Animation onComplete={handleComplete} />
         </div>
       )}

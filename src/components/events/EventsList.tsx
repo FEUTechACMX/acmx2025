@@ -59,10 +59,10 @@ export default function EventsList({ semester }: { semester: string }) {
   }
 
   return (
-    <div className="w-full overflow-x-auto pb-4">
-      <div className="flex gap-6 sm:gap-8 min-w-min">
+    <div className="w-full">
+      <div className="flex flex-wrap gap-6 sm:gap-8">
         {events.map((event) => (
-          <div key={event.eventId} className="w-[280px] sm:w-[320px] lg:w-[360px] shrink-0">
+          <div key={event.eventId} className="w-full sm:w-[calc(50%-16px)] lg:w-[calc(33.33%-22px)]">
             <EventCards event={event} priceTier={priceTier} />
           </div>
         ))}

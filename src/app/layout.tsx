@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/UI/NavBar";
-import ContactFooter from "@/components/about/ContactFooter";
 import { getCurrentUser } from "@/lib/auth";
 import { toSafeUser } from "@/lib/userMapper";
 import ThemeProvider from "@/components/ThemeProvider";
@@ -54,7 +53,6 @@ export default async function RootLayout({
           <div style={{ position: "relative", zIndex: 1 }}>
             <NavBar user={user} />
             {children}
-            <ContactFooter />
           </div>
         </ThemeProvider>
       </body>

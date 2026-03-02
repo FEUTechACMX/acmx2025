@@ -20,13 +20,13 @@ const WAVE_R = 200;
 const BREATHE = 0.30;
 const WAVE_SPEED = 0.12;
 
-// Rest opacities high enough to clearly see the grid at all times
-const D_REST = 0.09;
+// Rest opacities toned down so the grid doesn't compete with content
+const D_REST = 0.05;
 const D_GLOW = 0.5;
-const L_REST = 0.06;
+const L_REST = 0.03;
 const L_GLOW = 0.55;
 // Subtle fill inside diamonds
-const F_REST = 0.02;
+const F_REST = 0.01;
 const F_GLOW = 0.12;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);

@@ -21,8 +21,11 @@ const AttendButton: React.FC<AttendButtonProps> = ({ eventId }) => {
           const data = await res.json();
           setIsRegistered(data.registered);
         }
-      } catch { /* ignore */ }
-      finally { setChecking(false); }
+      } catch {
+        /* ignore */
+      } finally {
+        setChecking(false);
+      }
     }
     checkRegistration();
   }, [eventId]);
@@ -56,6 +59,7 @@ const AttendButton: React.FC<AttendButtonProps> = ({ eventId }) => {
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
         eventId={eventId}
+        onRegistrationSuccess={() => setIsRegistered(true)}
       />
     </>
   );

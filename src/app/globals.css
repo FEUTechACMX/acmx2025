@@ -157,6 +157,15 @@ body {
 .dark .bg-gray-900.text-white { background-color: #e5e5e5 !important; color: #0a0a0a !important; }
 .dark .hover\:bg-gray-800:hover.text-white { background-color: #d4d4d4 !important; color: #0a0a0a !important; }
 
+/* Login modal dark mode */
+.dark .bg-gradient-to-br.from-white.to-gray-50 {
+  background: linear-gradient(to bottom right, var(--surface), var(--surface-secondary)) !important;
+}
+.dark .hover\:bg-gray-200:hover { background-color: #333 !important; }
+.dark .bg-red-50 { background-color: rgba(220, 38, 38, 0.1) !important; }
+.dark .border-red-100 { border-color: rgba(220, 38, 38, 0.2) !important; }
+.dark .bg-gray-50\/50 { background-color: rgba(30, 30, 30, 0.5) !important; }
+
 /* ── Font faces ─────────────────────────────────────────────────── */
 
 @font-face {

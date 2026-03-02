@@ -4,6 +4,7 @@ import AboutHero from "@/components/about/AboutHero";
 import StudentChapter from "@/components/about/StudentChapter";
 import Mission from "@/components/about/Mission";
 import Vision from "@/components/about/Vision";
+import ContactFooter from "@/components/about/ContactFooter";
 
 export default function AboutPage() {
   const [preloaderDone, setPreloaderDone] = useState(false);
@@ -116,6 +117,8 @@ export default function AboutPage() {
           ))}
         </div>
       )}
+
+      {preloaderDone && <ContactFooter />}
     </>
   );
 }

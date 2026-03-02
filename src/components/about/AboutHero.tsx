@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import Animation from "@/components/UI/Animation";
+import DiamondScaleBackground from "@/components/UI/DiamondScaleBackground";
 
 interface AboutHeroProps {
   onComplete: () => void;
@@ -94,7 +95,7 @@ export default function AboutHero({ onComplete }: AboutHeroProps) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white z-[999]">
+    <div className="fixed inset-0 flex items-center justify-center z-[999]" style={{ backgroundColor: "color-mix(in srgb, var(--background) 92%, transparent)" }}>
       {/* Desktop */}
       <div className="anim-element absolute z-10 right-[-250px] h-[892px] w-[892px] overflow-visible hidden lg:block xl:block">
         <Animation size={892} />

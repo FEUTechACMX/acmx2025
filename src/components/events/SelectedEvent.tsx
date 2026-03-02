@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { isOfficer, isEventAdmin } from "@/types/auth";
 import AttendanceLookup from "./AttendanceLookup";
 import EventGallery from "./EventGallery";
+import ReactMarkdown from "react-markdown";
 
 interface SelectedEventProps {
   event: EventWithCount;
@@ -18,7 +19,9 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
   // For multi-day events, selectedDay tracks which sub-event's context to show.
   // Day 0 = the parent overview (no registration), Day 1+ = sub-events.
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [priceTier, setPriceTier] = useState<"officer" | "member" | "nonmember">("nonmember");
+  const [priceTier, setPriceTier] = useState<
+    "officer" | "member" | "nonmember"
+  >("nonmember");
   const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
@@ -32,20 +35,27 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
             setShowAdminPanel(isEventAdmin(data.user.role));
           }
         }
-      } catch { /* not logged in */ }
+      } catch {
+        /* not logged in */
+      }
     }
     fetchUserRole();
   }, []);
 
   // Determine which event context to use for registration
-  const activeEvent: EventWithCount = hasSubEvents && selectedDayIndex > 0
-    ? event.subEvents![selectedDayIndex - 1]
-    : event;
+  const activeEvent: EventWithCount =
+    hasSubEvents && selectedDayIndex > 0
+      ? event.subEvents![selectedDayIndex - 1]
+      : event;
 
   const status = getEventStatus(event);
   const isFinished = status === "finished";
   const isOngoing = status === "ongoing";
-  const canRegister = !isFinished && !isOngoing;
+
+  // For registration eligibility, use the selected sub-event's own status
+  const activeStatus =
+    hasSubEvents && selectedDayIndex > 0 ? getEventStatus(activeEvent) : status;
+  const canRegister = activeStatus !== "finished" && activeStatus !== "ongoing";
   const hasGallery = event.gallery && event.gallery.length > 0;
 
   // For display: show the active sub-event's date/venue when a day is selected
@@ -60,8 +70,18 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
           href="/events"
           className="inline-flex items-center gap-1.5 text-sm font-['Arian-light'] text-gray-400 hover:text-gray-900 transition-colors"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="square"
+              strokeLinejoin="miter"
+              strokeWidth={1.5}
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Back to Events
         </Link>
@@ -147,10 +167,8 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14">
-
           {/* Main column */}
           <div className="lg:col-span-2 space-y-8">
-
             {/* Gallery — for ongoing/finished events */}
             {(isFinished || isOngoing) && hasGallery && (
               <div>
@@ -168,6 +186,10 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                   src={`/events/event-${event.eventId}.png`}
                   alt={event.name}
                   className="w-full h-auto object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      event.image || event.cardImage || "/eventCard/cardBG.png";
+                  }}
                 />
               </div>
             )}
@@ -179,12 +201,70 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                   ? `Day ${selectedDayIndex} — About`
                   : "About this event"}
               </h2>
-              <p className="text-gray-600 font-['Arian-light'] text-base leading-relaxed">
-                {(hasSubEvents && selectedDayIndex > 0
-                  ? event.subEvents![selectedDayIndex - 1].description
-                  : event.description) ||
-                  "Details for this event will be announced soon. Stay tuned for more information."}
-              </p>
+              <div className="text-gray-600 font-['Arian-light'] text-base leading-relaxed markdown-content">
+                <ReactMarkdown
+                  components={{
+                    p: ({ node, ...props }) => (
+                      <p className="mb-3" {...props} />
+                    ),
+                    strong: ({ node, ...props }) => (
+                      <strong
+                        className="font-['Arian-bold'] text-gray-900"
+                        {...props}
+                      />
+                    ),
+                    em: ({ node, ...props }) => (
+                      <em className="italic text-gray-700" {...props} />
+                    ),
+                    a: ({ node, ...props }) => (
+                      <a
+                        className="text-[#CF78EC] hover:text-[#b560d4] underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        {...props}
+                      />
+                    ),
+                    ul: ({ node, ...props }) => (
+                      <ul
+                        className="list-disc list-inside mb-3 space-y-1"
+                        {...props}
+                      />
+                    ),
+                    ol: ({ node, ...props }) => (
+                      <ol
+                        className="list-decimal list-inside mb-3 space-y-1"
+                        {...props}
+                      />
+                    ),
+                    li: ({ node, ...props }) => (
+                      <li className="text-gray-600" {...props} />
+                    ),
+                    h1: ({ node, ...props }) => (
+                      <h1
+                        className="text-2xl font-['Arian-bold'] text-gray-900 mt-4 mb-2"
+                        {...props}
+                      />
+                    ),
+                    h2: ({ node, ...props }) => (
+                      <h2
+                        className="text-xl font-['Arian-bold'] text-gray-900 mt-3 mb-2"
+                        {...props}
+                      />
+                    ),
+                    h3: ({ node, ...props }) => (
+                      <h3
+                        className="text-lg font-['Arian-bold'] text-gray-900 mt-2 mb-1"
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {(hasSubEvents && selectedDayIndex > 0
+                    ? event.subEvents![selectedDayIndex - 1].description
+                    : event.description) ||
+                    "Details for this event will be announced soon. Stay tuned for more information."}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
 
@@ -197,8 +277,18 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
               </h3>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <svg className="w-4 h-4 text-[#CF78EC] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="w-4 h-4 text-[#CF78EC] shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="square"
+                      strokeLinejoin="miter"
+                      strokeWidth={1.5}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
                   <p className="text-sm font-['Arian-bold'] text-gray-900">
                     {activeEvent.dayOfWeek},{" "}
@@ -210,8 +300,18 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <svg className="w-4 h-4 text-[#CF78EC] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-4 h-4 text-[#CF78EC] shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="square"
+                      strokeLinejoin="miter"
+                      strokeWidth={1.5}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                   <p className="text-sm font-['Arian-light'] text-gray-600">
                     {new Date(displayDate).toLocaleTimeString("en-US", {
@@ -230,12 +330,29 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                 Venue
               </h3>
               <div className="flex items-start gap-3">
-                <svg className="w-4 h-4 text-[#CF78EC] shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <svg
+                  className="w-4 h-4 text-[#CF78EC] shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="square"
+                    strokeLinejoin="miter"
+                    strokeWidth={1.5}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="square"
+                    strokeLinejoin="miter"
+                    strokeWidth={1.5}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
                 <div>
-                  <p className="text-sm font-['Arian-bold'] text-gray-900">{displayVenue}</p>
+                  <p className="text-sm font-['Arian-bold'] text-gray-900">
+                    {displayVenue}
+                  </p>
                   <p className="text-xs font-['Arian-light'] text-gray-400 mt-0.5">
                     FEU Institute of Technology
                   </p>
@@ -247,10 +364,16 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
             <div className="border border-gray-100 p-5">
               <div>
                 <p className="text-2xl font-['Arian-bold'] text-gray-900 leading-none">
-                  {activeEvent._count.registrations}
+                  {hasSubEvents && selectedDayIndex === 0
+                    ? event._aggregatedCount?.registrations || 0
+                    : activeEvent._count.registrations}
                 </p>
                 <div className="w-6 h-[2px] bg-[#CF78EC] mt-2 mb-1" />
-                <p className="text-xs font-['Arian-light'] text-gray-400">Registered</p>
+                <p className="text-xs font-['Arian-light'] text-gray-400">
+                  {hasSubEvents && selectedDayIndex === 0
+                    ? "Total Registered"
+                    : "Registered"}
+                </p>
               </div>
             </div>
 
@@ -264,7 +387,11 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
               </p>
               <div className="w-6 h-[2px] bg-[#CF78EC] mt-2 mb-1" />
               <p className="text-xs font-['Arian-light'] text-gray-400">
-                {priceTier === "officer" ? "Officer Rate" : priceTier === "member" ? "Member Rate" : "Non-Member Rate"}
+                {priceTier === "officer"
+                  ? "Officer Rate"
+                  : priceTier === "member"
+                    ? "Member Rate"
+                    : "Non-Member Rate"}
               </p>
             </div>
 
@@ -294,7 +421,12 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
             className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-['Arian-bold'] text-white bg-gray-900 hover:bg-gray-800 transition-colors"
           >
             Manage Event
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path strokeLinecap="square" strokeWidth={1.5} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
@@ -319,23 +451,36 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
 
 function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; classes: string }> = {
-    upcoming: { label: "Upcoming", classes: "border border-[#CF78EC] text-[#CF78EC]" },
+    upcoming: {
+      label: "Upcoming",
+      classes: "border border-[#CF78EC] text-[#CF78EC]",
+    },
     ongoing: { label: "Ongoing", classes: "bg-[#CF78EC] text-white" },
-    finished: { label: "Finished", classes: "border border-gray-200 text-gray-400" },
+    finished: {
+      label: "Finished",
+      classes: "border border-gray-200 text-gray-400",
+    },
   };
   const { label, classes } = config[status] ?? config.upcoming;
   return (
-    <span className={`text-[10px] font-['Arian-bold'] uppercase tracking-widest px-2 py-0.5 ${classes}`}>
+    <span
+      className={`text-[10px] font-['Arian-bold'] uppercase tracking-widest px-2 py-0.5 ${classes}`}
+    >
       {label}
     </span>
   );
 }
 
-function getUserPrice(event: EventWithCount, tier: "officer" | "member" | "nonmember"): string {
+function getUserPrice(
+  event: EventWithCount,
+  tier: "officer" | "member" | "nonmember",
+): string {
   const amount =
-    tier === "officer" ? event.price :
-    tier === "member" ? event.priceMember :
-    event.priceNonMember;
+    tier === "officer"
+      ? event.price
+      : tier === "member"
+        ? event.priceMember
+        : event.priceNonMember;
   return amount === 0 ? "Free" : `₱${amount}`;
 }
 
