@@ -11,11 +11,19 @@ export type EventWithCount = Event & {
 export type EventStatus = "upcoming" | "ongoing" | "finished";
 
 export function getEventStatus(
-  event: Pick<Event, "startDate" | "endDate" | "statusOverride">,
+  event: any,
 ): EventStatus {
   // If there's an explicit override, use it
   if (event.statusOverride) {
     return event.statusOverride.toLowerCase() as EventStatus;
+  }
+
+  // If it's a parent event with sub-events, derive status from children
+  if (event.subEvents && Array.isArray(event.subEvents) && event.subEvents.length > 0) {
+    const subStatuses = event.subEvents.map((sub: any) => getEventStatus(sub));
+    if (subStatuses.includes("ongoing")) return "ongoing";
+    if (subStatuses.includes("upcoming")) return "upcoming";
+    return "finished"; // all finished
   }
 
   const now = new Date();

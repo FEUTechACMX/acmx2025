@@ -7,7 +7,7 @@ interface EventSelectorProps {
 }
 
 export default function EventSelector({ onChange }: EventSelectorProps) {
-  const [selected, setSelected] = useState("1st");
+  const [selected, setSelected] = useState("2nd");
 
   const handleSelect = (semester: string) => {
     setSelected(semester);

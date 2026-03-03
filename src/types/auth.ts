@@ -46,3 +46,16 @@ export function isOfficer(role?: string): boolean {
 export function isEventAdmin(role?: string): boolean {
   return !!role && EVENT_ADMIN_ROLES.includes(role);
 }
+
+// Roles that can perform on-site registration (Secretariat and above)
+export const SECRETARIAT_AND_ABOVE_ROLES: string[] = [
+  "ADMIN",
+  "EXECUTIVES_MEDIA",
+  "EXECUTIVES",
+  "SECRETARIAT",
+  "SECRETARIAT_JUNIOR_OFFICER",
+];
+
+export function isSecretariatOrAbove(role?: string): boolean {
+  return !!role && SECRETARIAT_AND_ABOVE_ROLES.includes(role);
+}

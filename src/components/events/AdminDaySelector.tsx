@@ -67,7 +67,7 @@ export default function AdminDaySelector({ event }: AdminDaySelectorProps) {
       )}
 
       {/* Admin panel for the selected day */}
-      <AdminEventPanel key={activeDay.eventId} eventId={activeDay.eventId} />
+      <AdminEventPanel key={activeDay.eventId} eventId={activeDay.eventId} eventName={activeDay.name} />
     </div>
   );
 }

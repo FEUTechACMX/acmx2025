@@ -133,6 +133,16 @@ model Attendance {
   registration   Registration     @relation(fields: [registrationId], references: [id])
 }
 
+model Lesson {
+  id          String   @id @default(cuid())
+  title       String
+  author      String
+  fileUrl     String
+  slideCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum UserRole {
   MEMBER
   JUNIOR_OFFICER
