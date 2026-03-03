@@ -61,8 +61,6 @@ export default function Animation({ size = 840, onComplete }: AnimationProps) {
       },
       ">0"
     );
-    // Pause for 2s after spin completes
-    tl.to({}, { duration: 2 });
 
     // Glitch blink — 3×0.05s synced across all Animation instances
     const glitchDuration = 0.05;

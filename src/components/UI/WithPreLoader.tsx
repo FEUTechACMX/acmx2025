@@ -52,9 +52,9 @@ export default function WithPreloader({
       {showPreloader && (
         <div
           ref={overlayRef}
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ backgroundColor: "color-mix(in srgb, var(--background) 92%, transparent)" }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background"
         >
+          <DiamondScaleBackground />
           <Animation onComplete={handleComplete} />
         </div>
       )}

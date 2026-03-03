@@ -44,7 +44,7 @@ export default function EventCards({ event, priceTier }: EventCardProps) {
           <div className="absolute top-0 right-0 h-[76%] w-[77%]">
             <img
               className="h-full w-full object-cover"
-              src={event.cardImage || event.image || "/eventCard/cardBG.png"}
+              src={event.cardImage || "/eventCard/cardBG.png"}
               alt={event.name}
             />
           </div>

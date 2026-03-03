@@ -68,7 +68,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28">
         <Link
           href="/events"
-          className="inline-flex items-center gap-1.5 text-sm font-['Arian-light'] text-gray-400 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-sans text-gray-400 hover:text-gray-900 transition-colors"
         >
           <svg
             className="w-4 h-4"
@@ -106,7 +106,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-['Fjalla-One'] text-gray-900 leading-none">
               {event.name}
             </h1>
-            <p className="text-gray-400 font-['Arian-light'] text-sm mt-3">
+            <p className="text-gray-400 font-sans text-sm mt-3">
               Hosted by ACM · FEU Tech
             </p>
           </div>
@@ -115,7 +115,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
           {canRegister && (
             <div className="shrink-0">
               {hasSubEvents && selectedDayIndex === 0 ? (
-                <p className="text-xs font-['Arian-light'] text-gray-400 italic">
+                <p className="text-xs font-sans text-gray-400 italic">
                   Select a day below to register
                 </p>
               ) : (
@@ -183,12 +183,12 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
             {!isFinished && !isOngoing && (
               <div className="border border-gray-100 overflow-hidden">
                 <img
-                  src={`/events/event-${event.eventId}.png`}
+                  src={event.image || `/events/event-${event.eventId}.png`}
                   alt={event.name}
                   className="w-full h-auto object-cover"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).src =
-                      event.image || event.cardImage || "/eventCard/cardBG.png";
+                      event.cardImage || "/eventCard/cardBG.png";
                   }}
                 />
               </div>
@@ -201,7 +201,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                   ? `Day ${selectedDayIndex} — About`
                   : "About this event"}
               </h2>
-              <div className="text-gray-600 font-['Arian-light'] text-base leading-relaxed markdown-content">
+              <div className="text-gray-600 font-sans text-base leading-relaxed markdown-content">
                 <ReactMarkdown
                   components={{
                     p: ({ node, ...props }) => (
@@ -313,7 +313,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <p className="text-sm font-['Arian-light'] text-gray-600">
+                  <p className="text-sm font-sans text-gray-600">
                     {new Date(displayDate).toLocaleTimeString("en-US", {
                       hour: "numeric",
                       minute: "2-digit",
@@ -353,7 +353,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                   <p className="text-sm font-['Arian-bold'] text-gray-900">
                     {displayVenue}
                   </p>
-                  <p className="text-xs font-['Arian-light'] text-gray-400 mt-0.5">
+                  <p className="text-xs font-sans text-gray-400 mt-0.5">
                     FEU Institute of Technology
                   </p>
                 </div>
@@ -369,7 +369,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                     : activeEvent._count.registrations}
                 </p>
                 <div className="w-6 h-[2px] bg-[#CF78EC] mt-2 mb-1" />
-                <p className="text-xs font-['Arian-light'] text-gray-400">
+                <p className="text-xs font-sans text-gray-400">
                   {hasSubEvents && selectedDayIndex === 0
                     ? "Total Registered"
                     : "Registered"}
@@ -386,7 +386,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
                 {getUserPrice(event, priceTier)}
               </p>
               <div className="w-6 h-[2px] bg-[#CF78EC] mt-2 mb-1" />
-              <p className="text-xs font-['Arian-light'] text-gray-400">
+              <p className="text-xs font-sans text-gray-400">
                 {priceTier === "officer"
                   ? "Officer Rate"
                   : priceTier === "member"

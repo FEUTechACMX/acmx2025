@@ -60,6 +60,11 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+p {
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
 /* ── Global dark mode overrides ─────────────────────────────────── */
 /* These override Tailwind's hardcoded utility classes site-wide    */
 /* so components don't need individual changes.                     */

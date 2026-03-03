@@ -86,16 +86,14 @@ export default function AboutHero({ onComplete }: AboutHeroProps) {
     tl.add(typeText(headingLine1Ref.current, "WHERE CODES"), 0);
     tl.add(typeText(headingLine2Ref.current, "MEET THE COSMOS"), 0);
 
-    // Pause 2s — let everything sit, matching Animation's 2s pause
-    tl.to({}, { duration: 2 });
-
     // Synced blink — same timing as Animation's blink (3×0.05s)
     tl.call(() => setTypingCompleted(true));
     tl.add(blinkContent());
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-[999]" style={{ backgroundColor: "color-mix(in srgb, var(--background) 92%, transparent)" }}>
+    <div className="fixed inset-0 flex items-center justify-center z-[999] bg-background">
+      <DiamondScaleBackground />
       {/* Desktop */}
       <div className="anim-element absolute z-10 right-[-250px] h-[892px] w-[892px] overflow-visible hidden lg:block xl:block">
         <Animation size={892} />

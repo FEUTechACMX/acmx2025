@@ -38,10 +38,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔹 2. Create registration record
+    // 🔹 2. Check if user exists in the database to correctly assign the role
+    let finalUserId = userId || null;
+    let finalRole: RegistrationRole = RegistrationRole.NON_MEMBER;
+
+    if (!finalUserId) {
+      // If no session userId was provided, check if the student number or school email exists in the User table
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [{ studentId: studentNumber }, { schoolEmail }],
+        },
+      });
+      if (existingUser) {
+        finalUserId = existingUser.id;
+        finalRole = RegistrationRole.MEMBER;
+      }
+    } else {
+       // If userId was included in the request body, we assume they're already logged in as a member
+       finalRole = RegistrationRole.MEMBER;
+    }
+
+    // 🔹 3. Create registration record
     const registration = await prisma.registration.create({
       data: {
-        userId: userId || null,
+        userId: finalUserId,
         eventId,
         fullName,
         studentNumber,
@@ -52,7 +72,7 @@ export async function POST(req: Request) {
         section,
         professor,
         degreeProgram,
-        role: userId ? RegistrationRole.MEMBER : RegistrationRole.NON_MEMBER,
+        role: finalRole,
       },
     });
 

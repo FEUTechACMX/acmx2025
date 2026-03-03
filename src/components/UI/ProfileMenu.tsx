@@ -99,10 +99,10 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
           className="absolute right-0 mt-3 w-64 z-50 transform origin-top-right"
         >
           {/* Glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#CF78EC] via-[#a855f7] to-[#CF78EC] rounded-2xl blur-lg opacity-20" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-[#CF78EC] via-[#a855f7] to-[#CF78EC] blur-lg opacity-20" />
 
           {/* Dropdown content */}
-          <div className="relative bg-white/95 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative bg-white/95 backdrop-blur-xl border border-gray-100 shadow-2xl overflow-hidden">
             {/* Top gradient bar */}
             <div className="h-1 bg-gradient-to-r from-[#CF78EC] via-[#a855f7] to-[#CF78EC]" />
 
