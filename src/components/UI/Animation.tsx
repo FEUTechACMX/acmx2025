@@ -110,7 +110,7 @@ export default function Animation({ size = 840, onComplete }: AnimationProps) {
         <Image src="/assets/animation/Layer5.svg" alt="Layer5" fill />
       </div>
       <div ref={base} className="h-full w-full absolute">
-        <Image src="/assets/animation/base.svg" alt="Base" fill />
+        <Image src="/assets/animation/Base.svg" alt="Base" fill />
       </div>
     </div>
   );
