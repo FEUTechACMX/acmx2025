@@ -3,16 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import { getCurrentUser } from "@/lib/auth";
 import { EVENT_ADMIN_ROLES } from "@/types/auth";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY!
-);
-
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 // POST /api/upload — server-side upload to Supabase Storage (bypasses RLS)
 export async function POST(req: NextRequest) {
   try {
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     const user = await getCurrentUser(req);
     if (!user || !EVENT_ADMIN_ROLES.includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
