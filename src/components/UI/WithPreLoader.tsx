@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import Animation from "./Animation";
-import DiamondScaleBackground from "./DiamondScaleBackground";
 import { gsap } from "gsap";
 
 export default function WithPreloader({
@@ -54,7 +53,6 @@ export default function WithPreloader({
           ref={overlayRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-background"
         >
-          <DiamondScaleBackground />
           <Animation onComplete={handleComplete} />
         </div>
       )}

@@ -5,7 +5,6 @@ import NavBar from "@/components/UI/NavBar";
 import { getCurrentUser } from "@/lib/auth";
 import { toSafeUser } from "@/lib/userMapper";
 import ThemeProvider from "@/components/ThemeProvider";
-import DiamondScaleBackground from "@/components/UI/DiamondScaleBackground";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,11 +48,8 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <DiamondScaleBackground />
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <NavBar user={user} />
-            {children}
-          </div>
+          <NavBar user={user} />
+          {children}
         </ThemeProvider>
       </body>
     </html>

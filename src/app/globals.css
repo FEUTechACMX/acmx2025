@@ -60,6 +60,10 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* ── Design-system font utilities ───────────────────────────────── */
+.font-monument    { font-family: 'Monument Extended', sans-serif; }
+.font-helvetica-now { font-family: 'Helvetica Now MT Text', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+
 p {
   font-family: var(--font-sans);
   line-height: 1.6;
@@ -194,6 +198,24 @@ p {
 @font-face {
   font-family: "Trochut";
   src: url("/fonts/Trochut.ttf") format("truetype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Monument Extended";
+  src: url("/fonts/MonumentExtended-Regular.otf") format("opentype");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Monument Extended";
+  src: url("/fonts/MonumentExtended-Ultrabold.otf") format("opentype");
+  font-weight: 800;
+}
+
+@font-face {
+  font-family: "Helvetica Now MT Text";
+  src: url("/fonts/HelveticaNowMTText.ttf") format("truetype");
   font-weight: 400;
 }
 

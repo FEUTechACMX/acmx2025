@@ -56,15 +56,14 @@ export default function NavBar({ user }: NavBarProps) {
 
   return (
     <>
-      <nav className="fixed top-0 left-[7vw] w-[86vw] z-50 flex items-center justify-between">
-        {/* Logo */}
+      <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between h-16 px-[7vw] backdrop-blur-md bg-black/20 dark:bg-black/30 border-b border-black/10 dark:border-white/[0.06]">
+        {/* Brand */}
         <div className="flex items-center pointer-events-none select-none">
-          <img src="/assets/logo.png" className="h-[38px]" alt="" />
-          <h1 className="font-[Arian-bold] text-[32px]">ACM</h1>
+          <h1 className="font-monument font-bold text-[1.25rem] tracking-[0.35em]">ACM</h1>
         </div>
 
         {/* Desktop Nav Links */}
-        <div className="hidden lg:flex font-[Arian-light] items-center gap-8">
+        <div className="hidden lg:flex font-monument text-[0.6875rem] tracking-[0.22em] uppercase items-center gap-8">
           <Link href="/" className={getLinkClasses("/")}>
             Home
             {isActive("/") && (
@@ -171,7 +170,7 @@ export default function NavBar({ user }: NavBarProps) {
             <ProfileMenu user={user} />
           ) : (
             <button
-              className="px-5 py-2 text-[#CF78EC] font-['Supermolot'] text-sm tracking-wide border border-[#CF78EC] hover:bg-[#CF78EC] hover:text-white transition-all duration-200 cursor-pointer"
+              className="px-5 py-2 text-[#CF78EC] font-monument text-[0.6875rem] tracking-[0.15em] border border-[#CF78EC] hover:bg-[#CF78EC] hover:text-white transition-all duration-200 cursor-pointer"
               onClick={() => setIsLoginOpen(true)}
             >
               Log In
@@ -196,7 +195,7 @@ export default function NavBar({ user }: NavBarProps) {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="fixed top-[70px] left-[7vw] w-[86vw] bg-white shadow-lg z-40 lg:hidden rounded-md p-4">
-          <div className="flex flex-col gap-4 font-[Arian-light]">
+          <div className="flex flex-col gap-4 font-monument text-[0.75rem] tracking-[0.18em] uppercase">
             <Link 
               href="/" 
               className={`${isActive("/") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
