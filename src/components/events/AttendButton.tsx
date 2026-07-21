@@ -1,11 +1,24 @@
-// components/AttendButton.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import RegistrationModal from "@/components/registration/RegistrationModal";
+import { Button, Label, useDS } from "@/components/ds";
 
 interface AttendButtonProps {
   eventId: string;
+}
+
+/** Inert twin of the accent button — same box, no affordance. */
+function StaticState({ children }: { children: React.ReactNode }) {
+  const { c } = useDS();
+  return (
+    <div
+      className="select-none"
+      style={{ border: `1px solid ${c.rule}`, padding: "0.8rem 2.25rem", textAlign: "center" }}
+    >
+      <Label style={{ color: c.faint }}>{children}</Label>
+    </div>
+  );
 }
 
 const AttendButton: React.FC<AttendButtonProps> = ({ eventId }) => {
@@ -30,30 +43,12 @@ const AttendButton: React.FC<AttendButtonProps> = ({ eventId }) => {
     checkRegistration();
   }, [eventId]);
 
-  if (checking) {
-    return (
-      <div className="px-6 py-2.5 text-sm font-['Arian-bold'] text-gray-400 bg-gray-100">
-        Loading...
-      </div>
-    );
-  }
-
-  if (isRegistered) {
-    return (
-      <div className="px-6 py-2.5 text-sm font-['Arian-bold'] text-gray-400 bg-gray-100 select-none">
-        Registered ✓
-      </div>
-    );
-  }
+  if (checking) return <StaticState>Checking…</StaticState>;
+  if (isRegistered) return <StaticState>Registered ✓</StaticState>;
 
   return (
     <>
-      <button
-        className="px-6 py-2.5 text-sm font-['Arian-bold'] text-white bg-[#CF78EC] hover:bg-[#b560d4] transition-colors cursor-pointer"
-        onClick={() => setModalOpen(true)}
-      >
-        Register Now
-      </button>
+      <Button onClick={() => setModalOpen(true)}>Register Now</Button>
 
       <RegistrationModal
         isOpen={isModalOpen}

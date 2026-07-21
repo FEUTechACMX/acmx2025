@@ -1,4 +1,3 @@
-// components/events/Events.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -6,6 +5,8 @@ import EventsList from "./EventsList";
 import EventSelector from "./EventSelector";
 import EventCreationModal from "./EventCreationModal";
 import { isEventAdmin } from "@/types/auth";
+import { Column, PageHeader, Button } from "@/components/ds";
+import { layout } from "@/styles/design-system";
 
 export default function Events() {
   const [semester, setSemester] = useState("2nd");
@@ -31,25 +32,25 @@ export default function Events() {
   }, []);
 
   return (
-    <div className="flex flex-col justify-center items-center w-full max-w-6xl mx-auto px-4 sm:px-6 relative">
-      <div className="text-center mb-8 sm:mb-12 md:mb-20">
-        <h1 className="text-5xl sm:text-7xl md:text-[96px] mt-[66px] font-['Fjalla-One'] text-[#CF78EC] leading-none">
-          ACM EVENTS
-        </h1>
+    <Column>
+      <PageHeader
+        eyebrow={["GATHER", "BUILD", "SHIP"]}
+        title="ACM EVENTS"
+        intro="Workshops, competitions, and seminars run by the chapter throughout the academic year. Register early — seats are limited."
+        aside={
+          canCreate ? (
+            <Button variant="outline" onClick={() => setShowCreate(true)}>
+              + Create Event
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div style={{ marginTop: `calc(${layout.gap} * 1.5)` }}>
+        <EventSelector onChange={setSemester} />
       </div>
 
-      <div className="relative z-20 w-full flex flex-col items-center">
-        {/* Admin: Create Event button */}
-        {canCreate && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="mb-6 px-5 py-2 text-xs font-['Arian-bold'] text-white bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer uppercase tracking-widest"
-          >
-            + Create Event
-          </button>
-        )}
-
-        <EventSelector onChange={setSemester} />
+      <div style={{ marginTop: layout.gap }}>
         <EventsList key={refreshKey} semester={semester} />
       </div>
 
@@ -58,6 +59,6 @@ export default function Events() {
         onClose={() => setShowCreate(false)}
         onCreated={() => setRefreshKey((k) => k + 1)}
       />
-    </div>
+    </Column>
   );
 }

@@ -1,7 +1,11 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
 import type { EventWithCount } from "@/types/events";
 import { getEventStatus } from "@/types/events";
+import { Badge, Subheading, Label, useDS } from "@/components/ds";
+import { type as t, motion } from "@/styles/design-system";
 
 interface EventCardProps {
   event: EventWithCount;
@@ -14,96 +18,96 @@ const STATUS_LABEL: Record<string, string> = {
   finished: "Finished",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  upcoming: "bg-[#E4BCF3] text-[#7c3aed]",
-  ongoing: "bg-[#CF78EC] text-white",
-  finished: "bg-gray-100 text-gray-400",
-};
+const STATUS_TONE = {
+  upcoming: "neutral",
+  ongoing: "accent",
+  finished: "quiet",
+} as const;
 
-function getPrice(
-  event: EventWithCount,
-  tier: "officer" | "member" | "nonmember",
-): string {
+function getPrice(event: EventWithCount, tier: EventCardProps["priceTier"]): string {
   const amount =
-    tier === "officer"
-      ? event.price
-      : tier === "member"
-        ? event.priceMember
-        : event.priceNonMember;
+    tier === "officer" ? event.price : tier === "member" ? event.priceMember : event.priceNonMember;
   return amount === 0 ? "Free" : `₱${amount}`;
 }
 
+/**
+ * Event poster in the system's language: hairline frame, image plate,
+ * Monument title, metadata split across a rule.
+ */
 export default function EventCards({ event, priceTier }: EventCardProps) {
+  const { c } = useDS();
+  const [hover, setHover] = useState(false);
   const status = getEventStatus(event);
 
+  const date = new Date(event.startDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const registered = event._aggregatedCount
+    ? event._aggregatedCount.registrations
+    : event._count.registrations;
+
   return (
-    <Link href={`/events/${event.eventId}`} passHref>
-      <div className="dark-exempt">
-        <div className="w-full aspect-[409/578] bg-white relative text-black overflow-hidden border border-[#CD78EC] group hover:border-[#CF78EC] transition-colors">
-          {/* Card Design */}
-          <div className="absolute top-0 right-0 h-[76%] w-[77%]">
-            <img
-              className="h-full w-full object-cover"
-              src={event.cardImage || "/eventCard/cardBG.png"}
-              alt={event.name}
-            />
-          </div>
-
-          {/* Status Badge */}
-          <div className="absolute top-3 left-3 z-10">
-            <span
-              className={`text-[10px] font-['Arian-bold'] uppercase tracking-widest px-2 py-0.5 ${STATUS_COLORS[status]}`}
-            >
-              {STATUS_LABEL[status]}
-            </span>
-            {event.isMultiDay && (
-              <span className="ml-1 text-[10px] font-['Arian-bold'] uppercase tracking-widest px-2 py-0.5 bg-gray-900 text-white">
-                Multi-Day
-              </span>
-            )}
-          </div>
-
-          {/* Semester Info */}
-          <div className="headers font-['Montserrat'] text-[clamp(8px,2.5vw,12px)] sm:text-[12px] absolute rotate-270 text-right w-[123px] origin-top-left h-[36px] left-[7%] top-[26.5%]">
-            <p className="m-0">{event.eventSemester} SEMESTER</p>
-            <p className="m-0 -mt-1 font-bold">ACM EVENT SERIES</p>
-          </div>
-
-          {/* Title */}
-          <div className="absolute left-[7%] right-[7%] bottom-[24.4%] font-['Roller-Coaster']">
-            <p className="text-[clamp(20px,6vw,32px)] sm:text-[32px] leading-tight">
-              ACM
-            </p>
-            <h1 className="text-[clamp(36px,12vw,66px)] sm:text-[66px] leading-none">
-              {event.name}
-            </h1>
-          </div>
-
-          {/* Venue + Schedule */}
-          <div className="absolute left-[7%] right-[7%] bottom-[13%] font-['Trochut'] text-[clamp(10px,3vw,16px)] sm:text-[16px] gap-0">
-            <p className="m-0">Where: {event.venue}</p>
-            <p className="-mt-1">
-              {event.dayOfWeek},{" "}
-              {new Date(event.startDate).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div className="absolute bottom-[5.2%] right-[7%] left-[7%] font-['Montserrat'] text-[clamp(7px,2vw,10px)] sm:text-[10px] flex justify-between">
-            <p>
-              {event._aggregatedCount
-                ? `${event._aggregatedCount.registrations} registered`
-                : `${event._count.registrations} People Going`}
-            </p>
-            <p>{getPrice(event, priceTier)}</p>
+    <Link href={`/events/${event.eventId}`} style={{ textDecoration: "none", display: "block" }}>
+      <article
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        className="flex flex-col h-full"
+        style={{
+          backgroundColor: c.panel,
+          border: `1px solid ${hover ? c.accent : c.rule}`,
+          transition: `border-color ${motion.fast}`,
+        }}
+      >
+        {/* Image plate */}
+        <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4 / 3" }}>
+          <img
+            src={event.cardImage || "/eventCard/cardBG.png"}
+            alt={event.name}
+            className="h-full w-full object-cover"
+            style={{
+              filter: status === "finished" ? "grayscale(1)" : undefined,
+              opacity: status === "finished" ? 0.55 : 1,
+              transform: hover ? "scale(1.03)" : "scale(1)",
+              transition: `transform ${motion.base} ${motion.ease}`,
+            }}
+          />
+          <div className="absolute top-3 left-3 flex gap-2">
+            <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
+            {event.isMultiDay && <Badge tone="neutral">Multi-Day</Badge>}
           </div>
         </div>
-      </div>
+
+        {/* Body */}
+        <div
+          className="flex flex-col flex-1"
+          style={{ padding: "clamp(0.875rem, 1.6vw, 1.25rem)", gap: "0.75rem" }}
+        >
+          <Label style={{ color: c.faint }}>
+            {event.eventSemester} Semester · ACM Event Series
+          </Label>
+
+          <Subheading style={{ color: c.text }}>{event.name}</Subheading>
+
+          <div className="flex flex-col" style={{ gap: "0.15rem", marginTop: "auto" }}>
+            <span style={{ ...t.mono, color: c.muted }}>{event.venue}</span>
+            <span style={{ ...t.mono, color: c.muted }}>
+              {event.dayOfWeek}, {date}
+            </span>
+          </div>
+
+          <div
+            className="flex items-baseline justify-between"
+            style={{ borderTop: `1px solid ${c.rule}`, paddingTop: "0.75rem" }}
+          >
+            <Label style={{ color: c.faint }}>{registered} Registered</Label>
+            <Label color={c.accent}>{getPrice(event, priceTier)}</Label>
+          </div>
+        </div>
+      </article>
     </Link>
   );
 }

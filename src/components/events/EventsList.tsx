@@ -4,13 +4,33 @@ import React, { useEffect, useState } from "react";
 import EventCards from "./EventCards";
 import type { EventWithCount } from "@/types/events";
 import { isOfficer } from "@/types/auth";
+import { Panel, Body, Label, useDS } from "@/components/ds";
 
 type PriceTier = "officer" | "member" | "nonmember";
+
+/** Square accent spinner — the system has no circles. */
+function Loader() {
+  const { c } = useDS();
+  return (
+    <div className="flex justify-center items-center w-full" style={{ height: "16rem" }}>
+      <div
+        className="animate-spin"
+        style={{
+          width: "1.25rem",
+          height: "1.25rem",
+          border: `2px solid ${c.rule}`,
+          borderTopColor: c.accent,
+        }}
+      />
+    </div>
+  );
+}
 
 export default function EventsList({ semester }: { semester: string }) {
   const [events, setEvents] = useState<EventWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [priceTier, setPriceTier] = useState<PriceTier>("nonmember");
+  const { c } = useDS();
 
   useEffect(() => {
     async function fetchUserRole() {
@@ -22,7 +42,9 @@ export default function EventsList({ semester }: { semester: string }) {
             setPriceTier(isOfficer(data.user.role) ? "officer" : "member");
           }
         }
-      } catch { /* not logged in */ }
+      } catch {
+        /* not logged in */
+      }
     }
     fetchUserRole();
   }, []);
@@ -44,29 +66,27 @@ export default function EventsList({ semester }: { semester: string }) {
     loadEvents();
   }, [semester]);
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-64 w-full">
-      <div className="w-5 h-5 border-2 border-gray-200 border-t-[#CF78EC] animate-spin" />
-    </div>
-  );
+  if (loading) return <Loader />;
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-400 text-lg font-['Arian-light']">No events available for {semester} semester</p>
-      </div>
+      <Panel style={{ textAlign: "center", padding: "clamp(2.5rem, 8vh, 5rem) 1.5rem" }}>
+        <Label style={{ color: c.accent }}>No Events</Label>
+        <div style={{ marginTop: "0.75rem" }}>
+          <Body measure={false}>Nothing scheduled for the {semester} semester yet.</Body>
+        </div>
+      </Panel>
     );
   }
 
   return (
-    <div className="w-full">
-      <div className="flex flex-wrap gap-6 sm:gap-8">
-        {events.map((event) => (
-          <div key={event.eventId} className="w-full sm:w-[calc(50%-16px)] lg:w-[calc(33.33%-22px)]">
-            <EventCards event={event} priceTier={priceTier} />
-          </div>
-        ))}
-      </div>
+    <div
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+      style={{ gap: "clamp(1rem, 2vw, 1.75rem)" }}
+    >
+      {events.map((event) => (
+        <EventCards key={event.eventId} event={event} priceTier={priceTier} />
+      ))}
     </div>
   );
 }

@@ -8,20 +8,82 @@ import { isOfficer, isEventAdmin } from "@/types/auth";
 import AttendanceLookup from "./AttendanceLookup";
 import EventGallery from "./EventGallery";
 import ReactMarkdown from "react-markdown";
+import {
+  Surface,
+  Column,
+  PageHeader,
+  Panel,
+  Badge,
+  DataRow,
+  Button,
+  Rule,
+  Label,
+  Subheading,
+  Segmented,
+  useDS,
+} from "@/components/ds";
+import { layout, type as t, motion } from "@/styles/design-system";
 
 interface SelectedEventProps {
   event: EventWithCount;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  upcoming: "Upcoming",
+  ongoing: "Ongoing",
+  finished: "Finished",
+};
+
+const STATUS_TONE = {
+  upcoming: "neutral",
+  ongoing: "accent",
+  finished: "quiet",
+} as const;
+
+/** Section heading in the left-rail idiom: tracked caps over a hairline. */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  const { c } = useDS();
+  return (
+    <div style={{ marginBottom: layout.gapTight }}>
+      <Label style={{ color: c.faint }}>{children}</Label>
+      <div style={{ marginTop: "0.55rem" }}>
+        <Rule />
+      </div>
+    </div>
+  );
+}
+
+function BackLink() {
+  const { c } = useDS();
+  const [hover, setHover] = useState(false);
+  return (
+    <Link
+      href="/events"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        ...t.label,
+        textTransform: "uppercase",
+        color: hover ? c.accent : c.faint,
+        textDecoration: "none",
+        transition: `color ${motion.fast}`,
+        display: "inline-block",
+        marginBottom: layout.gap,
+      }}
+    >
+      ← Back to Events
+    </Link>
+  );
+}
+
 const SelectedEvent = ({ event }: SelectedEventProps) => {
-  const hasSubEvents = event.subEvents && event.subEvents.length > 0;
+  const hasSubEvents = !!event.subEvents && event.subEvents.length > 0;
+  const { c } = useDS();
 
   // For multi-day events, selectedDay tracks which sub-event's context to show.
   // Day 0 = the parent overview (no registration), Day 1+ = sub-events.
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [priceTier, setPriceTier] = useState<
-    "officer" | "member" | "nonmember"
-  >("nonmember");
+  const [priceTier, setPriceTier] = useState<"officer" | "member" | "nonmember">("nonmember");
   const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   useEffect(() => {
@@ -44,9 +106,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
 
   // Determine which event context to use for registration
   const activeEvent: EventWithCount =
-    hasSubEvents && selectedDayIndex > 0
-      ? event.subEvents![selectedDayIndex - 1]
-      : event;
+    hasSubEvents && selectedDayIndex > 0 ? event.subEvents![selectedDayIndex - 1] : event;
 
   const status = getEventStatus(event);
   const isFinished = status === "finished";
@@ -56,132 +116,118 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
   const activeStatus =
     hasSubEvents && selectedDayIndex > 0 ? getEventStatus(activeEvent) : status;
   const canRegister = activeStatus !== "finished" && activeStatus !== "ongoing";
-  const hasGallery = event.gallery && event.gallery.length > 0;
+  const hasGallery = !!event.gallery && event.gallery.length > 0;
 
-  // For display: show the active sub-event's date/venue when a day is selected
   const displayDate = activeEvent.startDate;
   const displayVenue = activeEvent.venue;
 
+  const dayOptions = [
+    { value: "0", label: "Overview" },
+    ...(event.subEvents ?? []).map((sub, idx) => ({
+      value: String(idx + 1),
+      label: `Day ${idx + 1} · ${new Date(sub.startDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      })}`,
+    })),
+  ];
+
+  const registeredCount =
+    hasSubEvents && selectedDayIndex === 0
+      ? (event._aggregatedCount?.registrations ?? 0)
+      : activeEvent._count.registrations;
+
+  const markdownComponents = {
+    p: (props: React.ComponentProps<"p">) => (
+      <p style={{ ...t.body, color: c.muted, margin: "0 0 1rem" }} {...props} />
+    ),
+    strong: (props: React.ComponentProps<"strong">) => (
+      <strong style={{ color: c.text, fontWeight: 500 }} {...props} />
+    ),
+    em: (props: React.ComponentProps<"em">) => (
+      <em style={{ color: c.muted, fontStyle: "italic" }} {...props} />
+    ),
+    a: (props: React.ComponentProps<"a">) => (
+      <a
+        style={{ color: c.accent, textDecoration: "underline" }}
+        target="_blank"
+        rel="noopener noreferrer"
+        {...props}
+      />
+    ),
+    ul: (props: React.ComponentProps<"ul">) => (
+      <ul style={{ ...t.body, color: c.muted, margin: "0 0 1rem", paddingLeft: "1.15rem" }} {...props} />
+    ),
+    ol: (props: React.ComponentProps<"ol">) => (
+      <ol style={{ ...t.body, color: c.muted, margin: "0 0 1rem", paddingLeft: "1.15rem" }} {...props} />
+    ),
+    li: (props: React.ComponentProps<"li">) => (
+      <li style={{ marginBottom: "0.35rem" }} {...props} />
+    ),
+    h1: (props: React.ComponentProps<"h1">) => (
+      <h1 style={{ ...t.subheading, color: c.text, margin: "1.5rem 0 0.75rem" }} {...props} />
+    ),
+    h2: (props: React.ComponentProps<"h2">) => (
+      <h2 style={{ ...t.subheading, color: c.text, margin: "1.25rem 0 0.6rem" }} {...props} />
+    ),
+    h3: (props: React.ComponentProps<"h3">) => (
+      <h3 style={{ ...t.subheading, color: c.text, margin: "1rem 0 0.5rem" }} {...props} />
+    ),
+  };
+
   return (
-    <div className="min-h-screen">
-      {/* Back navigation */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28">
-        <Link
-          href="/events"
-          className="inline-flex items-center gap-1.5 text-sm font-sans text-gray-400 hover:text-gray-900 transition-colors"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="square"
-              strokeLinejoin="miter"
-              strokeWidth={1.5}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back to Events
-        </Link>
-      </div>
+    <Surface corners="bottom-right">
+      <Column>
+        <BackLink />
 
-      {/* Hero Section */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-6">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <p className="text-xs font-['Arian-bold'] text-[#CF78EC] uppercase tracking-widest">
-                ACM Event
-              </p>
-              {/* Status badge */}
-              <StatusBadge status={status} />
-              {event.isMultiDay && (
-                <span className="text-[10px] font-['Arian-bold'] uppercase tracking-widest px-2 py-0.5 bg-gray-900 text-white">
-                  Multi-Day
-                </span>
-              )}
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-['Fjalla-One'] text-gray-900 leading-none">
-              {event.name}
-            </h1>
-            <p className="text-gray-400 font-sans text-sm mt-3">
-              Hosted by ACM · FEU Tech
-            </p>
-          </div>
-
-          {/* Register button — only for upcoming events */}
-          {canRegister && (
-            <div className="shrink-0">
-              {hasSubEvents && selectedDayIndex === 0 ? (
-                <p className="text-xs font-sans text-gray-400 italic">
-                  Select a day below to register
-                </p>
+        <PageHeader
+          eyebrow={["ACM", "EVENT", "SERIES"]}
+          title={event.name}
+          aside={
+            canRegister ? (
+              hasSubEvents && selectedDayIndex === 0 ? (
+                <Label style={{ color: c.faint }}>Select a day to register</Label>
               ) : (
                 <AttendButton eventId={activeEvent.eventId} />
-              )}
-            </div>
-          )}
+              )
+            ) : undefined
+          }
+        />
+
+        {/* Status row */}
+        <div className="flex items-center flex-wrap" style={{ gap: "0.5rem", marginTop: layout.gap }}>
+          <Badge tone={STATUS_TONE[status]}>{STATUS_LABEL[status]}</Badge>
+          {event.isMultiDay && <Badge tone="neutral">Multi-Day</Badge>}
+          <Badge tone="quiet">{event.eventSemester} Semester</Badge>
+          <Badge tone="quiet">Hosted by ACM · FEU Tech</Badge>
         </div>
 
-        {/* Day Selector Tabs (multi-day events) */}
         {hasSubEvents && (
-          <div className="mt-6">
-            <div className="inline-flex border border-gray-200">
-              <button
-                onClick={() => setSelectedDayIndex(0)}
-                className={`px-4 py-2 text-xs font-['Arian-bold'] uppercase tracking-wider transition-colors cursor-pointer ${
-                  selectedDayIndex === 0
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-500 hover:bg-gray-50"
-                }`}
-              >
-                Overview
-              </button>
-              {event.subEvents!.map((sub, idx) => (
-                <button
-                  key={sub.eventId}
-                  onClick={() => setSelectedDayIndex(idx + 1)}
-                  className={`px-4 py-2 text-xs font-['Arian-bold'] uppercase tracking-wider transition-colors cursor-pointer border-l border-gray-200 ${
-                    selectedDayIndex === idx + 1
-                      ? "bg-[#CF78EC] text-white"
-                      : "text-gray-500 hover:bg-gray-50"
-                  }`}
-                >
-                  Day {idx + 1} —{" "}
-                  {new Date(sub.startDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </button>
-              ))}
-            </div>
+          <div style={{ marginTop: layout.gap }} className="overflow-x-auto">
+            <Segmented
+              options={dayOptions}
+              value={String(selectedDayIndex)}
+              onChange={(v) => setSelectedDayIndex(Number(v))}
+            />
           </div>
         )}
 
-        {/* Divider */}
-        <div className="w-full h-px bg-gray-100 mt-6" />
-      </div>
-
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14">
+        {/* Body grid */}
+        <div
+          className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]"
+          style={{ marginTop: `calc(${layout.gap} * 1.5)`, gap: `calc(${layout.gap} * 1.5)` }}
+        >
           {/* Main column */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Gallery — for ongoing/finished events */}
+          <div className="flex flex-col" style={{ gap: `calc(${layout.gap} * 1.5)` }}>
             {(isFinished || isOngoing) && hasGallery && (
-              <div>
-                <h2 className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-widest mb-4">
-                  Photos
-                </h2>
+              <section>
+                <SectionLabel>Photos</SectionLabel>
                 <EventGallery images={event.gallery!} eventName={event.name} />
-              </div>
+              </section>
             )}
 
-            {/* Event image (upcoming/single-day) */}
             {!isFinished && !isOngoing && (
-              <div className="border border-gray-100 overflow-hidden">
+              <div style={{ border: `1px solid ${c.rule}`, overflow: "hidden" }}>
                 <img
                   src={event.image || `/events/event-${event.eventId}.png`}
                   alt={event.name}
@@ -194,293 +240,107 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
               </div>
             )}
 
-            {/* Description */}
-            <div>
-              <h2 className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-widest mb-4">
+            <section>
+              <SectionLabel>
                 {hasSubEvents && selectedDayIndex > 0
                   ? `Day ${selectedDayIndex} — About`
                   : "About this event"}
-              </h2>
-              <div className="text-gray-600 font-sans text-base leading-relaxed markdown-content">
-                <ReactMarkdown
-                  components={{
-                    p: ({ node, ...props }) => (
-                      <p className="mb-3" {...props} />
-                    ),
-                    strong: ({ node, ...props }) => (
-                      <strong
-                        className="font-['Arian-bold'] text-gray-900"
-                        {...props}
-                      />
-                    ),
-                    em: ({ node, ...props }) => (
-                      <em className="italic text-gray-700" {...props} />
-                    ),
-                    a: ({ node, ...props }) => (
-                      <a
-                        className="text-[#CF78EC] hover:text-[#b560d4] underline"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        {...props}
-                      />
-                    ),
-                    ul: ({ node, ...props }) => (
-                      <ul
-                        className="list-disc list-inside mb-3 space-y-1"
-                        {...props}
-                      />
-                    ),
-                    ol: ({ node, ...props }) => (
-                      <ol
-                        className="list-decimal list-inside mb-3 space-y-1"
-                        {...props}
-                      />
-                    ),
-                    li: ({ node, ...props }) => (
-                      <li className="text-gray-600" {...props} />
-                    ),
-                    h1: ({ node, ...props }) => (
-                      <h1
-                        className="text-2xl font-['Arian-bold'] text-gray-900 mt-4 mb-2"
-                        {...props}
-                      />
-                    ),
-                    h2: ({ node, ...props }) => (
-                      <h2
-                        className="text-xl font-['Arian-bold'] text-gray-900 mt-3 mb-2"
-                        {...props}
-                      />
-                    ),
-                    h3: ({ node, ...props }) => (
-                      <h3
-                        className="text-lg font-['Arian-bold'] text-gray-900 mt-2 mb-1"
-                        {...props}
-                      />
-                    ),
-                  }}
-                >
+              </SectionLabel>
+              <div style={{ maxWidth: "60ch" }}>
+                <ReactMarkdown components={markdownComponents}>
                   {(hasSubEvents && selectedDayIndex > 0
                     ? event.subEvents![selectedDayIndex - 1].description
                     : event.description) ||
                     "Details for this event will be announced soon. Stay tuned for more information."}
                 </ReactMarkdown>
               </div>
-            </div>
+            </section>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Date & Time */}
-            <div className="border border-gray-100 p-5">
-              <h3 className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-widest mb-4">
-                Date & Time
-              </h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <svg
-                    className="w-4 h-4 text-[#CF78EC] shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="square"
-                      strokeLinejoin="miter"
-                      strokeWidth={1.5}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="text-sm font-['Arian-bold'] text-gray-900">
-                    {activeEvent.dayOfWeek},{" "}
-                    {new Date(displayDate).toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <svg
-                    className="w-4 h-4 text-[#CF78EC] shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="square"
-                      strokeLinejoin="miter"
-                      strokeWidth={1.5}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <p className="text-sm font-sans text-gray-600">
-                    {new Date(displayDate).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </p>
-                </div>
+          <aside className="flex flex-col" style={{ gap: layout.gap }}>
+            <Panel>
+              <Label style={{ color: c.faint }}>Schedule</Label>
+              <div style={{ marginTop: layout.gapTight }}>
+                <DataRow
+                  label="Date"
+                  value={`${activeEvent.dayOfWeek}, ${new Date(displayDate).toLocaleDateString(
+                    "en-US",
+                    { month: "long", day: "numeric", year: "numeric" },
+                  )}`}
+                />
+                <DataRow
+                  label="Time"
+                  value={new Date(displayDate).toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                />
+                <DataRow label="Venue" value={displayVenue} />
+                <DataRow label="Campus" value="FEU Institute of Technology" />
               </div>
-            </div>
+            </Panel>
 
-            {/* Venue */}
-            <div className="border border-gray-100 p-5">
-              <h3 className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-widest mb-4">
-                Venue
-              </h3>
-              <div className="flex items-start gap-3">
-                <svg
-                  className="w-4 h-4 text-[#CF78EC] shrink-0 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
-                    strokeWidth={1.5}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="square"
-                    strokeLinejoin="miter"
-                    strokeWidth={1.5}
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <div>
-                  <p className="text-sm font-['Arian-bold'] text-gray-900">
-                    {displayVenue}
-                  </p>
-                  <p className="text-xs font-sans text-gray-400 mt-0.5">
-                    FEU Institute of Technology
-                  </p>
-                </div>
-              </div>
-            </div>
+            <div className="grid grid-cols-2" style={{ gap: layout.gapTight }}>
+              <Panel>
+                <Subheading style={{ color: c.text }}>{registeredCount}</Subheading>
+                <div
+                  style={{ width: "1.5rem", height: 2, backgroundColor: c.accent, margin: "0.6rem 0 0.4rem" }}
+                />
+                <Label style={{ color: c.faint }}>
+                  {hasSubEvents && selectedDayIndex === 0 ? "Total Registered" : "Registered"}
+                </Label>
+              </Panel>
 
-            {/* Stats */}
-            <div className="border border-gray-100 p-5">
-              <div>
-                <p className="text-2xl font-['Arian-bold'] text-gray-900 leading-none">
-                  {hasSubEvents && selectedDayIndex === 0
-                    ? event._aggregatedCount?.registrations || 0
-                    : activeEvent._count.registrations}
-                </p>
-                <div className="w-6 h-[2px] bg-[#CF78EC] mt-2 mb-1" />
-                <p className="text-xs font-sans text-gray-400">
-                  {hasSubEvents && selectedDayIndex === 0
-                    ? "Total Registered"
-                    : "Registered"}
-                </p>
-              </div>
+              <Panel>
+                <Subheading style={{ color: c.text }}>{getUserPrice(event, priceTier)}</Subheading>
+                <div
+                  style={{ width: "1.5rem", height: 2, backgroundColor: c.accent, margin: "0.6rem 0 0.4rem" }}
+                />
+                <Label style={{ color: c.faint }}>
+                  {priceTier === "officer"
+                    ? "Officer Rate"
+                    : priceTier === "member"
+                      ? "Member Rate"
+                      : "Non-Member Rate"}
+                </Label>
+              </Panel>
             </div>
+          </aside>
+        </div>
 
-            {/* Pricing */}
-            <div className="border border-gray-100 p-5">
-              <h3 className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-widest mb-4">
-                Entry
-              </h3>
-              <p className="text-2xl font-['Arian-bold'] text-gray-900 leading-none">
-                {getUserPrice(event, priceTier)}
-              </p>
-              <div className="w-6 h-[2px] bg-[#CF78EC] mt-2 mb-1" />
-              <p className="text-xs font-sans text-gray-400">
-                {priceTier === "officer"
-                  ? "Officer Rate"
-                  : priceTier === "member"
-                    ? "Member Rate"
-                    : "Non-Member Rate"}
-              </p>
-            </div>
+        {showAdminPanel && (
+          <section style={{ marginTop: `calc(${layout.gap} * 2)` }}>
+            <SectionLabel>Admin</SectionLabel>
+            <Link href={`/events/${event.eventId}/admin`}>
+              <Button variant="outline">Manage Event →</Button>
+            </Link>
+          </section>
+        )}
 
-            {/* Semester Badge */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-['Arian-bold'] text-[#CF78EC] border border-[#CF78EC] px-3 py-1 uppercase tracking-wider">
-                {event.eventSemester} Semester
-              </span>
-              <StatusBadge status={status} />
-            </div>
+        {(isOngoing || isFinished) && (
+          <div style={{ marginTop: `calc(${layout.gap} * 2)` }}>
+            <AttendanceLookup
+              eventId={event.eventId}
+              subEvents={event.subEvents?.map((sub) => ({
+                eventId: sub.eventId,
+                name: sub.name,
+              }))}
+            />
           </div>
-        </div>
-      </div>
-
-      {/* Admin link — only visible to event admin roles */}
-      {showAdminPanel && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-20">
-          <div className="flex items-center gap-4 mt-10">
-            <div className="w-2 h-2 bg-[#CF78EC] shrink-0" />
-            <h2 className="text-xs font-['Arian-bold'] text-[#CF78EC] uppercase tracking-widest">
-              Admin
-            </h2>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-          <Link
-            href={`/events/${event.eventId}/admin`}
-            className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-['Arian-bold'] text-white bg-gray-900 hover:bg-gray-800 transition-colors"
-          >
-            Manage Event
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="square" strokeWidth={1.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-      )}
-
-      {/* Proof of Attendance — visible for ongoing/finished events */}
-      {(isOngoing || isFinished) && (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <AttendanceLookup
-            eventId={event.eventId}
-            subEvents={event.subEvents?.map((sub) => ({
-              eventId: sub.eventId,
-              name: sub.name,
-            }))}
-          />
-        </div>
-      )}
-    </div>
+        )}
+      </Column>
+    </Surface>
   );
 };
-
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; classes: string }> = {
-    upcoming: {
-      label: "Upcoming",
-      classes: "border border-[#CF78EC] text-[#CF78EC]",
-    },
-    ongoing: { label: "Ongoing", classes: "bg-[#CF78EC] text-white" },
-    finished: {
-      label: "Finished",
-      classes: "border border-gray-200 text-gray-400",
-    },
-  };
-  const { label, classes } = config[status] ?? config.upcoming;
-  return (
-    <span
-      className={`text-[10px] font-['Arian-bold'] uppercase tracking-widest px-2 py-0.5 ${classes}`}
-    >
-      {label}
-    </span>
-  );
-}
 
 function getUserPrice(
   event: EventWithCount,
   tier: "officer" | "member" | "nonmember",
 ): string {
   const amount =
-    tier === "officer"
-      ? event.price
-      : tier === "member"
-        ? event.priceMember
-        : event.priceNonMember;
+    tier === "officer" ? event.price : tier === "member" ? event.priceMember : event.priceNonMember;
   return amount === 0 ? "Free" : `₱${amount}`;
 }
 

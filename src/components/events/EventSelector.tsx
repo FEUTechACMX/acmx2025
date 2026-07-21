@@ -1,36 +1,29 @@
 "use client";
 
 import React, { useState } from "react";
+import { Segmented } from "@/components/ds";
+
+const SEMESTERS = [
+  { value: "1st", label: "1st Sem" },
+  { value: "2nd", label: "2nd Sem" },
+  { value: "3rd", label: "3rd Sem" },
+] as const;
 
 interface EventSelectorProps {
   onChange: (semester: string) => void;
 }
 
 export default function EventSelector({ onChange }: EventSelectorProps) {
-  const [selected, setSelected] = useState("2nd");
-
-  const handleSelect = (semester: string) => {
-    setSelected(semester);
-    onChange(semester);
-  };
+  const [selected, setSelected] = useState<string>("2nd");
 
   return (
-    <div className="flex justify-center mb-8 sm:mb-10">
-      <div className="inline-flex items-center bg-white border border-gray-200 p-1">
-        {["1st", "2nd", "3rd"].map((sem) => (
-          <button
-            key={sem}
-            onClick={() => handleSelect(sem)}
-            className={`px-4 sm:px-6 py-2 sm:py-3 font-['Arian-bold'] text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
-              selected === sem
-                ? "bg-[#E4BCF3] text-black shadow-sm border border-gray-200"
-                : "text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {sem} Semester
-          </button>
-        ))}
-      </div>
-    </div>
+    <Segmented
+      options={SEMESTERS}
+      value={selected}
+      onChange={(v) => {
+        setSelected(v);
+        onChange(v);
+      }}
+    />
   );
 }
