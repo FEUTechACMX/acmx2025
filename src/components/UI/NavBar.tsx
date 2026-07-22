@@ -49,9 +49,9 @@ export default function NavBar({ user }: NavBarProps) {
   const getLinkClasses = (href: string) => {
     const baseClasses = "transition-colors relative";
     if (isActive(href)) {
-      return `${baseClasses} text-[#CF78EC] font-medium`;
+      return `${baseClasses} text-[var(--accent)] font-medium`;
     }
-    return `${baseClasses} hover:text-[#CF78EC]`;
+    return `${baseClasses} hover:text-[var(--accent)]`;
   };
 
   return (
@@ -67,32 +67,32 @@ export default function NavBar({ user }: NavBarProps) {
           <Link href="/" className={getLinkClasses("/")}>
             Home
             {isActive("/") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
             )}
           </Link>
           <Link href="/about" className={getLinkClasses("/about")}>
             About
             {isActive("/about") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
             )}
           </Link>
           <Link href="/merchandise" className={getLinkClasses("/merchandise")}>
             Merchandise
             {isActive("/merchandise") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
             )}
           </Link>
           <Link href="/events" className={getLinkClasses("/events")}>
             Events
             {isActive("/events") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
             )}
           </Link>
           
           {/* ACM Dropdown - Click to toggle */}
           <div className="relative" ref={dropdownRef}>
             <button 
-              className={`flex items-center gap-1 transition-colors cursor-pointer relative ${isAcmActive ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'}`}
+              className={`flex items-center gap-1 transition-colors cursor-pointer relative ${isAcmActive ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'}`}
               onClick={() => setIsAcmDropdownOpen(!isAcmDropdownOpen)}
             >
               ACM
@@ -105,7 +105,7 @@ export default function NavBar({ user }: NavBarProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
               {isAcmActive && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
               )}
             </button>
             
@@ -114,14 +114,14 @@ export default function NavBar({ user }: NavBarProps) {
               <div className="absolute top-full left-0 mt-2 w-40 bg-white shadow-lg rounded-md py-2 border border-gray-100">
                 <Link 
                   href="/committee" 
-                  className={`block px-4 py-2 transition-colors ${isActive("/committee") ? 'text-[#CF78EC] bg-[#CF78EC]/10 font-medium' : 'text-gray-700 hover:bg-[#CF78EC]/10 hover:text-[#CF78EC]'}`}
+                  className={`block px-4 py-2 transition-colors ${isActive("/committee") ? 'text-[var(--accent)] bg-[var(--accent-bg)] font-medium' : 'text-gray-700 hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'}`}
                   onClick={() => setIsAcmDropdownOpen(false)}
                 >
                   Committee
                 </Link>
                 <Link 
                   href="/officers" 
-                  className={`block px-4 py-2 transition-colors ${isActive("/officers") ? 'text-[#CF78EC] bg-[#CF78EC]/10 font-medium' : 'text-gray-700 hover:bg-[#CF78EC]/10 hover:text-[#CF78EC]'}`}
+                  className={`block px-4 py-2 transition-colors ${isActive("/officers") ? 'text-[var(--accent)] bg-[var(--accent-bg)] font-medium' : 'text-gray-700 hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'}`}
                   onClick={() => setIsAcmDropdownOpen(false)}
                 >
                   Officers
@@ -134,7 +134,7 @@ export default function NavBar({ user }: NavBarProps) {
             <Link href="/profile" className={getLinkClasses("/profile")}>
               Profile
               {isActive("/profile") && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
               )}
             </Link>
           )}
@@ -143,7 +143,7 @@ export default function NavBar({ user }: NavBarProps) {
             <Link href="/scanner" className={getLinkClasses("/scanner")}>
               Scanner
               {isActive("/scanner") && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[#CF78EC] rounded-full" />
+                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
               )}
             </Link>
           )}
@@ -153,7 +153,7 @@ export default function NavBar({ user }: NavBarProps) {
         <div className="hidden lg:flex items-center gap-3">
           <button
             onClick={toggleTheme}
-            className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-[#CF78EC] transition-colors cursor-pointer"
+            className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-[var(--accent)] transition-colors cursor-pointer"
             aria-label="Toggle dark mode"
           >
             {theme === "dark" ? (
@@ -170,7 +170,7 @@ export default function NavBar({ user }: NavBarProps) {
             <ProfileMenu user={user} />
           ) : (
             <button
-              className="px-5 py-2 text-[#CF78EC] font-monument text-[0.6875rem] tracking-[0.15em] border border-[#CF78EC] hover:bg-[#CF78EC] hover:text-white transition-all duration-200 cursor-pointer"
+              className="px-5 py-2 text-[var(--accent)] font-monument text-[0.6875rem] tracking-[0.15em] border border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all duration-200 cursor-pointer"
               onClick={() => setIsLoginOpen(true)}
             >
               Log In
@@ -198,25 +198,25 @@ export default function NavBar({ user }: NavBarProps) {
           <div className="flex flex-col gap-4 font-monument text-[0.75rem] tracking-[0.18em] uppercase">
             <Link 
               href="/" 
-              className={`${isActive("/") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+              className={`${isActive("/") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
             >
               Home
             </Link>
             <Link 
               href="/about" 
-              className={`${isActive("/about") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+              className={`${isActive("/about") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
             >
               About
             </Link>
             <Link 
               href="/merchandise" 
-              className={`${isActive("/merchandise") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+              className={`${isActive("/merchandise") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
             >
               Merchandise
             </Link>
             <Link 
               href="/events" 
-              className={`${isActive("/events") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+              className={`${isActive("/events") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
             >
               Events
             </Link>
@@ -224,7 +224,7 @@ export default function NavBar({ user }: NavBarProps) {
             {/* Mobile ACM Dropdown */}
             <div>
               <button 
-                className={`flex items-center gap-1 transition-colors w-full cursor-pointer ${isAcmActive ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'}`}
+                className={`flex items-center gap-1 transition-colors w-full cursor-pointer ${isAcmActive ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'}`}
                 onClick={() => setIsMobileAcmOpen(!isMobileAcmOpen)}
               >
                 ACM
@@ -241,13 +241,13 @@ export default function NavBar({ user }: NavBarProps) {
                 <div className="ml-4 mt-2 flex flex-col gap-2">
                   <Link 
                     href="/committee" 
-                    className={`${isActive("/committee") ? 'text-[#CF78EC] font-medium' : 'text-gray-600 hover:text-[#CF78EC]'} transition-colors`}
+                    className={`${isActive("/committee") ? 'text-[var(--accent)] font-medium' : 'text-gray-600 hover:text-[var(--accent)]'} transition-colors`}
                   >
                     Committee
                   </Link>
                   <Link 
                     href="/officers" 
-                    className={`${isActive("/officers") ? 'text-[#CF78EC] font-medium' : 'text-gray-600 hover:text-[#CF78EC]'} transition-colors`}
+                    className={`${isActive("/officers") ? 'text-[var(--accent)] font-medium' : 'text-gray-600 hover:text-[var(--accent)]'} transition-colors`}
                   >
                     Officers
                   </Link>
@@ -258,7 +258,7 @@ export default function NavBar({ user }: NavBarProps) {
             {user && (
               <Link 
                 href="/profile" 
-                className={`${isActive("/profile") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+                className={`${isActive("/profile") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
               >
                 Profile
               </Link>
@@ -267,7 +267,7 @@ export default function NavBar({ user }: NavBarProps) {
             {user?.role === "ADMIN" && (
               <Link 
                 href="/scanner" 
-                className={`${isActive("/scanner") ? 'text-[#CF78EC] font-medium' : 'hover:text-[#CF78EC]'} transition-colors`}
+                className={`${isActive("/scanner") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
               >
                 Scanner
               </Link>
@@ -277,7 +277,7 @@ export default function NavBar({ user }: NavBarProps) {
           <div className="mt-4 flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-[#CF78EC] transition-colors cursor-pointer border border-gray-200"
+              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-[var(--accent)] transition-colors cursor-pointer border border-gray-200"
               aria-label="Toggle dark mode"
             >
               {theme === "dark" ? (
@@ -295,7 +295,7 @@ export default function NavBar({ user }: NavBarProps) {
               <ProfileMenu user={user} />
             ) : (
               <button
-                className="w-full py-2.5 text-[#CF78EC] font-['Supermolot'] text-sm tracking-wide border border-[#CF78EC] hover:bg-[#CF78EC] hover:text-white transition-all duration-200 cursor-pointer"
+                className="w-full py-2.5 text-[var(--accent)] font-['Supermolot'] text-sm tracking-wide border border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all duration-200 cursor-pointer"
                 onClick={() => {
                   setIsMenuOpen(false);
                   setIsLoginOpen(true);

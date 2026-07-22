@@ -13,8 +13,8 @@ export default function Page() {
     <WithPreloader>
       <Surface corners="both">
         <div
-          className="flex flex-col min-h-[100dvh] w-full"
-          style={{ padding: `38vh ${layout.gutter} 10vh` }}
+          className="flex flex-col min-h-[100dvh] w-full pt-[38vh] pb-[10vh] md:h-[100vh] md:min-h-0 md:justify-center md:overflow-hidden md:py-[10vh]"
+          style={{ paddingLeft: layout.gutter, paddingRight: layout.gutter }}
         >
           <Eyebrow words={["CODE", "IN", "THE", "COSMOS"]} />
 

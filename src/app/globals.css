@@ -12,9 +12,9 @@
   --text-secondary: #6b7280;
   --text-tertiary: #9ca3af;
   --text-muted: #d1d5db;
-  --accent: #CF78EC;
-  --accent-hover: #b85cd6;
-  --accent-bg: rgba(207, 120, 236, 0.05);
+  --accent: #9B2FBE;
+  --accent-hover: #82269E;
+  --accent-bg: rgba(155, 47, 190, 0.06);
 }
 
 .dark {
