@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import QrScanner from "@/components/qr/QrScanner";
+import BlinkIn from "@/components/UI/BlinkIn";
 
 export default function ScanPage() {
   const [result, setResult] = useState<any>(null);
@@ -31,6 +32,7 @@ export default function ScanPage() {
 
   return (
     <div className="p-6 min-h-screen flex flex-col items-center bg-gray-50">
+      <BlinkIn>
       <h1 className="text-2xl font-bold mb-6 text-gray-800">Scan QR Code</h1>
 
       {/* Scanner box */}
@@ -81,6 +83,7 @@ export default function ScanPage() {
           <p className="text-gray-700 text-sm">{error}</p>
         </div>
       )}
+      </BlinkIn>
     </div>
   );
 }

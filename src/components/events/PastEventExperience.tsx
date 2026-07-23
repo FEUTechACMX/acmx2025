@@ -590,7 +590,7 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
       {!introDone && <DoorsIntro event={event} onDone={() => setIntroDone(true)} />}
 
       {/* THE MEMORY WALK */}
-      <Column style={{ paddingTop: "clamp(1rem, 3vh, 2rem)", gap: `calc(${layout.gap} * 1.5)` }}>
+      <Column reveal={false} style={{ paddingTop: "clamp(1rem, 3vh, 2rem)", gap: `calc(${layout.gap} * 1.5)` }}>
         {/* Back link */}
         <Link
           href="/events"

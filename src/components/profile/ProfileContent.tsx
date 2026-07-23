@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { gsap } from "gsap";
 import type { safeUser } from "@/types/auth";
+import { runBlinkIn } from "@/lib/blink";
 
 type RegistrationItem = {
   id: string;
@@ -69,16 +69,7 @@ export default function ProfileContent({ user }: ProfileContentProps) {
   useEffect(() => {
     if (!containerRef.current || loading) return;
 
-    const sections = containerRef.current.querySelectorAll(".profile-section");
-    gsap.set(sections, { opacity: 0, y: 15 });
-    gsap.to(sections, {
-      opacity: 1,
-      y: 0,
-      duration: 0.5,
-      stagger: 0.12,
-      delay: 0.15,
-      ease: "power2.out",
-    });
+    runBlinkIn(containerRef.current.querySelectorAll(".profile-section"), { stagger: 0.12 });
   }, [loading]);
 
   const getRoleLabel = () => {

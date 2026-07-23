@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import ContinuosAnimation from "@/components/UI/ContinousAnimation";
 import { texture, layout } from "@/styles/design-system";
+import { runBlinkIn } from "@/lib/blink";
 import { useDS } from "./useDS";
 
 type Corners = "both" | "top-left" | "bottom-right" | "none";
@@ -95,13 +96,25 @@ export function Column({
   children,
   className = "",
   style,
+  reveal = true,
 }: {
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
+  /** Blink the column's direct children in on mount. Opt out on pages that
+   *  drive their own section animations. */
+  reveal?: boolean;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!reveal || !ref.current) return;
+    runBlinkIn(ref.current.children);
+  }, [reveal]);
+
   return (
     <div
+      ref={ref}
       className={`flex flex-col w-full ${className}`}
       style={{
         padding: `${layout.topPad} ${layout.gutter} ${layout.bottomPad}`,

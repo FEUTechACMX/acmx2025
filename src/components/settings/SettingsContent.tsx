@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
-import { gsap } from "gsap";
 import type { safeUser } from "@/types/auth";
+import { runBlinkIn } from "@/lib/blink";
 
 type SettingsContentProps = {
   user: safeUser;
@@ -21,18 +21,7 @@ export default function SettingsContent({ user }: SettingsContentProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const sections = containerRef.current.querySelectorAll(".settings-section");
-
-    gsap.set(sections, { opacity: 0, y: 15 });
-
-    gsap.to(sections, {
-      opacity: 1,
-      y: 0,
-      duration: 0.5,
-      stagger: 0.12,
-      delay: 0.15,
-      ease: "power2.out",
-    });
+    runBlinkIn(containerRef.current.querySelectorAll(".settings-section"), { stagger: 0.12 });
   }, []);
 
   const getRoleLabel = () => {

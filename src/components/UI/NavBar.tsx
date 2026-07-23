@@ -15,8 +15,9 @@ type NavBarProps = {
 
 type NavItem = { label: string; href: string };
 
+// Home is prepended per-user (dashboard when signed in, hero otherwise) so the
+// link skips the "/" redirect hop.
 const BASE_LINKS: NavItem[] = [
-  { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Merchandise", href: "/merchandise" },
   { label: "Events", href: "/events" },
@@ -83,8 +84,12 @@ export default function NavBar({ user }: NavBarProps) {
   const { theme, toggleTheme } = useTheme();
   const { c, isDark } = useDS();
 
+  // Home points straight at the user's landing page — no "/" redirect round-trip.
+  const homeHref = user ? "/dashboard" : "/hero";
+  const navLinks: NavItem[] = [{ label: "Home", href: homeHref }, ...BASE_LINKS];
+
   const isActive = (href: string) => {
-    if (href === "/") {
+    if (href === "/dashboard" || href === "/hero") {
       return pathname === "/" || pathname === "/hero" || pathname === "/dashboard";
     }
     return pathname.startsWith(href);
@@ -126,7 +131,7 @@ export default function NavBar({ user }: NavBarProps) {
         }}
       >
         {/* Wordmark */}
-        <Link href="/" style={{ textDecoration: "none" }}>
+        <Link href={homeHref} style={{ textDecoration: "none" }}>
           <span
             className="font-monument select-none"
             style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "0.28em", color: c.text }}
@@ -137,7 +142,7 @@ export default function NavBar({ user }: NavBarProps) {
 
         {/* Desktop links */}
         <div className="hidden lg:flex items-center" style={{ gap: "2.25rem" }}>
-          {BASE_LINKS.map((item) => (
+          {navLinks.map((item) => (
             <NavLink key={item.href} item={item} active={isActive(item.href)} />
           ))}
 
@@ -218,7 +223,7 @@ export default function NavBar({ user }: NavBarProps) {
 
         {/* Right cluster */}
         <div className="hidden lg:flex items-center" style={{ gap: "1.25rem" }}>
-          <ThemeToggle theme={theme} onToggle={toggleTheme} accent={c.accent} rule={c.ruleStrong} />
+          <ThemeToggle theme={theme} onToggle={toggleTheme} color={c.text} />
           {user ? (
             <ProfileMenu user={user} />
           ) : (
@@ -267,7 +272,7 @@ export default function NavBar({ user }: NavBarProps) {
           }}
         >
           <div className="flex flex-col">
-            {BASE_LINKS.map((item) => (
+            {navLinks.map((item) => (
               <div key={item.href} style={{ borderBottom: `1px solid ${c.rule}` }}>
                 <NavLink item={item} active={isActive(item.href)} block onClick={() => setIsMenuOpen(false)} />
               </div>
@@ -321,7 +326,7 @@ export default function NavBar({ user }: NavBarProps) {
           </div>
 
           <div className="flex items-center" style={{ gap: "1rem", marginTop: "1.5rem" }}>
-            <ThemeToggle theme={theme} onToggle={toggleTheme} accent={c.accent} rule={c.ruleStrong} />
+            <ThemeToggle theme={theme} onToggle={toggleTheme} color={c.text} />
             <div className="flex-1">
               {user ? (
                 <ProfileMenu user={user} />
@@ -354,24 +359,23 @@ export default function NavBar({ user }: NavBarProps) {
         onClose={() => setIsLoginOpen(false)}
         onLoginSuccess={() => {
           setIsLoginOpen(false);
-          window.location.reload();
+          // Send members straight to the dashboard after signing in.
+          window.location.href = "/dashboard";
         }}
       />
     </>
   );
 }
 
-/** Accent-dot theme switch — filled in dark, ringed in light. */
+/** Single borderless theme switch — shows a sun in light mode, a moon in dark. */
 function ThemeToggle({
   theme,
   onToggle,
-  accent,
-  rule,
+  color,
 }: {
   theme: string;
   onToggle: () => void;
-  accent: string;
-  rule: string;
+  color: string;
 }) {
   const isDark = theme === "dark";
   return (
@@ -380,19 +384,21 @@ function ThemeToggle({
       aria-label="Toggle theme"
       title={isDark ? "Switch to light" : "Switch to dark"}
       className="flex items-center justify-center cursor-pointer"
-      style={{ width: "2.25rem", height: "2.25rem", background: "none", border: "none" }}
+      style={{ width: "2.25rem", height: "2.25rem", background: "none", border: "none", color, padding: 0 }}
     >
-      <span
-        style={{
-          width: "0.85rem",
-          height: "0.85rem",
-          borderRadius: "50%",
-          backgroundColor: isDark ? accent : "transparent",
-          border: `1.5px solid ${isDark ? accent : rule}`,
-          boxShadow: isDark ? `0 0 0 3px ${accent}22` : "none",
-          transition: "background-color 0.2s ease, border-color 0.2s ease",
-        }}
-      />
+      {isDark ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+        </svg>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7}>
+          <circle cx="12" cy="12" r="4" />
+          <path
+            strokeLinecap="round"
+            d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"
+          />
+        </svg>
+      )}
     </button>
   );
 }

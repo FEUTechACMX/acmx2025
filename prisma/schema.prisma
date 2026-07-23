@@ -150,6 +150,22 @@ model Lesson {
   updatedAt   DateTime @updatedAt
 }
 
+/// Featured videos shown in the dashboard hero slideshow. Admins upload a
+/// video (or paste a URL) together with a redirect link users are sent to.
+model FeaturedVideo {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String?
+  /// Playable video source (uploaded file public URL, or a direct video URL).
+  videoUrl    String
+  /// Where the user is redirected when they click the slide / "Watch".
+  redirectUrl String?
+  /// Manual ordering in the slideshow (ascending).
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 enum UserRole {
   MEMBER
   JUNIOR_OFFICER

@@ -6,8 +6,20 @@ const authRoutes = ["/settings", "/scanner", "/profile", "/dashboard"];
 // API routes that require authentication
 const authApiRoutes = ["/api/scan"];
 
+// Pages a logged-in user should never see — they belong on the dashboard.
+const guestOnlyRoutes = ["/hero"];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const sessionCookie = req.cookies.get("session");
+  const isAuthed = !!sessionCookie?.value;
+
+  // Logged-in users get bounced off guest-only pages (e.g. the hero landing).
+  const isGuestOnly = guestOnlyRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+  if (isGuestOnly) {
+    if (isAuthed) return NextResponse.redirect(new URL("/dashboard", req.url));
+    return NextResponse.next();
+  }
 
   // Check if the route requires authentication
   const needsAuth =
@@ -16,10 +28,7 @@ export async function middleware(req: NextRequest) {
 
   if (!needsAuth) return NextResponse.next();
 
-  // Check for session cookie
-  const sessionCookie = req.cookies.get("session");
-
-  if (!sessionCookie?.value) {
+  if (!isAuthed) {
     // Pages → redirect to home
     if (!pathname.startsWith("/api")) {
       return NextResponse.redirect(new URL("/", req.url));
@@ -35,5 +44,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/settings/:path*", "/scanner/:path*", "/profile/:path*", "/dashboard/:path*", "/api/scan/:path*"],
+  matcher: [
+    "/hero",
+    "/settings/:path*",
+    "/scanner/:path*",
+    "/profile/:path*",
+    "/dashboard/:path*",
+    "/api/scan/:path*",
+  ],
 };

@@ -1,343 +1,341 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { gsap } from "gsap";
+import { useRouter } from "next/navigation";
 import type { safeUser } from "@/types/auth";
+import { isEventAdmin } from "@/types/auth";
+import { runBlinkIn } from "@/lib/blink";
+import { type as t, layout } from "@/styles/design-system";
+import { Surface, Panel, DataRow, Button, Label, useDS } from "@/components/ds";
+import VideoCarousel, { type FeaturedVideo } from "./VideoCarousel";
+import CalendarCard from "./CalendarCard";
+import SchoolCalendarModal from "./SchoolCalendarModal";
+import ManageVideosModal from "./ManageVideosModal";
 
 type EventPreview = {
   id: string;
   name: string;
   venue: string;
   startDate: string;
+  endDate: string;
   registrations: number;
-};
-
-type TransactionPreview = {
-  id: string;
-  type: string;
-  description: string;
-  status: string;
-  points: number | null;
-  createdAt: string;
 };
 
 type DashboardData = {
   upcomingEvents: EventPreview[];
-  recentTransactions: TransactionPreview[];
-  stats: {
-    eventsAttended: number;
-    totalRegistrations: number;
-  };
+  stats: { eventsAttended: number; totalRegistrations: number };
 };
 
-type DashboardHomeProps = {
-  user: safeUser;
-};
-
-export default function DashboardHome({ user }: DashboardHomeProps) {
+export default function DashboardHome({ user }: { user: safeUser }) {
+  const { c } = useDS();
   const containerRef = useRef<HTMLDivElement>(null);
+
   const [data, setData] = useState<DashboardData | null>(null);
+  const [videos, setVideos] = useState<FeaturedVideo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
+
+  const admin = isEventAdmin(user?.role);
+  const isDesktop = useIsDesktop();
+
+  const fetchVideos = useCallback(async () => {
+    try {
+      const res = await fetch("/api/videos");
+      const json = await res.json();
+      if (json.ok) setVideos(json.videos);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/profile");
-      const json = await res.json();
+      const [profileRes] = await Promise.all([fetch("/api/profile"), fetchVideos()]);
+      const json = await profileRes.json();
       if (json.ok) {
-        setData({
-          upcomingEvents: json.upcomingEvents,
-          recentTransactions: json.recentTransactions,
-          stats: json.stats,
-        });
+        setData({ upcomingEvents: json.upcomingEvents, stats: json.stats });
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchVideos]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Blink each element in on load — shared site-wide reveal.
   useEffect(() => {
     if (!containerRef.current || loading) return;
-
-    const sections = containerRef.current.querySelectorAll(".home-section");
-    gsap.set(sections, { opacity: 0, y: 20 });
-    gsap.to(sections, {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      stagger: 0.1,
-      delay: 0.1,
-      ease: "power2.out",
-    });
+    runBlinkIn(containerRef.current.querySelectorAll(".glitch-el"));
   }, [loading]);
 
-
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "ACCEPTED":
-        return "text-emerald-600 bg-emerald-50 border-emerald-200";
-      case "REJECTED":
-        return "text-red-600 bg-red-50 border-red-200";
-      default:
-        return "text-amber-600 bg-amber-50 border-amber-200";
-    }
-  };
+  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const nextEvent = data?.upcomingEvents?.[0];
+  const eventDates = (data?.upcomingEvents ?? []).map((e) => new Date(e.startDate));
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen pt-28 pb-20 px-6 sm:px-8"
-    >
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="home-section mb-12">
-          <h1 className="text-4xl sm:text-5xl font-['Arian-bold'] text-gray-900 tracking-tight">
-            Dashboard
-          </h1>
-          <div className="w-12 h-[2px] bg-[#CF78EC] mt-4 mb-3" />
-          <p className="text-gray-500 font-['Arian-light'] text-lg">
-            Welcome back, {user?.name?.split(" ")[0]}
-          </p>
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-          {/* Upcoming Events — wider */}
-          <div className="home-section lg:col-span-3">
-            <div className="flex items-center justify-between mb-4">
-              <h2
-                className="text-xs font-['Arian-bold'] uppercase tracking-widest text-gray-400"
-              >
-                Upcoming Events
-              </h2>
-              <Link
-                href="/events"
-                className="text-xs text-[#CF78EC] font-['supermolot'] tracking-wide hover:underline"
-              >
-                View All →
-              </Link>
+    <Surface>
+      <div
+        className="dash-root"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "clamp(0.75rem, 1.8vh, 1.35rem)",
+          paddingTop: `calc(${layout.navHeight} + clamp(0.85rem, 2vh, 1.5rem))`,
+          paddingBottom: "clamp(0.85rem, 2vh, 1.5rem)",
+          paddingLeft: layout.gutter,
+          paddingRight: layout.gutter,
+        }}
+      >
+        <div ref={containerRef} style={{ display: "contents" }}>
+          {/* ── Header ── */}
+          <div
+            className="glitch-el"
+            style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "1rem", flex: "0 0 auto" }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <span style={{ ...t.eyebrow, color: c.accent }}>MEMBER DASHBOARD</span>
+              <h1 style={{ ...t.title, fontSize: "clamp(1.4rem, 3.2vh, 2.25rem)", lineHeight: 1.05, color: c.text, margin: 0 }}>
+                Welcome back, {firstName}.
+              </h1>
+              <span style={{ width: 44, height: 2, background: c.accent }} />
             </div>
-
-            {loading ? (
-              <LoadingSkeleton rows={3} />
-            ) : data?.upcomingEvents.length ? (
-              <div className="border-t border-gray-100">
-                {data.upcomingEvents.map((event) => (
-                  <Link
-                    key={event.id}
-                    href={`/events/${event.id}`}
-                    className="block py-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors px-3 -mx-3 group"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-['Arian-bold'] text-gray-900 text-sm leading-tight group-hover:text-[#CF78EC] transition-colors">
-                          {event.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-xs text-gray-400 font-['Arian-light']">
-                            {event.venue}
-                          </span>
-                          <span className="text-gray-200">·</span>
-                          <span className="text-xs text-gray-400 font-['Arian-light']">
-                            {event.registrations} registered
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-sm font-['Arian-bold'] text-gray-900">
-                          {formatDate(event.startDate)}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <EmptyState message="No upcoming events at the moment" />
-            )}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "clamp(1.25rem, 2.5vw, 2.5rem)", rowGap: "1rem" }}>
+              <Stat value={user?.points ?? 0} label="Points" />
+              <Stat value={data?.stats.eventsAttended ?? 0} label="Events Attended" />
+              <Stat value={data?.stats.totalRegistrations ?? 0} label="Registrations" />
+            </div>
           </div>
 
-          {/* Recent Activity — narrower */}
-          <div className="home-section lg:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xs font-['Arian-bold'] uppercase tracking-widest text-gray-400">
-                Recent Activity
-              </h2>
-              <Link
-                href="/profile"
-                className="text-xs text-[#CF78EC] font-['supermolot'] tracking-wide hover:underline"
-              >
-                See All →
-              </Link>
+          {/* ── Main grid: featured video + rail ── */}
+          <div
+            className="dash-grid"
+            style={{ display: "grid", gap: "clamp(1rem, 1.8vw, 1.6rem)" }}
+          >
+            <div className="glitch-el" style={{ minWidth: 0, minHeight: 0, display: "flex" }}>
+              <VideoCarousel fillHeight={isDesktop} videos={videos} isAdmin={admin} onManage={() => setManageOpen(true)} />
             </div>
 
-            {loading ? (
-              <LoadingSkeleton rows={3} />
-            ) : data?.recentTransactions.length ? (
-              <div className="border-t border-gray-100">
-                {data.recentTransactions.slice(0, 4).map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="py-3.5 border-b border-gray-50"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-['Arian-bold'] text-gray-900 text-sm truncate">
-                        {tx.description}
-                      </p>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 border font-['Arian-light'] shrink-0 ${getStatusStyle(tx.status)}`}
-                      >
-                        {tx.status}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-gray-400 font-['Arian-light']">
-                        {tx.type}
-                      </span>
-                      {tx.points !== null && (
-                        <>
-                          <span className="text-gray-200">·</span>
-                          <span className="text-xs font-['Arian-bold'] text-[#CF78EC]">
-                            {tx.points > 0 ? "+" : ""}{tx.points} pts
-                          </span>
-                        </>
-                      )}
-                      <span className="text-gray-200">·</span>
-                      <span className="text-xs text-gray-400 font-['Arian-light']">
-                        {formatDate(tx.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+            <div className="dash-rail" style={{ display: "flex", flexDirection: "column", gap: "clamp(0.75rem, 1.6vh, 1.25rem)" }}>
+              <div className="glitch-el" style={{ display: "flex", flexDirection: "column" }}>
+                {nextEvent ? <UpNextCard event={nextEvent} /> : <SeasonWrappedCard loading={loading} />}
               </div>
-            ) : (
-              <EmptyState message="No activity yet" />
-            )}
+              <div className="glitch-el" style={{ display: "flex", flexDirection: "column" }}>
+                <CalendarCard keyDates={eventDates} onOpen={() => setCalendarOpen(true)} />
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Quick Links */}
-        <div className="home-section mt-14">
-          <h2 className="text-xs font-['Arian-bold'] uppercase tracking-widest text-gray-400 mb-4">
-            Quick Links
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <QuickLink
-              href="/events"
-              label="Events"
-              description="Browse all events"
-              icon={
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              }
-            />
-            <QuickLink
-              href="/profile"
-              label="Profile"
-              description="Your account"
-              icon={
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              }
-            />
-            <QuickLink
-              href="/about"
-              label="About ACM"
-              description="Learn more"
-              icon={
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-            />
-            <QuickLink
-              href="/settings"
-              label="Settings"
-              description="Manage account"
-              icon={
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              }
-            />
+          {/* ── Explore ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.55rem", flex: "0 0 auto" }}>
+            <div className="glitch-el">
+              <Label>Explore More</Label>
+            </div>
+            <div className="dash-tiles" style={{ display: "grid", gap: "clamp(0.6rem, 1.1vw, 1rem)" }}>
+              {TILES.map((tile, i) => (
+                <ExploreTile key={tile.href} tile={tile} index={i} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
+
+      <SchoolCalendarModal isOpen={calendarOpen} onClose={() => setCalendarOpen(false)} />
+      {admin && (
+        <ManageVideosModal isOpen={manageOpen} onClose={() => setManageOpen(false)} onChanged={fetchVideos} />
+      )}
+
+      {/* Mobile: natural vertical scroll, comfortable spacing.
+          Desktop (>=1000px): single viewport, fills height. */}
+      <style>{`
+        .dash-grid { grid-template-columns: 1fr; }
+        .dash-tiles { grid-template-columns: 1fr; }
+        @media (min-width: 560px) {
+          .dash-tiles { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1000px) {
+          .dash-root { height: 100dvh; overflow: hidden; }
+          .dash-grid { grid-template-columns: 2fr 1fr; flex: 1 1 0; min-height: 0; }
+          .dash-rail { min-height: 0; overflow: hidden; }
+          .dash-tiles { grid-template-columns: repeat(4, 1fr); }
+        }
+      `}</style>
+    </Surface>
+  );
+}
+
+/* ── Viewport hook ── */
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1000px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return isDesktop;
+}
+
+/* ── Stat ── */
+function Stat({ value, label }: { value: number | string; label: string }) {
+  const { c } = useDS();
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+      <span style={{ ...t.title, fontSize: "clamp(1.35rem, 3vh, 2rem)", color: c.text }}>{value}</span>
+      <span style={{ width: 24, height: 2, background: c.accent }} />
+      <span style={{ ...t.label, color: c.faint, textTransform: "uppercase" }}>{label}</span>
     </div>
   );
 }
 
-/* ─── Sub-components ─── */
+/* ── Up Next event spotlight (primary action) ── */
+function UpNextCard({ event }: { event: EventPreview }) {
+  const { c } = useDS();
+  const router = useRouter();
+  const start = new Date(event.startDate);
+  const end = new Date(event.endDate);
 
-function QuickLink({
-  href,
-  label,
-  description,
-  icon,
-}: {
-  href: string;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-}) {
+  const badge = `${start.toLocaleDateString("en-US", { month: "short" }).toUpperCase()} ${start.getDate()}`;
+  const fmtTime = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const timeRange =
+    end && end.getTime() > start.getTime() ? `${fmtTime(start)} – ${fmtTime(end)}` : fmtTime(start);
+
   return (
-    <Link
-      href={href}
-      className="border border-gray-100 p-5 group hover:border-[#CF78EC]/30 transition-all duration-200"
-    >
-      <div className="text-gray-400 group-hover:text-[#CF78EC] transition-colors mb-3">
-        {icon}
+    <Panel padded={false} style={{ padding: "clamp(0.9rem, 1.6vh, 1.35rem)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "clamp(0.55rem, 1.2vh, 0.9rem)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ ...t.eyebrow, color: c.accent }}>UP NEXT</span>
+          <span style={{ ...t.label, color: c.text, border: `1px solid ${c.rule}`, padding: "0.3rem 0.6rem" }}>
+            {badge}
+          </span>
+        </div>
+        <h3 style={{ ...t.subheading, fontSize: "clamp(1.05rem, 1.8vw, 1.4rem)", color: c.text, margin: 0 }}>
+          {event.name}
+        </h3>
+        <div>
+          <DataRow label="Venue" value={event.venue || "TBA"} />
+          <DataRow label="Time" value={timeRange} />
+        </div>
+        <Button block onClick={() => router.push(`/events/${event.id}`)}>
+          Register &nbsp;&rarr;
+        </Button>
       </div>
-      <p className="font-['Arian-bold'] text-gray-900 text-sm group-hover:text-[#CF78EC] transition-colors">
-        {label}
-      </p>
-      <p className="text-xs text-gray-400 font-['Arian-light'] mt-0.5">
-        {description}
-      </p>
+    </Panel>
+  );
+}
+
+/* ── Empty state: all events finished ── */
+function SeasonWrappedCard({ loading }: { loading: boolean }) {
+  const { c } = useDS();
+  const router = useRouter();
+  return (
+    <Panel padded={false} style={{ padding: "clamp(0.9rem, 1.6vh, 1.35rem)" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "clamp(0.55rem, 1.2vh, 0.9rem)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ ...t.eyebrow, color: c.accent }}>{loading ? "LOADING" : "SEASON WRAPPED"}</span>
+          <CalendarCheckIcon color={c.accent} />
+        </div>
+        <h3 style={{ ...t.subheading, fontSize: "clamp(1.05rem, 1.8vw, 1.4rem)", color: c.text, margin: 0 }}>
+          {loading ? "Checking the schedule…" : "That's a wrap for now."}
+        </h3>
+        <p style={{ ...t.bodySmall, color: c.muted, margin: 0 }}>
+          {loading
+            ? "Fetching your upcoming events."
+            : "Every event this term has finished. Relive the highlights while the officers plan what's next."}
+        </p>
+        {!loading && (
+          <Button variant="outline" block onClick={() => router.push("/events")}>
+            Revisit Past Events &nbsp;&rarr;
+          </Button>
+        )}
+      </div>
+    </Panel>
+  );
+}
+
+/* ── Explore tile (compact horizontal) ── */
+type Tile = { icon: React.ReactNode; label: string; sublabel: string; href: string };
+
+const TILES: Tile[] = [
+  { icon: <ShoppingBagIcon />, label: "MERCHANDISE", sublabel: "Shop the latest drop", href: "/merchandise" },
+  { icon: <UsersIcon />, label: "OFFICERS", sublabel: "Meet the people", href: "/officers" },
+  { icon: <BookOpenIcon />, label: "ABOUT ACM-X", sublabel: "Our story & mission", href: "/about" },
+  { icon: <ImageIcon />, label: "GALLERY", sublabel: "Relive past events", href: "/events" },
+];
+
+function ExploreTile({ tile }: { tile: Tile; index: number }) {
+  const { c } = useDS();
+  return (
+    <Link href={tile.href} className="glitch-el" style={{ textDecoration: "none" }}>
+      <Panel interactive padded={false} style={{ padding: "clamp(0.7rem, 1.4vh, 1rem)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
+          <span style={{ color: c.accent, display: "inline-flex", flexShrink: 0 }}>{tile.icon}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.15rem", minWidth: 0 }}>
+            <span style={{ ...t.subheading, fontSize: "clamp(0.8rem, 1.1vw, 0.95rem)", color: c.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {tile.label}
+            </span>
+            <span style={{ ...t.bodySmall, color: c.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {tile.sublabel}
+            </span>
+          </div>
+          <span style={{ marginLeft: "auto", flexShrink: 0 }}>
+            <ArrowRightIcon color={c.muted} />
+          </span>
+        </div>
+      </Panel>
     </Link>
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+/* ── Inline icons ── */
+function CalendarCheckIcon({ color = "currentColor" }: { color?: string }) {
   return (
-    <div className="border-t border-gray-100 py-10 text-center">
-      <p className="text-gray-300 font-['Arian-light'] text-sm">{message}</p>
-    </div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6}>
+      <rect x="3" y="4" width="18" height="18" rx="1" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M8 2v4M16 2v4M9 15l2 2 4-4" />
+    </svg>
   );
 }
-
-function LoadingSkeleton({ rows }: { rows: number }) {
+function ShoppingBagIcon() {
   return (
-    <div className="border-t border-gray-100">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="py-4 border-b border-gray-50">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 space-y-2">
-              <div className="h-3.5 bg-gray-100 animate-pulse w-3/4" />
-              <div className="h-3 bg-gray-50 animate-pulse w-1/2" />
-            </div>
-            <div className="h-3 bg-gray-100 animate-pulse w-16" />
-          </div>
-        </div>
-      ))}
-    </div>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 2l-2 5v13a1 1 0 001 1h14a1 1 0 001-1V7l-2-5H6zM4 7h16M9 11a3 3 0 006 0" />
+    </svg>
+  );
+}
+function UsersIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.87M16 3.13A4 4 0 0116 11" />
+    </svg>
+  );
+}
+function BookOpenIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2 4h6a4 4 0 014 4v12a3 3 0 00-3-3H2V4zM22 4h-6a4 4 0 00-4 4v12a3 3 0 013-3h7V4z" />
+    </svg>
+  );
+}
+function ImageIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+      <rect x="3" y="3" width="18" height="18" rx="1" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21" />
+    </svg>
+  );
+}
+function ArrowRightIcon({ color = "currentColor" }: { color?: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.6}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   );
 }

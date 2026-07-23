@@ -260,7 +260,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
 
   return (
     <Surface corners="none">
-      <Column style={{ gap: layout.gap }}>
+      <Column reveal={false} style={{ gap: layout.gap }}>
         <BackLink />
 
         <div>
