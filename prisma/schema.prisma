@@ -57,6 +57,13 @@ model Event {
   gallery       String[]       @default([])
   isMultiDay      Boolean        @default(false)
   statusOverride  EventStatus?
+  // Extended details sourced from Event Details.md
+  type                String[]     @default([])
+  overview            String?
+  mainObjective       String?
+  specificObjectives  String[]     @default([])
+  targetParticipants  String?
+  registrationFees    String?
   parentId        String?
   parent          Event?         @relation("EventDays", fields: [parentId], references: [eventId])
   subEvents       Event[]        @relation("EventDays")

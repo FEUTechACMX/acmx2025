@@ -6,21 +6,83 @@ import type { safeUser } from "@/types/auth";
 import LoginModal from "@/components/login/modal/LogInModal";
 import ProfileMenu from "./ProfileMenu";
 import { useTheme } from "@/components/ThemeProvider";
+import { useDS } from "@/components/ds";
+import { type as t, motion, layout } from "@/styles/design-system";
 
 type NavBarProps = {
   user: safeUser | null;
 };
+
+type NavItem = { label: string; href: string };
+
+const BASE_LINKS: NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "About", href: "/about" },
+  { label: "Merchandise", href: "/merchandise" },
+  { label: "Events", href: "/events" },
+];
+
+/** Tracked-caps nav link with an accent hairline under the active route. */
+function NavLink({
+  item,
+  active,
+  onClick,
+  block = false,
+}: {
+  item: NavItem;
+  active: boolean;
+  onClick?: () => void;
+  block?: boolean;
+}) {
+  const { c } = useDS();
+  const [hover, setHover] = useState(false);
+  const color = active || hover ? c.accent : c.muted;
+
+  return (
+    <Link
+      href={item.href}
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className={`relative ${block ? "block" : "inline-block"}`}
+      style={{
+        ...t.label,
+        textTransform: "uppercase",
+        color,
+        textDecoration: "none",
+        padding: block ? "0.75rem 0" : undefined,
+        transition: `color ${motion.fast}`,
+      }}
+    >
+      {item.label}
+      {active && !block && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 0,
+            bottom: "-0.7rem",
+            width: "100%",
+            height: 1,
+            backgroundColor: c.accent,
+          }}
+        />
+      )}
+    </Link>
+  );
+}
 
 export default function NavBar({ user }: NavBarProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAcmDropdownOpen, setIsAcmDropdownOpen] = useState(false);
   const [isMobileAcmOpen, setIsMobileAcmOpen] = useState(false);
+  const [loginHover, setLoginHover] = useState(false);
   const pathname = usePathname();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { c, isDark } = useDS();
 
-  // Helper function to check if a link is active
   const isActive = (href: string) => {
     if (href === "/") {
       return pathname === "/" || pathname === "/hero" || pathname === "/dashboard";
@@ -28,288 +90,265 @@ export default function NavBar({ user }: NavBarProps) {
     return pathname.startsWith(href);
   };
 
-  // Check if ACM section is active (committee or officers)
   const isAcmActive = pathname.startsWith("/committee") || pathname.startsWith("/officers");
 
-  // Close dropdown when clicking outside
+  // Close the ACM dropdown on outside click.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsAcmDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Active link styles
-  const getLinkClasses = (href: string) => {
-    const baseClasses = "transition-colors relative";
-    if (isActive(href)) {
-      return `${baseClasses} text-[var(--accent)] font-medium`;
-    }
-    return `${baseClasses} hover:text-[var(--accent)]`;
-  };
+  // Translucent bar tint — surface at ~72% so the concrete reads through the blur.
+  const barBg = isDark ? "rgba(38, 37, 42, 0.72)" : "rgba(232, 227, 219, 0.72)";
+
+  const acmLinks: NavItem[] = [
+    { label: "Committee", href: "/committee" },
+    { label: "Officers", href: "/officers" },
+  ];
 
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between h-16 px-[7vw] backdrop-blur-md bg-black/20 dark:bg-black/30 border-b border-black/10 dark:border-white/[0.06]">
-        {/* Brand */}
-        <div className="flex items-center pointer-events-none select-none">
-          <h1 className="font-monument font-bold text-[1.25rem] tracking-[0.35em]">ACM</h1>
-        </div>
+      <nav
+        className="fixed top-0 left-0 w-full z-50 flex items-center justify-between"
+        style={{
+          height: layout.navHeight,
+          paddingLeft: layout.gutter,
+          paddingRight: layout.gutter,
+          backgroundColor: barBg,
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderBottom: `1px solid ${c.rule}`,
+        }}
+      >
+        {/* Wordmark */}
+        <Link href="/" style={{ textDecoration: "none" }}>
+          <span
+            className="font-monument select-none"
+            style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "0.28em", color: c.text }}
+          >
+            ACMX
+          </span>
+        </Link>
 
-        {/* Desktop Nav Links */}
-        <div className="hidden lg:flex font-monument text-[0.6875rem] tracking-[0.22em] uppercase items-center gap-8">
-          <Link href="/" className={getLinkClasses("/")}>
-            Home
-            {isActive("/") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
-            )}
-          </Link>
-          <Link href="/about" className={getLinkClasses("/about")}>
-            About
-            {isActive("/about") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
-            )}
-          </Link>
-          <Link href="/merchandise" className={getLinkClasses("/merchandise")}>
-            Merchandise
-            {isActive("/merchandise") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
-            )}
-          </Link>
-          <Link href="/events" className={getLinkClasses("/events")}>
-            Events
-            {isActive("/events") && (
-              <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
-            )}
-          </Link>
-          
-          {/* ACM Dropdown - Click to toggle */}
+        {/* Desktop links */}
+        <div className="hidden lg:flex items-center" style={{ gap: "2.25rem" }}>
+          {BASE_LINKS.map((item) => (
+            <NavLink key={item.href} item={item} active={isActive(item.href)} />
+          ))}
+
+          {/* ACM dropdown */}
           <div className="relative" ref={dropdownRef}>
-            <button 
-              className={`flex items-center gap-1 transition-colors cursor-pointer relative ${isAcmActive ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'}`}
-              onClick={() => setIsAcmDropdownOpen(!isAcmDropdownOpen)}
+            <button
+              onClick={() => setIsAcmDropdownOpen((o) => !o)}
+              className="flex items-center cursor-pointer"
+              style={{
+                ...t.label,
+                textTransform: "uppercase",
+                gap: "0.35rem",
+                color: isAcmActive ? c.accent : c.muted,
+                background: "none",
+                border: "none",
+                transition: `color ${motion.fast}`,
+              }}
             >
               ACM
-              <svg 
-                className={`w-4 h-4 transition-transform duration-200 ${isAcmDropdownOpen ? 'rotate-180' : ''}`} 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
+                style={{
+                  transform: isAcmDropdownOpen ? "rotate(180deg)" : "none",
+                  transition: `transform ${motion.fast}`,
+                }}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path strokeLinecap="square" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
               {isAcmActive && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
+                <span
+                  aria-hidden="true"
+                  style={{ position: "absolute", left: 0, bottom: "-0.7rem", width: "100%", height: 1, backgroundColor: c.accent }}
+                />
               )}
             </button>
-            
-            {/* Dropdown Menu */}
+
             {isAcmDropdownOpen && (
-              <div className="absolute top-full left-0 mt-2 w-40 bg-white shadow-lg rounded-md py-2 border border-gray-100">
-                <Link 
-                  href="/committee" 
-                  className={`block px-4 py-2 transition-colors ${isActive("/committee") ? 'text-[var(--accent)] bg-[var(--accent-bg)] font-medium' : 'text-gray-700 hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'}`}
-                  onClick={() => setIsAcmDropdownOpen(false)}
-                >
-                  Committee
-                </Link>
-                <Link 
-                  href="/officers" 
-                  className={`block px-4 py-2 transition-colors ${isActive("/officers") ? 'text-[var(--accent)] bg-[var(--accent-bg)] font-medium' : 'text-gray-700 hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'}`}
-                  onClick={() => setIsAcmDropdownOpen(false)}
-                >
-                  Officers
-                </Link>
+              <div
+                className="absolute top-full left-0"
+                style={{
+                  marginTop: "1rem",
+                  minWidth: "11rem",
+                  backgroundColor: c.surface,
+                  border: `1px solid ${c.rule}`,
+                }}
+              >
+                {acmLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsAcmDropdownOpen(false)}
+                    className="block"
+                    style={{
+                      ...t.label,
+                      textTransform: "uppercase",
+                      padding: "0.85rem 1.1rem",
+                      color: isActive(item.href) ? c.accent : c.muted,
+                      textDecoration: "none",
+                      borderBottom: item.href === acmLinks[0].href ? `1px solid ${c.rule}` : "none",
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             )}
           </div>
 
-          {user && (
-            <Link href="/profile" className={getLinkClasses("/profile")}>
-              Profile
-              {isActive("/profile") && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
-              )}
-            </Link>
-          )}
-
+          {user && <NavLink item={{ label: "Profile", href: "/profile" }} active={isActive("/profile")} />}
           {user?.role === "ADMIN" && (
-            <Link href="/scanner" className={getLinkClasses("/scanner")}>
-              Scanner
-              {isActive("/scanner") && (
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-[var(--accent)] rounded-full" />
-              )}
-            </Link>
+            <NavLink item={{ label: "Scanner", href: "/scanner" }} active={isActive("/scanner")} />
           )}
         </div>
 
-        {/* Desktop Login / Profile + Theme Toggle */}
-        <div className="hidden lg:flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-[var(--accent)] transition-colors cursor-pointer"
-            aria-label="Toggle dark mode"
-          >
-            {theme === "dark" ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
+        {/* Right cluster */}
+        <div className="hidden lg:flex items-center" style={{ gap: "1.25rem" }}>
+          <ThemeToggle theme={theme} onToggle={toggleTheme} accent={c.accent} rule={c.ruleStrong} />
           {user ? (
             <ProfileMenu user={user} />
           ) : (
             <button
-              className="px-5 py-2 text-[var(--accent)] font-monument text-[0.6875rem] tracking-[0.15em] border border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all duration-200 cursor-pointer"
               onClick={() => setIsLoginOpen(true)}
+              onMouseEnter={() => setLoginHover(true)}
+              onMouseLeave={() => setLoginHover(false)}
+              className="cursor-pointer"
+              style={{
+                ...t.label,
+                textTransform: "uppercase",
+                padding: "0.55rem 1.4rem",
+                color: loginHover ? "#ffffff" : c.accent,
+                backgroundColor: loginHover ? c.accent : "transparent",
+                border: `1px solid ${c.accent}`,
+                transition: `background-color ${motion.fast}, color ${motion.fast}`,
+              }}
             >
               Log In
             </button>
           )}
         </div>
 
-        {/* Hamburger Button (mobile only) */}
+        {/* Hamburger (mobile) */}
         <button
-          className="lg:hidden"
+          className="lg:hidden flex flex-col cursor-pointer"
+          style={{ gap: "0.3rem" }}
           onClick={() => setIsMenuOpen((prev) => !prev)}
           aria-label="Toggle menu"
         >
-          <div className="space-y-1">
-            <span className="block w-6 h-0.5 bg-black" />
-            <span className="block w-6 h-0.5 bg-black" />
-            <span className="block w-6 h-0.5 bg-black" />
-          </div>
+          <span style={{ display: "block", width: "1.5rem", height: 1.5, backgroundColor: c.text }} />
+          <span style={{ display: "block", width: "1.5rem", height: 1.5, backgroundColor: c.text }} />
+          <span style={{ display: "block", width: "1.5rem", height: 1.5, backgroundColor: c.text }} />
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="fixed top-[70px] left-[7vw] w-[86vw] bg-white shadow-lg z-40 lg:hidden rounded-md p-4">
-          <div className="flex flex-col gap-4 font-monument text-[0.75rem] tracking-[0.18em] uppercase">
-            <Link 
-              href="/" 
-              className={`${isActive("/") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/about" 
-              className={`${isActive("/about") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
-            >
-              About
-            </Link>
-            <Link 
-              href="/merchandise" 
-              className={`${isActive("/merchandise") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
-            >
-              Merchandise
-            </Link>
-            <Link 
-              href="/events" 
-              className={`${isActive("/events") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
-            >
-              Events
-            </Link>
-            
-            {/* Mobile ACM Dropdown */}
-            <div>
-              <button 
-                className={`flex items-center gap-1 transition-colors w-full cursor-pointer ${isAcmActive ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'}`}
-                onClick={() => setIsMobileAcmOpen(!isMobileAcmOpen)}
+        <div
+          className="fixed left-0 w-full z-40 lg:hidden"
+          style={{
+            top: layout.navHeight,
+            backgroundColor: c.surface,
+            borderBottom: `1px solid ${c.rule}`,
+            padding: `1.5rem ${layout.gutter}`,
+          }}
+        >
+          <div className="flex flex-col">
+            {BASE_LINKS.map((item) => (
+              <div key={item.href} style={{ borderBottom: `1px solid ${c.rule}` }}>
+                <NavLink item={item} active={isActive(item.href)} block onClick={() => setIsMenuOpen(false)} />
+              </div>
+            ))}
+
+            {/* Mobile ACM */}
+            <div style={{ borderBottom: `1px solid ${c.rule}` }}>
+              <button
+                onClick={() => setIsMobileAcmOpen((o) => !o)}
+                className="flex items-center justify-between w-full cursor-pointer"
+                style={{
+                  ...t.label,
+                  textTransform: "uppercase",
+                  padding: "0.75rem 0",
+                  color: isAcmActive ? c.accent : c.muted,
+                  background: "none",
+                  border: "none",
+                }}
               >
                 ACM
-                <svg 
-                  className={`w-4 h-4 transition-transform duration-200 ${isMobileAcmOpen ? 'rotate-180' : ''}`} 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
+                  style={{ transform: isMobileAcmOpen ? "rotate(180deg)" : "none", transition: `transform ${motion.fast}` }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path strokeLinecap="square" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               {isMobileAcmOpen && (
-                <div className="ml-4 mt-2 flex flex-col gap-2">
-                  <Link 
-                    href="/committee" 
-                    className={`${isActive("/committee") ? 'text-[var(--accent)] font-medium' : 'text-gray-600 hover:text-[var(--accent)]'} transition-colors`}
-                  >
-                    Committee
-                  </Link>
-                  <Link 
-                    href="/officers" 
-                    className={`${isActive("/officers") ? 'text-[var(--accent)] font-medium' : 'text-gray-600 hover:text-[var(--accent)]'} transition-colors`}
-                  >
-                    Officers
-                  </Link>
+                <div style={{ paddingLeft: "1rem", paddingBottom: "0.5rem" }}>
+                  {acmLinks.map((item) => (
+                    <NavLink key={item.href} item={item} active={isActive(item.href)} block onClick={() => setIsMenuOpen(false)} />
+                  ))}
                 </div>
               )}
             </div>
 
             {user && (
-              <Link 
-                href="/profile" 
-                className={`${isActive("/profile") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
-              >
-                Profile
-              </Link>
+              <div style={{ borderBottom: `1px solid ${c.rule}` }}>
+                <NavLink item={{ label: "Profile", href: "/profile" }} active={isActive("/profile")} block onClick={() => setIsMenuOpen(false)} />
+              </div>
             )}
-
             {user?.role === "ADMIN" && (
-              <Link 
-                href="/scanner" 
-                className={`${isActive("/scanner") ? 'text-[var(--accent)] font-medium' : 'hover:text-[var(--accent)]'} transition-colors`}
-              >
-                Scanner
-              </Link>
+              <div style={{ borderBottom: `1px solid ${c.rule}` }}>
+                <NavLink item={{ label: "Scanner", href: "/scanner" }} active={isActive("/scanner")} block onClick={() => setIsMenuOpen(false)} />
+              </div>
             )}
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
-            <button
-              onClick={toggleTheme}
-              className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-[var(--accent)] transition-colors cursor-pointer border border-gray-200"
-              aria-label="Toggle dark mode"
-            >
-              {theme === "dark" ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                </svg>
-              )}
-            </button>
+          <div className="flex items-center" style={{ gap: "1rem", marginTop: "1.5rem" }}>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} accent={c.accent} rule={c.ruleStrong} />
             <div className="flex-1">
-            {user ? (
-              <ProfileMenu user={user} />
-            ) : (
-              <button
-                className="w-full py-2.5 text-[var(--accent)] font-['Supermolot'] text-sm tracking-wide border border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all duration-200 cursor-pointer"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  setIsLoginOpen(true);
-                }}
-              >
-                Log In
-              </button>
-            )}
+              {user ? (
+                <ProfileMenu user={user} />
+              ) : (
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsLoginOpen(true);
+                  }}
+                  className="w-full cursor-pointer"
+                  style={{
+                    ...t.label,
+                    textTransform: "uppercase",
+                    padding: "0.7rem 0",
+                    color: c.accent,
+                    backgroundColor: "transparent",
+                    border: `1px solid ${c.accent}`,
+                  }}
+                >
+                  Log In
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
@@ -319,5 +358,41 @@ export default function NavBar({ user }: NavBarProps) {
         }}
       />
     </>
+  );
+}
+
+/** Accent-dot theme switch — filled in dark, ringed in light. */
+function ThemeToggle({
+  theme,
+  onToggle,
+  accent,
+  rule,
+}: {
+  theme: string;
+  onToggle: () => void;
+  accent: string;
+  rule: string;
+}) {
+  const isDark = theme === "dark";
+  return (
+    <button
+      onClick={onToggle}
+      aria-label="Toggle theme"
+      title={isDark ? "Switch to light" : "Switch to dark"}
+      className="flex items-center justify-center cursor-pointer"
+      style={{ width: "2.25rem", height: "2.25rem", background: "none", border: "none" }}
+    >
+      <span
+        style={{
+          width: "0.85rem",
+          height: "0.85rem",
+          borderRadius: "50%",
+          backgroundColor: isDark ? accent : "transparent",
+          border: `1.5px solid ${isDark ? accent : rule}`,
+          boxShadow: isDark ? `0 0 0 3px ${accent}22` : "none",
+          transition: "background-color 0.2s ease, border-color 0.2s ease",
+        }}
+      />
+    </button>
   );
 }
