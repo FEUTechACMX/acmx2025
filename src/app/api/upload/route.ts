@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const bucket = formData.get("bucket") as string;
     const files = formData.getAll("files") as File[];
 
-    if (!bucket || !["events", "eventCard", "videos"].includes(bucket)) {
+    if (!bucket || !["events", "eventCard", "videos", "merch"].includes(bucket)) {
       return NextResponse.json({ error: "Invalid bucket" }, { status: 400 });
     }
 

@@ -7,6 +7,8 @@ import LoginModal from "@/components/login/modal/LogInModal";
 import ProfileMenu from "./ProfileMenu";
 import { useTheme } from "@/components/ThemeProvider";
 import { useDS } from "@/components/ds";
+import Icon from "@/components/admin/icons";
+import { useCart } from "@/components/merch/cartClient";
 import { type as t, motion, layout } from "@/styles/design-system";
 
 type NavBarProps = {
@@ -227,6 +229,7 @@ export default function NavBar({ user }: NavBarProps) {
 
         {/* Right cluster */}
         <div className="hidden lg:flex items-center" style={{ gap: "1.25rem" }}>
+          {user && <CartLink />}
           <ThemeToggle theme={theme} onToggle={toggleTheme} color={c.text} />
           {user ? (
             <ProfileMenu user={user} />
@@ -318,9 +321,19 @@ export default function NavBar({ user }: NavBarProps) {
             </div>
 
             {user && (
-              <div style={{ borderBottom: `1px solid ${c.rule}` }}>
-                <NavLink item={{ label: "Profile", href: "/profile" }} active={isActive("/profile")} block onClick={() => setIsMenuOpen(false)} />
-              </div>
+              <>
+                <div style={{ borderBottom: `1px solid ${c.rule}` }}>
+                  <NavLink
+                    item={{ label: "Cart", href: "/merchandise/cart" }}
+                    active={isActive("/merchandise/cart")}
+                    block
+                    onClick={() => setIsMenuOpen(false)}
+                  />
+                </div>
+                <div style={{ borderBottom: `1px solid ${c.rule}` }}>
+                  <NavLink item={{ label: "Profile", href: "/profile" }} active={isActive("/profile")} block onClick={() => setIsMenuOpen(false)} />
+                </div>
+              </>
             )}
             {user?.role === "ADMIN" && (
               <div style={{ borderBottom: `1px solid ${c.rule}` }}>
@@ -372,6 +385,48 @@ export default function NavBar({ user }: NavBarProps) {
 }
 
 /** Single borderless theme switch — shows a sun in light mode, a moon in dark. */
+/**
+ * Cart entry point for signed-in members. The count comes from the server-side
+ * basket and updates live — every cart mutation broadcasts the fresh totals.
+ */
+function CartLink() {
+  const { c } = useDS();
+  const pathname = usePathname();
+  const { cart } = useCart(true);
+  const active = pathname.startsWith("/merchandise/cart");
+  const filled = cart.count > 0;
+
+  return (
+    <Link
+      href="/merchandise/cart"
+      aria-label={`Cart, ${cart.count} ${cart.count === 1 ? "item" : "items"}`}
+      className="relative flex items-center"
+      style={{ color: active || filled ? c.accent : c.muted, transition: `color ${motion.fast}` }}
+    >
+      <Icon name="cart" size={18} />
+      {filled && (
+        <span
+          style={{
+            ...t.label,
+            position: "absolute",
+            top: -7,
+            right: -9,
+            minWidth: 16,
+            padding: "1px 4px",
+            fontSize: "0.5rem",
+            lineHeight: "14px",
+            textAlign: "center",
+            color: "#ffffff",
+            backgroundColor: c.accent,
+          }}
+        >
+          {cart.count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 function ThemeToggle({
   theme,
   onToggle,

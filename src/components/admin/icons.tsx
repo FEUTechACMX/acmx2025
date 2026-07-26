@@ -35,7 +35,12 @@ export type IconName =
   | "user-plus"
   | "flag"
   | "more"
-  | "dot";
+  | "dot"
+  | "bag"
+  | "cart"
+  | "minus"
+  | "arrow-left"
+  | "package";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   overview: (
@@ -175,6 +180,27 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   dot: <circle cx="12" cy="12" r="10" />,
+  bag: (
+    <>
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+      <path d="M3 6h18M16 10a4 4 0 01-8 0" />
+    </>
+  ),
+  cart: (
+    <>
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+    </>
+  ),
+  minus: <path d="M5 12h14" />,
+  "arrow-left": <path d="M19 12H5M12 19l-7-7 7-7" />,
+  package: (
+    <>
+      <path d="M16.5 9.4L7.5 4.21M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+      <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+    </>
+  ),
 };
 
 export default function Icon({

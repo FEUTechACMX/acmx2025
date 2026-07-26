@@ -30,7 +30,10 @@ model User {
   registration   Registration[]
   schedules      Schedule[]
   Transaction    Transaction[]
-  sessions       Session[] 
+  sessions       Session[]
+  cartLines      MerchCartLine[]
+  merchOrders    MerchOrder[]
+  restockRequests MerchRestockRequest[]
 }
 
 model Session {
@@ -68,6 +71,122 @@ model Event {
   parent          Event?         @relation("EventDays", fields: [parentId], references: [eventId])
   subEvents       Event[]        @relation("EventDays")
   registrations   Registration[]
+}
+
+/// A product in the chapter store. Items are never deleted when they run out —
+/// SOLD_OUT keeps the record listed but un-reservable, HIDDEN pulls it off the
+/// public store while keeping it in the console. DELETE is the only destructive
+/// path and lives behind the admin editor.
+model MerchItem {
+  id          String        @id @default(cuid())
+  /// URL key for /merchandise/[slug].
+  slug        String        @unique
+  name        String
+  category    MerchCategory @default(APPAREL)
+  /// Short line under the card / above the fold.
+  blurb       String?
+  description String?
+  /// Peso price. Members-only pricing — there is no non-member tier.
+  price       Float         @default(0)
+  /// Gallery. The first entry doubles as the card cover.
+  images      String[]      @default([])
+  status      MerchStatus   @default(AVAILABLE)
+  /// Flags the "NEW DROP" accent on the storefront card.
+  isNewDrop   Boolean       @default(false)
+  /// Manual ordering on the storefront (ascending).
+  order       Int           @default(0)
+  /// Shown in the item's facts list.
+  pickupNote  String?
+  paymentNote String?
+  restockNote String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  variants   MerchVariant[]
+  restockRequests MerchRestockRequest[]
+}
+
+/// A buyable variant of an item — a size, a colour, or the single implicit
+/// "One size" row for things that don't vary.
+model MerchVariant {
+  id      String  @id @default(cuid())
+  itemId  String
+  /// "S", "M", "ONE SIZE", …
+  label   String
+  stock   Int     @default(0)
+  /// Force this variant out of stock independently of the count.
+  soldOut Boolean @default(false)
+  order   Int     @default(0)
+
+  item      MerchItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  cartLines MerchCartLine[]
+  orderLines MerchOrderLine[]
+
+  @@unique([itemId, label])
+}
+
+/// A member's basket. Persisted server-side so the cart survives devices and
+/// can be validated against live stock at checkout.
+model MerchCartLine {
+  id        String   @id @default(cuid())
+  userId    String
+  variantId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variant MerchVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, variantId])
+}
+
+/// A checked-out reservation. Nothing is paid online — checking out holds the
+/// units for `expiresAt`, and the member settles with an officer on collection.
+model MerchOrder {
+  id        String           @id @default(cuid())
+  /// Short human code the member quotes at the ACM room.
+  reference String           @unique
+  userId    String
+  status    MerchOrderStatus @default(PENDING)
+  /// Peso total, snapshotted at checkout.
+  total     Float            @default(0)
+  note      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  /// End of the hold window. Past this, the reservation may be released.
+  expiresAt DateTime
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lines MerchOrderLine[]
+}
+
+/// One line of a reservation. Name/label/price are snapshotted so a later edit
+/// to the catalogue never rewrites what somebody reserved.
+model MerchOrderLine {
+  id           String  @id @default(cuid())
+  orderId      String
+  variantId    String?
+  itemName     String
+  variantLabel String
+  unitPrice    Float
+  quantity     Int     @default(1)
+
+  order   MerchOrder    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant MerchVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+}
+
+/// "Notify me when restocked" on a sold-out item.
+model MerchRestockRequest {
+  id        String   @id @default(cuid())
+  itemId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  item MerchItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, userId])
 }
 
 model Schedule {
@@ -201,6 +320,28 @@ enum TransactionType {
   TASKS
   PURCHASE
 }
+enum MerchCategory {
+  APPAREL
+  ACCESSORIES
+  STICKERS
+  STATIONERY
+}
+
+/// The single three-way availability choice from the admin editor. SOLD_OUT
+/// keeps the item listed and readable; HIDDEN removes it from the public store.
+enum MerchStatus {
+  AVAILABLE
+  SOLD_OUT
+  HIDDEN
+}
+
+enum MerchOrderStatus {
+  PENDING
+  READY
+  COLLECTED
+  CANCELLED
+}
+
 enum TransactionStatus{
   PENDING
   ACCEPTED

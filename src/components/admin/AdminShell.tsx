@@ -11,11 +11,12 @@ import { type as t, font, motion, texture } from "@/styles/design-system";
 import { runBlinkIn } from "@/lib/blink";
 import Icon, { type IconName } from "./icons";
 
-type NavKey = "overview" | "events" | "media" | "people" | "videos";
+type NavKey = "overview" | "events" | "merchandise" | "media" | "people" | "videos";
 
 const NAV: { key: NavKey; label: string; href: string; icon: IconName }[] = [
   { key: "overview", label: "Overview", href: "/admin", icon: "overview" },
   { key: "events", label: "Events", href: "/admin/events", icon: "events" },
+  { key: "merchandise", label: "Merchandise", href: "/admin/merchandise", icon: "bag" },
   { key: "media", label: "Media Library", href: "/admin/media", icon: "media" },
   { key: "people", label: "People & Roles", href: "/admin/people", icon: "people" },
   { key: "videos", label: "Videos", href: "/admin/videos", icon: "videos" },
