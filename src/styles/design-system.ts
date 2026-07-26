@@ -57,12 +57,40 @@ export const palette = {
   },
 } as const;
 
-export type Palette = (typeof palette)[Theme] & { accent: string; accentHover: string; accentWash: string };
+/**
+ * The only two colours in the system that aren't concrete or orchid.
+ *
+ * Added reluctantly, and only because security UI needs them: a rejected
+ * password and a successful change must not read the same, and the accent
+ * can't carry both meanings at once. Both are desaturated to sit inside the
+ * editorial palette rather than shout out of it — no Tailwind red-500 here —
+ * and both clear AA against their theme's surface.
+ *
+ * Use them for state, never for decoration.
+ */
+export const status = {
+  light: {
+    danger: "#A32A22",
+    dangerWash: "rgba(163, 42, 34, 0.09)",
+    positive: "#2F6B4F",
+    positiveWash: "rgba(47, 107, 79, 0.09)",
+  },
+  dark: {
+    danger: "#F08C82",
+    dangerWash: "rgba(240, 140, 130, 0.09)",
+    positive: "#84C9A6",
+    positiveWash: "rgba(132, 201, 166, 0.09)",
+  },
+} as const;
+
+export type Palette = (typeof palette)[Theme] &
+  (typeof status)[Theme] & { accent: string; accentHover: string; accentWash: string };
 
 export function resolvePalette(theme: Theme): Palette {
   const a = accent[theme];
   return {
     ...palette[theme],
+    ...status[theme],
     accent: a.base,
     accentHover: a.hover,
     accentWash: a.wash,

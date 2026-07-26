@@ -1,83 +1,54 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { gsap } from "gsap";
 import type { safeUser } from "@/types/auth";
+import { useDS } from "@/components/ds";
+import { runBlinkIn } from "@/lib/blink";
+import { type as t, motion } from "@/styles/design-system";
 
 type ProfileMenuProps = {
   user: safeUser;
 };
 
+/** Enum role → display label: JUNIOR_OFFICER → "Junior Officer". */
+function formatRole(role?: string) {
+  if (!role) return "";
+  return role
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export default function ProfileMenu({ user }: ProfileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { c } = useDS();
 
-  // Handle click outside to close dropdown
+  const initial = user?.name?.[0]?.toUpperCase() ?? "?";
+
+  // Close on outside click.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // GSAP Glitch animation on dropdown open
+  // Reveal with the site-wide blink-in — same language as the nav / preloader.
   useEffect(() => {
     if (isOpen && dropdownRef.current) {
-      const dropdown = dropdownRef.current;
-      const elements = dropdown.querySelectorAll(".glitch-target");
-      
-      // Initial state
-      gsap.set(dropdown, { opacity: 0, y: -10, scale: 0.95 });
-      gsap.set(elements, { opacity: 0 });
-
-      // Main timeline
-      const tl = gsap.timeline();
-
-      // Glitch effect - rapid flicker
-      tl.to(dropdown, { opacity: 1, duration: 0.05 })
-        .to(dropdown, { opacity: 0, duration: 0.03 })
-        .to(dropdown, { opacity: 1, duration: 0.05 })
-        .to(dropdown, { opacity: 0, duration: 0.02 })
-        .to(dropdown, { 
-          opacity: 1, 
-          y: 0, 
-          scale: 1, 
-          duration: 0.2, 
-          ease: "power2.out" 
-        })
-        .to(elements, { 
-          opacity: 1, 
-          duration: 0.15, 
-          stagger: 0.03 
-        }, "-=0.1");
+      runBlinkIn(dropdownRef.current.querySelectorAll(".blink-el"), { stagger: 0.05 });
     }
   }, [isOpen]);
 
   const handleLogOut = async () => {
-    await fetch("/api/logout", {
-      method: "POST",
-      credentials: "include",
-    });
+    await fetch("/api/logout", { method: "POST", credentials: "include" });
     window.location.reload();
-  };
-
-  // Get role badge styling
-  const getRoleBadge = () => {
-    if (!user?.role) return null;
-    const roleStyles: Record<string, string> = {
-      ADMIN: "bg-gradient-to-r from-red-500 to-orange-500",
-      EXECUTIVES: "bg-gradient-to-r from-[#CF78EC] to-[#a855f7]",
-      JUNIOR_OFFICER: "bg-gradient-to-r from-blue-500 to-cyan-500",
-      MEMBER: "bg-gradient-to-r from-gray-500 to-gray-600",
-    };
-    return roleStyles[user.role] || roleStyles.MEMBER;
   };
 
   return (
@@ -88,7 +59,7 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
         className="relative w-11 h-11 rounded-full bg-gradient-to-br from-[#CF78EC] to-[#a855f7] p-[2px] focus:outline-none focus:ring-2 focus:ring-[#CF78EC]/50 focus:ring-offset-2 transition-all duration-200 hover:shadow-lg hover:shadow-[#CF78EC]/30 cursor-pointer group"
       >
         <div className="w-full h-full rounded-full bg-gradient-to-br from-[#CF78EC] to-[#a855f7] flex items-center justify-center text-white text-lg font-bold group-hover:from-[#b85cd6] group-hover:to-[#9333ea] transition-all duration-200">
-          {user?.name[0].toUpperCase()}
+          {initial}
         </div>
       </button>
 
@@ -96,125 +67,146 @@ export default function ProfileMenu({ user }: ProfileMenuProps) {
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 mt-3 w-64 z-50 transform origin-top-right"
+          className="absolute right-0 z-50"
+          style={{
+            marginTop: "1rem",
+            width: "17rem",
+            backgroundColor: c.surface,
+            border: `1px solid ${c.rule}`,
+          }}
         >
-          {/* Glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#CF78EC] via-[#a855f7] to-[#CF78EC] blur-lg opacity-20" />
+          {/* Accent hairline cap — the recurring underline motif. */}
+          <div className="blink-el" style={{ height: 2, backgroundColor: c.accent }} />
 
-          {/* Dropdown content */}
-          <div className="relative bg-white/95 backdrop-blur-xl border border-gray-100 shadow-2xl overflow-hidden">
-            {/* Top gradient bar */}
-            <div className="h-1 bg-gradient-to-r from-[#CF78EC] via-[#a855f7] to-[#CF78EC]" />
-
-            {/* User Info Section */}
-            <div className="p-4 border-b border-gray-100 glitch-target">
-              <div className="flex items-center gap-3">
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#CF78EC] to-[#a855f7] p-[2px] flex-shrink-0">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-[#CF78EC] to-[#a855f7] flex items-center justify-center text-white text-xl font-bold">
-                    {user?.name[0].toUpperCase()}
-                  </div>
-                </div>
-
-                {/* User Details */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-['Arian-bold'] text-gray-800 truncate">
-                    {user?.name}
-                  </p>
-                  <p className="text-xs text-gray-500 font-['Arian-light'] truncate">
-                    {user?.email}
-                  </p>
-                </div>
-              </div>
-
-              {/* Role Badge & Points */}
-              <div className="flex items-center justify-between mt-3">
-                <span className={`px-2.5 py-1 text-xs font-medium text-white rounded-full ${getRoleBadge()}`}>
-                  {user?.role}
-                </span>
-                <div className="flex items-center gap-1.5 text-sm">
-                  <svg className="w-4 h-4 text-[#CF78EC]" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                  </svg>
-                  <span className="font-medium text-gray-700">{user?.points ?? 0}</span>
-                  <span className="text-gray-500 text-xs">pts</span>
-                </div>
+          {/* Identity */}
+          <div
+            className="blink-el"
+            style={{ padding: "1.1rem 1.1rem", borderBottom: `1px solid ${c.rule}` }}
+          >
+            <div className="flex items-center" style={{ gap: "0.85rem" }}>
+              <span
+                className="flex items-center justify-center flex-shrink-0"
+                style={{
+                  width: "2.75rem",
+                  height: "2.75rem",
+                  ...t.heading,
+                  fontSize: "1.25rem",
+                  color: c.accent,
+                  backgroundColor: c.accentWash,
+                  border: `1px solid ${c.accent}`,
+                }}
+              >
+                {initial}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="truncate"
+                  style={{ ...t.subheading, color: c.text, margin: 0 }}
+                >
+                  {user?.name}
+                </p>
+                <p
+                  className="truncate"
+                  style={{ ...t.mono, color: c.faint, margin: 0, marginTop: "0.15rem" }}
+                >
+                  {user?.email}
+                </p>
               </div>
             </div>
 
-            {/* Menu Items */}
-            <div className="py-2">
-              <Link
-                href="/profile"
-                className="glitch-target flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gradient-to-r hover:from-[#CF78EC]/10 hover:to-transparent hover:text-[#CF78EC] transition-all duration-200 group"
-                onClick={() => setIsOpen(false)}
+            {/* Role + points */}
+            <div className="flex items-center justify-between" style={{ marginTop: "0.9rem" }}>
+              <span
+                style={{
+                  ...t.label,
+                  fontSize: "clamp(0.5rem, 0.65vw, 0.625rem)",
+                  textTransform: "uppercase",
+                  padding: "0.25rem 0.6rem",
+                  color: c.text,
+                  border: `1px solid ${c.ruleStrong}`,
+                  whiteSpace: "nowrap",
+                }}
               >
-                <svg
-                  className="w-5 h-5 text-gray-400 group-hover:text-[#CF78EC] transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span className="font-['Arian-light'] text-sm">Profile</span>
-              </Link>
-
-              <Link
-                href="/settings"
-                className="glitch-target flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gradient-to-r hover:from-[#CF78EC]/10 hover:to-transparent hover:text-[#CF78EC] transition-all duration-200 group"
-                onClick={() => setIsOpen(false)}
-              >
-                <svg
-                  className="w-5 h-5 text-gray-400 group-hover:text-[#CF78EC] transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>
-                <span className="font-['Arian-light'] text-sm">Settings</span>
-              </Link>
-
-              <button
-                className="glitch-target w-full flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gradient-to-r hover:from-red-500/10 hover:to-transparent hover:text-red-500 transition-all duration-200 group cursor-pointer"
-                onClick={handleLogOut}
-              >
-                <svg
-                  className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-                <span className="font-['Arian-light'] text-sm">Logout</span>
-              </button>
+                {formatRole(user?.role)}
+              </span>
+              <span className="flex items-baseline" style={{ gap: "0.35rem" }}>
+                <span style={{ ...t.mono, color: c.text }}>{user?.points ?? 0}</span>
+                <span style={{ ...t.label, color: c.faint, textTransform: "uppercase" }}>Pts</span>
+              </span>
             </div>
+          </div>
+
+          {/* Actions — tracked-caps rows, hairline separated, accent on hover. */}
+          <div>
+            <MenuRow href="/profile" onNavigate={() => setIsOpen(false)}>
+              Profile
+            </MenuRow>
+            <MenuRow href="/profile?tab=account" onNavigate={() => setIsOpen(false)}>
+              Settings
+            </MenuRow>
+            <MenuRow onClick={handleLogOut} last>
+              Log Out
+            </MenuRow>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * A single dropdown action. Renders as a Link when `href` is given, otherwise a
+ * button. Matches the NavBar dropdown: tracked caps, muted → accent on hover,
+ * hairline divider below (suppressed on the last row).
+ */
+function MenuRow({
+  children,
+  href,
+  onClick,
+  onNavigate,
+  last = false,
+}: {
+  children: React.ReactNode;
+  href?: string;
+  onClick?: () => void;
+  onNavigate?: () => void;
+  last?: boolean;
+}) {
+  const { c } = useDS();
+  const [hover, setHover] = useState(false);
+
+  const style: React.CSSProperties = {
+    ...t.label,
+    textTransform: "uppercase",
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    padding: "0.85rem 1.1rem",
+    color: hover ? c.accent : c.muted,
+    backgroundColor: hover ? c.accentWash : "transparent",
+    border: "none",
+    borderBottom: last ? "none" : `1px solid ${c.rule}`,
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: `color ${motion.fast}, background-color ${motion.fast}`,
+  };
+
+  const handlers = {
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+  };
+
+  if (href) {
+    return (
+      <Link href={href} onClick={onNavigate} className="blink-el" style={style} {...handlers}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className="blink-el" style={style} {...handlers}>
+      {children}
+    </button>
   );
 }

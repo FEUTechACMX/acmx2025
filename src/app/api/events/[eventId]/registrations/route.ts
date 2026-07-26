@@ -29,6 +29,7 @@ export async function GET(
         professor: true,
         role: true,
         createdAt: true,
+        attendance: { select: { timeIn: true, timeOut: true } },
       },
       orderBy: { createdAt: "asc" },
     });

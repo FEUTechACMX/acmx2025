@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Routes that require authentication (logged-in user)
-const authRoutes = ["/settings", "/scanner", "/profile", "/dashboard"];
+// Routes that require authentication (logged-in user). The admin console does
+// its own ADMIN-role gate server-side in src/app/admin/layout.tsx; here we only
+// ensure the visitor is signed in at all.
+const authRoutes = ["/settings", "/profile", "/dashboard", "/admin"];
 
 // API routes that require authentication
-const authApiRoutes = ["/api/scan"];
+const authApiRoutes: string[] = [];
 
 // Pages a logged-in user should never see — they belong on the dashboard.
 const guestOnlyRoutes = ["/hero"];
@@ -47,9 +49,8 @@ export const config = {
   matcher: [
     "/hero",
     "/settings/:path*",
-    "/scanner/:path*",
     "/profile/:path*",
     "/dashboard/:path*",
-    "/api/scan/:path*",
+    "/admin/:path*",
   ],
 };

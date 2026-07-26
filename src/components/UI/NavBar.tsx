@@ -108,6 +108,10 @@ export default function NavBar({ user }: NavBarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // The admin console has its own sidebar chrome — suppress the public nav there.
+  // Placed after all hooks so hook order stays stable across route changes.
+  if (pathname.startsWith("/admin")) return null;
+
   // Translucent bar tint — surface at ~72% so the concrete reads through the blur.
   const barBg = isDark ? "rgba(38, 37, 42, 0.72)" : "rgba(232, 227, 219, 0.72)";
 
@@ -217,7 +221,7 @@ export default function NavBar({ user }: NavBarProps) {
 
           {user && <NavLink item={{ label: "Profile", href: "/profile" }} active={isActive("/profile")} />}
           {user?.role === "ADMIN" && (
-            <NavLink item={{ label: "Scanner", href: "/scanner" }} active={isActive("/scanner")} />
+            <NavLink item={{ label: "Admin", href: "/admin" }} active={isActive("/admin")} />
           )}
         </div>
 
@@ -320,7 +324,7 @@ export default function NavBar({ user }: NavBarProps) {
             )}
             {user?.role === "ADMIN" && (
               <div style={{ borderBottom: `1px solid ${c.rule}` }}>
-                <NavLink item={{ label: "Scanner", href: "/scanner" }} active={isActive("/scanner")} block onClick={() => setIsMenuOpen(false)} />
+                <NavLink item={{ label: "Admin", href: "/admin" }} active={isActive("/admin")} block onClick={() => setIsMenuOpen(false)} />
               </div>
             )}
           </div>

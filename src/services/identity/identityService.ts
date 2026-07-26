@@ -2,32 +2,6 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-//To Do:
-
-//Scanner functions
-
-//Member verification
-//Check if QR details have a match in the User Model.
-export async function userVerification(
-  studentNumber: string,
-  studentFirstName: string,
-  studentLastName: string
-) {
-  const user = await prisma.user.findUnique({
-    where: { studentId: studentNumber },
-  });
-
-  if (!user) {
-    throw new Error("User does not exist in our system");
-  }
-
-  if (user.firstName !== studentFirstName || user.lastName !== studentLastName) {
-    throw new Error("Name does not match records");
-  }
-
-  return user;
-}
-
 //Log-In logic
 export async function login(studentId: string, password: string) {
   async function verifyPassword(password: string, hash: string) {

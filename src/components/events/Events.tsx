@@ -9,7 +9,7 @@ import { Column, PageHeader, Button } from "@/components/ds";
 import { layout } from "@/styles/design-system";
 
 export default function Events() {
-  const [semester, setSemester] = useState("2nd");
+  const [semester, setSemester] = useState("3rd");
   const [showCreate, setShowCreate] = useState(false);
   const [canCreate, setCanCreate] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);

@@ -20,7 +20,7 @@ import AttendanceLookup from "./AttendanceLookup";
 /* ──────────────────────────────────────────────────────────────
  * PastEventExperience — "The Memory Doors"
  *
- * A finished event opens like a set of doors onto the night it was.
+ * A finished event opens like a set of doors onto the event it was.
  * Scroll (or click the seal) parts the diamond portal, then a vertical
  * "memory walk" replays the event: opening memory, a threaded run of
  * chapters, a memory wall (gallery), the purpose, the record, an afterglow.
@@ -495,7 +495,7 @@ function MemoryWall({ images, eventName }: { images: string[]; eventName: string
         ))}
       </div>
       <p style={{ ...t.bodySmall, color: c.faint, marginTop: "1rem" }}>
-        {has ? "Tap a tile to open it." : "Photos from the night will appear here soon."}
+        {has ? "Tap a tile to open it." : "Photos from the event will appear here soon."}
       </p>
 
       {open !== null && has && (
@@ -558,12 +558,12 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
   const lead =
     event.overview?.trim() ||
     (event.description || "").split(/\n{2,}/)[0]?.replace(/\*\*/g, "").trim() ||
-    "A night worth remembering.";
+    "An event worth remembering.";
 
   const stats: { n: number | string; l: string }[] = [
     { n: registered, l: "Registered" },
     ...(gallery.length ? [{ n: gallery.length, l: "Photos" }] : []),
-    { n: hasSub ? event.subEvents!.length : 1, l: hasSub ? "Sessions" : "Night" },
+    { n: hasSub ? event.subEvents!.length : 1, l: hasSub ? "Sessions" : "Event" },
     { n: fmtShort(event.startDate), l: "Held On" },
   ];
 
@@ -620,7 +620,7 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
               <span style={{ ...t.label, textTransform: "uppercase", color: c.accent }}>
                 Chapter 00 · You step inside
               </span>
-              <h2 style={{ ...t.heading, color: "#ffffff", margin: 0 }}>The night we remember</h2>
+              <h2 style={{ ...t.heading, color: "#ffffff", margin: 0 }}>The event we remember</h2>
             </div>
           </div>
         </Reveal>
@@ -632,7 +632,7 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
               {lead}
             </p>
             <Label style={{ color: c.faint }}>
-              {chapters.length > 1 ? `${chapters.length} moments from the night` : "How the night unfolded"}
+              {chapters.length > 1 ? `${chapters.length} moments from the event` : "How the event unfolded"}
             </Label>
           </div>
         </Reveal>
@@ -661,7 +661,7 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
           <Reveal>
             <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr]" style={{ gap: `calc(${layout.gap} * 1.5)` }}>
               <section>
-                <SectionLabel>Why the night mattered</SectionLabel>
+                <SectionLabel>Why the event mattered</SectionLabel>
                 {event.mainObjective && (
                   <p style={{ ...t.body, fontSize: "1.0625rem", color: c.text, maxWidth: "52ch", margin: "0 0 1.25rem" }}>
                     {event.mainObjective}
@@ -702,7 +702,7 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
             <Label style={{ color: c.accent }}>The doors close</Label>
             <h2 style={{ ...t.title, fontSize: "clamp(1.75rem, 3.5vw, 3rem)", color: c.text, margin: 0 }}>Until next year</h2>
             <p style={{ ...t.body, color: c.muted, maxWidth: "40ch", margin: 0 }}>
-              The masks came off. The memories stayed.
+              The event ended. The memories stayed.
             </p>
             <div style={{ width: 120, marginTop: "0.5rem" }}>
               <Rule />
@@ -712,7 +712,7 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
             </Link>
             {gallery.length === 0 && (
               <span style={{ ...t.bodySmall, color: c.faint, fontStyle: "italic" }}>
-                Photos from the night will appear here soon.
+                Photos from the event will appear here soon.
               </span>
             )}
           </div>

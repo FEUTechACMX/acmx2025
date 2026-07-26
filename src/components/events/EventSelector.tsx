@@ -14,7 +14,7 @@ interface EventSelectorProps {
 }
 
 export default function EventSelector({ onChange }: EventSelectorProps) {
-  const [selected, setSelected] = useState<string>("2nd");
+  const [selected, setSelected] = useState<string>("3rd");
 
   return (
     <Segmented

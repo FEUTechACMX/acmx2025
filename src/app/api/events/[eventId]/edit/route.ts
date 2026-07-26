@@ -22,6 +22,9 @@ export async function PATCH(
       "name", "description", "venue", "dayOfWeek",
       "startDate", "endDate", "price", "priceMember", "priceNonMember",
       "image", "cardImage", "gallery", "statusOverride",
+      // Extended event-detail fields (edited from the admin console).
+      "eventSemester", "type", "overview", "mainObjective",
+      "specificObjectives", "targetParticipants", "registrationFees",
     ];
 
     const data: Record<string, unknown> = {};
