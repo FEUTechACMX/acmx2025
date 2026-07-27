@@ -40,7 +40,16 @@ export type IconName =
   | "cart"
   | "minus"
   | "arrow-left"
-  | "package";
+  | "package"
+  | "committees"
+  | "pen"
+  | "terminal"
+  | "handshake"
+  | "camera"
+  | "wallet"
+  | "megaphone"
+  | "book"
+  | "calendar";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   overview: (
@@ -199,6 +208,67 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M16.5 9.4L7.5 4.21M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
       <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" />
+    </>
+  ),
+
+  /* Committee emblems. Stroked glyphs only — they render at 54px on a card
+     and 230px inside the hero diamond, and a filled mark survives neither. */
+  committees: (
+    <>
+      <path d="M12 2l4 4-4 4-4-4 4-4z" />
+      <path d="M5 13l3 3-3 3-3-3 3-3zM19 13l3 3-3 3-3-3 3-3z" />
+    </>
+  ),
+  pen: (
+    <>
+      <path d="M12 19l7-7 3 3-7 7-3-3z" />
+      <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+      <path d="M2 2l7.586 7.586" />
+      <circle cx="11" cy="11" r="2" />
+    </>
+  ),
+  terminal: (
+    <>
+      <path d="M4 17l6-6-6-6" />
+      <path d="M12 19h8" />
+    </>
+  ),
+  handshake: (
+    <>
+      <path d="M11 17l2 2a1 1 0 003-3" />
+      <path d="M14 16l2.5 2.5a1 1 0 003-3l-4.6-4.6a2 2 0 00-2.8 0l-1.6 1.6a2 2 0 01-2.8 0l-.4-.4a2 2 0 010-2.8l3.3-3.3a4 4 0 013.3-1.1l1.9.2" />
+      <path d="M21 4h-3M3 4h4l4 4" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </>
+  ),
+  wallet: (
+    <>
+      <path d="M21 12V7H5a2 2 0 010-4h14v4" />
+      <path d="M3 5v14a2 2 0 002 2h16v-5" />
+      <path d="M18 12a2 2 0 000 4h4v-4z" />
+    </>
+  ),
+  megaphone: (
+    <>
+      <path d="M3 11l18-5v12L3 13v-2z" />
+      <path d="M11.6 16.8a3 3 0 11-5.8-1.6" />
+    </>
+  ),
+  book: (
+    <>
+      <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
     </>
   ),
 };

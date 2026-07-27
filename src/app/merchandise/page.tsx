@@ -5,7 +5,7 @@ import Storefront from "@/components/merch/Storefront";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Merchandise · ACM X",
+  title: "Merchandise · ACMX",
 };
 
 export default async function MerchandisePage() {

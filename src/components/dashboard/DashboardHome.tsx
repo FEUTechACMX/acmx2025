@@ -266,7 +266,7 @@ type Tile = { icon: React.ReactNode; label: string; sublabel: string; href: stri
 const TILES: Tile[] = [
   { icon: <ShoppingBagIcon />, label: "MERCHANDISE", sublabel: "Shop the latest drop", href: "/merchandise" },
   { icon: <UsersIcon />, label: "OFFICERS", sublabel: "Meet the people", href: "/officers" },
-  { icon: <BookOpenIcon />, label: "ABOUT ACM-X", sublabel: "Our story & mission", href: "/about" },
+  { icon: <BookOpenIcon />, label: "ABOUT ACM", sublabel: "Our story & mission", href: "/about" },
   { icon: <ImageIcon />, label: "GALLERY", sublabel: "Relive past events", href: "/events" },
 ];
 

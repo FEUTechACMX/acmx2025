@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     select: { name: true, blurb: true },
   });
   return {
-    title: item ? `${item.name} · ACM X Merchandise` : "Merchandise · ACM X",
+    title: item ? `${item.name} · ACMX Merchandise` : "Merchandise · ACMX",
     description: item?.blurb ?? undefined,
   };
 }

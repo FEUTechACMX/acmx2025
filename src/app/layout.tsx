@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ACM X",
-  description: "ACM's Website",
+  title: "ACMX — FEU Tech ACM",
+  description: "The official website of the FEU Tech ACM Student Chapter.",
 };
 
 export default async function RootLayout({

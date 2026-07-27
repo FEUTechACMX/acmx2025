@@ -70,7 +70,7 @@ export default function SchoolCalendarModal({ isOpen, onClose, entries = [] }: P
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.25rem" }}>
           <div>
             <span style={{ ...t.eyebrow, color: c.accent, display: "block", marginBottom: "0.4rem" }}>
-              ACM-X
+              ACM
             </span>
             <h2 style={{ ...t.title, fontSize: "clamp(1.5rem, 3vw, 2.25rem)", color: c.text, margin: 0 }}>
               School Calendar

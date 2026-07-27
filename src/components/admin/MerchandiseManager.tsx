@@ -229,7 +229,7 @@ export default function MerchandiseManager({ user }: { user: safeUser }) {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `acmx-merch-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `acm-merch-orders-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }

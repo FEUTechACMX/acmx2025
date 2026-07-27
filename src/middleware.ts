@@ -11,6 +11,16 @@ const authApiRoutes: string[] = [];
 // Pages a logged-in user should never see — they belong on the dashboard.
 const guestOnlyRoutes = ["/hero"];
 
+/**
+ * Server Components can't read the request path, so we stamp it here. The admin
+ * layout uses it to keep a committee head inside /admin/committees.
+ */
+function pass(req: NextRequest) {
+  const headers = new Headers(req.headers);
+  headers.set("x-pathname", req.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const sessionCookie = req.cookies.get("session");
@@ -20,7 +30,7 @@ export async function middleware(req: NextRequest) {
   const isGuestOnly = guestOnlyRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
   if (isGuestOnly) {
     if (isAuthed) return NextResponse.redirect(new URL("/dashboard", req.url));
-    return NextResponse.next();
+    return pass(req);
   }
 
   // Check if the route requires authentication
@@ -28,7 +38,7 @@ export async function middleware(req: NextRequest) {
     authRoutes.some((r) => pathname.startsWith(r)) ||
     authApiRoutes.some((r) => pathname.startsWith(r));
 
-  if (!needsAuth) return NextResponse.next();
+  if (!needsAuth) return pass(req);
 
   if (!isAuthed) {
     // Pages → redirect to home
@@ -42,7 +52,7 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  return NextResponse.next();
+  return pass(req);
 }
 
 export const config = {

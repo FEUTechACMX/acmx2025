@@ -27,6 +27,7 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [pendingRole, setPendingRole] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +50,21 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
     setPendingRole(selectedMember?.role ?? null);
     setError(null);
   }, [selected, selectedMember?.role]);
+
+  /**
+   * The roll runs to four figures, so the list is unusable without this. Each
+   * term has to match somewhere, which lets "cruz 2023" narrow rather than
+   * widen — the same rule the committee roster picker searches by.
+   */
+  const shown = useMemo(() => {
+    const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return members;
+
+    return members.filter((m) => {
+      const haystack = `${m.name} ${m.email} ${m.studentId} ${roleLabel(m.role)}`.toLowerCase();
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [members, search]);
 
   const filteredRoles = useMemo(
     () => USER_ROLES.filter((r) => roleLabel(r).toLowerCase().includes(roleFilter.toLowerCase()) || r.toLowerCase().includes(roleFilter.toLowerCase())),
@@ -82,7 +98,13 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
   const dirty = !!selectedMember && pendingRole !== selectedMember.role;
 
   return (
-    <AdminShell user={user} breadcrumb="People & Roles" searchPlaceholder="Search members…">
+    <AdminShell
+      user={user}
+      breadcrumb="People & Roles"
+      searchPlaceholder="Search members…"
+      searchValue={search}
+      onSearchChange={setSearch}
+    >
       <AdminContent>
         <AdminPageHeader
           eyebrow={`${members.length} MEMBERS · ${USER_ROLES.length} ROLES`}
@@ -94,11 +116,14 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
           {/* Members table */}
           <div style={{ backgroundColor: c.panel, border: `1px solid ${c.rule}`, alignSelf: "start" }}>
             <div className="flex items-center" style={{ padding: "14px 20px", borderBottom: `1px solid ${c.rule}` }}>
-              <span className="flex-1" style={{ ...t.label, fontSize: 10, color: c.faint }}>MEMBER</span>
+              <span className="flex-1" style={{ ...t.label, fontSize: 10, color: c.faint }}>
+                MEMBER
+                {search.trim() && ` · ${shown.length} OF ${members.length}`}
+              </span>
               <span style={{ width: 180, ...t.label, fontSize: 10, color: c.faint }}>CURRENT ROLE</span>
               <span style={{ width: 90, ...t.label, fontSize: 10, color: c.faint }}>JOINED</span>
             </div>
-            {members.map((m, i) => {
+            {shown.map((m, i) => {
               const sel = m.studentId === selected;
               const pc = rolePillColors(m.role, c);
               return (
@@ -110,7 +135,7 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
                     padding: "13px 20px",
                     background: sel ? c.accentWash : "transparent",
                     borderLeft: `2px solid ${sel ? c.accent : "transparent"}`,
-                    borderBottom: i < members.length - 1 ? `1px solid ${c.rule}` : "none",
+                    borderBottom: i < shown.length - 1 ? `1px solid ${c.rule}` : "none",
                   }}
                 >
                   <div className="flex items-center flex-1 min-w-0" style={{ gap: 12 }}>
@@ -135,6 +160,13 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
             })}
             {members.length === 0 && (
               <div style={{ padding: "24px 20px" }}><span style={{ ...t.bodySmall, color: c.muted }}>Loading members…</span></div>
+            )}
+            {members.length > 0 && shown.length === 0 && (
+              <div style={{ padding: "24px 20px" }}>
+                <span style={{ ...t.bodySmall, color: c.muted }}>
+                  No member matches “{search.trim()}”. Search by name, email, student number or role.
+                </span>
+              </div>
             )}
           </div>
 

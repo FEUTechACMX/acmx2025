@@ -21,7 +21,7 @@ To provide the participants with an insightful understanding of the various fiel
 
 1. To educate the participants about the differences between Artificial Intelligence, Data Science, and Software Engineering in the context of pursuing Computer Science careers.
 2. To inform and explore the participants’ knowledge about the rising trends, innovations, technologies, and challenges in the industry.
-3. To promote ACM X as a student-led initiative creating software solutions for students, encouraging innovation and hands-on tech experience.
+3. To promote ACMX as a student-led initiative creating software solutions for students, encouraging innovation and hands-on tech experience.
 4. To instruct participants in ethically leveraging the use of Artificial Intelligence in the industry.
 
 ### Description of The Activity

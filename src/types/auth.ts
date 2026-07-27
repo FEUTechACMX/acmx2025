@@ -5,6 +5,9 @@ export type safeUser =
       email: string;
       role:
         | "ADMIN"
+        | "PRESIDENT"
+        | "VP_INTERNAL"
+        | "VP_EXTERNAL"
         | "EXECUTIVES_MEDIA"
         | "EXECUTIVES"
         | "SECRETARIAT"
@@ -17,9 +20,15 @@ export type safeUser =
     }
   | undefined;
 
+// The chapter's top table. These four are interchangeable everywhere access is
+// concerned — the President and the two VPs run the console exactly as an
+// administrator does, so every gate below tests membership of this list rather
+// than an equality against "ADMIN".
+export const ADMIN_ROLES: string[] = ["ADMIN", "PRESIDENT", "VP_INTERNAL", "VP_EXTERNAL"];
+
 // Roles that qualify for the officer/admin pricing tier
 export const OFFICER_ROLES: string[] = [
-  "ADMIN",
+  ...ADMIN_ROLES,
   "EXECUTIVES_MEDIA",
   "EXECUTIVES",
   "SECRETARIAT",
@@ -31,7 +40,7 @@ export const OFFICER_ROLES: string[] = [
 
 // Roles that can manage events (create, edit status, view admin panels)
 export const EVENT_ADMIN_ROLES: string[] = [
-  "ADMIN",
+  ...ADMIN_ROLES,
   "EXECUTIVES_MEDIA",
   "EXECUTIVES",
   "SECRETARIAT",
@@ -49,7 +58,7 @@ export function isEventAdmin(role?: string): boolean {
 
 // Roles that can perform on-site registration (Secretariat and above)
 export const SECRETARIAT_AND_ABOVE_ROLES: string[] = [
-  "ADMIN",
+  ...ADMIN_ROLES,
   "EXECUTIVES_MEDIA",
   "EXECUTIVES",
   "SECRETARIAT",
@@ -60,9 +69,10 @@ export function isSecretariatOrAbove(role?: string): boolean {
   return !!role && SECRETARIAT_AND_ABOVE_ROLES.includes(role);
 }
 
-// The admin console (/admin) is ADMIN-only.
+// Full run of the admin console (/admin). Committee heads get in too, but only
+// as far as their own committee — that gate lives in src/lib/committee-access.ts.
 export function isAdmin(role?: string): boolean {
-  return role === "ADMIN";
+  return !!role && ADMIN_ROLES.includes(role);
 }
 
 // All assignable user roles, ordered from highest to lowest. The single source
@@ -70,6 +80,9 @@ export function isAdmin(role?: string): boolean {
 // `UserRole` enum and they appear here.
 export const USER_ROLES = [
   "ADMIN",
+  "PRESIDENT",
+  "VP_INTERNAL",
+  "VP_EXTERNAL",
   "EXECUTIVES",
   "EXECUTIVES_MEDIA",
   "SECRETARIAT",
@@ -85,6 +98,9 @@ export type UserRoleName = (typeof USER_ROLES)[number];
 // Human-readable labels for the enum values.
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrator",
+  PRESIDENT: "President",
+  VP_INTERNAL: "VP · Internal",
+  VP_EXTERNAL: "VP · External",
   EXECUTIVES: "Executive",
   EXECUTIVES_MEDIA: "Executive · Media",
   SECRETARIAT: "Secretariat",

@@ -6,7 +6,7 @@ import CartPage from "@/components/merch/CartPage";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Your cart · ACM X Merchandise",
+  title: "Your cart · ACMX Merchandise",
 };
 
 // The cart belongs to an account, so signed-out visitors go back to the store

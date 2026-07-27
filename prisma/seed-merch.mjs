@@ -15,7 +15,7 @@ const items = [
     order: 1,
     blurb: "Heavyweight cotton tee in chapter black.",
     description:
-      "Heavyweight cotton tee in chapter black, screen-printed with the diamond mark on the chest and the ACMX wordmark across the back. Unisex fit, pre-shrunk. Designed by the 2026 creatives committee.",
+      "Heavyweight cotton tee in chapter black, screen-printed with the diamond mark on the chest and the ACM wordmark across the back. Unisex fit, pre-shrunk. Designed by the 2026 creatives committee.",
     variants: [
       { label: "S", stock: 5 },
       { label: "M", stock: 4 },
@@ -58,7 +58,7 @@ const items = [
     order: 4,
     blurb: "6 pieces",
     description:
-      "Six die-cut vinyl stickers: the diamond mark, the ACMX wordmark, and four in-jokes only the chapter will get. Weatherproof, laptop-safe.",
+      "Six die-cut vinyl stickers: the diamond mark, the ACM wordmark, and four in-jokes only the chapter will get. Weatherproof, laptop-safe.",
     variants: [{ label: "ONE SIZE", stock: 60 }],
   },
   {

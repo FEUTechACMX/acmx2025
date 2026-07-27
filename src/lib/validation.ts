@@ -182,7 +182,7 @@ export type Strength = { score: 0 | 1 | 2 | 3 | 4; label: string };
 export function passwordStrength(value: string): Strength {
   if (!value) return { score: 0, label: "" };
 
-  const OBVIOUS = /^(?:password|qwerty|letmein|welcome|admin|acmx|iloveyou)\d*!?$/i;
+  const OBVIOUS = /^(?:password|qwerty|letmein|welcome|admin|acm|acmx|iloveyou)\d*!?$/i;
   if (OBVIOUS.test(value) || /^(.)\1+$/.test(value)) {
     return { score: 1, label: "Too guessable" };
   }

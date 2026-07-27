@@ -34,6 +34,7 @@ model User {
   cartLines      MerchCartLine[]
   merchOrders    MerchOrder[]
   restockRequests MerchRestockRequest[]
+  committeeSeats CommitteeMember[]
 }
 
 model Session {
@@ -189,6 +190,125 @@ model MerchRestockRequest {
   @@unique([itemId, userId])
 }
 
+/// A chapter committee. Every committee — the six that exist today and any an
+/// admin adds later — renders through the SAME page at /committee/[slug]. The
+/// record supplies content; the design fixes section order and hierarchy, which
+/// is what stops six committees from becoming six different websites.
+model Committee {
+  id     String @id @default(cuid())
+  /// URL key for /committee/[slug].
+  slug   String @unique
+  name   String
+  /// Line beside the number in the hero, e.g. "STANDING COMMITTEE · AY 2026–27".
+  kicker String?
+  /// Emblem key from the fixed set in types/committee.ts. Constrained on purpose:
+  /// the diamond mark has to read at 230px, so admins pick, they don't upload.
+  emblem String @default("pen")
+  /// Hero paragraph.
+  mandate String?
+  /// The three-line card on the index. Falls back to `mandate` when empty.
+  blurb   String?
+  /// Manual ordering on the index (ascending). The N° in the hero follows it.
+  order   Int @default(0)
+  status  CommitteeStatus @default(PUBLISHED)
+
+  /// Which set of roster positions this committee offers. STANDARD is head /
+  /// co-head / member; DEV is the ACMx split — project lead, lead dev, junior
+  /// devs. Stored on the record rather than hardcoded against the ACMx slug so
+  /// renaming the committee doesn't silently change its roles.
+  track   CommitteeTrack @default(STANDARD)
+
+  /// The single three-way recruiting choice. Reconciled against `openSeats`
+  /// server-side so the page can never advertise seats that don't exist.
+  recruiting   CommitteeRecruiting @default(NOT_YET)
+  openSeats    Int       @default(0)
+  /// Copy inside the recruiting panel.
+  callBody     String?
+  callDeadline DateTime?
+  applyUrl     String?
+  contactEmail String?
+
+  formedYear Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  responsibilities CommitteeResponsibility[]
+  projects         CommitteeProject[]
+  facts            CommitteeFact[]
+  members          CommitteeMember[]
+}
+
+/// One row of "what this committee owns". Numbered automatically by `order`,
+/// so a committee with two duties and one with nine both render correctly.
+model CommitteeResponsibility {
+  id          String  @id @default(cuid())
+  committeeId String
+  title       String
+  description String?
+  order       Int     @default(0)
+
+  committee Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  @@index([committeeId])
+}
+
+/// A "current work" row. The whole block hides when a committee has none,
+/// rather than showing an empty header.
+model CommitteeProject {
+  id          String                 @id @default(cuid())
+  committeeId String
+  title       String
+  /// One-line context under the title.
+  meta        String?
+  status      CommitteeProjectStatus @default(IN_PROGRESS)
+  order       Int                    @default(0)
+
+  committee Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  @@index([committeeId])
+}
+
+/// A free key/value row in "At a glance". Free-form on purpose: a committee
+/// with no co-head simply has no co-head row, instead of an empty fixed field.
+model CommitteeFact {
+  id          String @id @default(cuid())
+  committeeId String
+  label       String
+  value       String
+  order       Int    @default(0)
+
+  committee Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+
+  @@index([committeeId])
+}
+
+/// A roster entry. Rosters are built by picking real accounts, so `userId` is
+/// how a seat grants console access; `name` is still stored alongside it so the
+/// roster survives the account being deleted.
+model CommitteeMember {
+  id          String                @id @default(cuid())
+  committeeId String
+  userId      String?
+  name        String
+  /// The lane under the portrait — "LAYOUT", "MOTION", …
+  roleLabel   String?
+  position    CommitteeMemberRole   @default(MEMBER)
+  /// Shown on the lead cards only.
+  bio         String?
+  photo       String?
+  order       Int                   @default(0)
+
+  committee Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  /// One seat per person per committee. Postgres treats NULLs as distinct, so
+  /// legacy unlinked entries are unaffected.
+  @@unique([committeeId, userId])
+  @@index([committeeId])
+  @@index([userId])
+}
+
 model Schedule {
   id        String   @id @default(cuid())
   section   String
@@ -294,6 +414,9 @@ enum UserRole {
   SECRETARIAT
   EXECUTIVES
   EXECUTIVES_MEDIA
+  VP_EXTERNAL
+  VP_INTERNAL
+  PRESIDENT
   ADMIN
 }
 
@@ -333,6 +456,46 @@ enum MerchStatus {
   AVAILABLE
   SOLD_OUT
   HIDDEN
+}
+
+/// PUBLISHED shows the committee on the index and at its own URL. HIDDEN keeps
+/// the record and its roster while taking it off the public site.
+enum CommitteeStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+/// Only RECRUITING gets the accent panel — on this page orchid means
+/// "you can act on this", so FULL and NOT_YET stay neutral.
+enum CommitteeRecruiting {
+  RECRUITING
+  FULL
+  NOT_YET
+}
+
+enum CommitteeProjectStatus {
+  IN_PROGRESS
+  REVIEW
+  SHIPPED
+}
+
+/// Roster positions across both tracks. The first four are single-seat and
+/// carry edit access to their own committee; MEMBER and JUNIOR_DEV are the
+/// unlimited, view-only ranks.
+enum CommitteeMemberRole {
+  HEAD
+  CO_HEAD
+  MEMBER
+  PROJECT_LEAD
+  LEAD_DEV
+  JUNIOR_DEV
+}
+
+/// STANDARD: head, co-head, members. DEV: project lead, lead dev, junior devs —
+/// the ACMx split.
+enum CommitteeTrack {
+  STANDARD
+  DEV
 }
 
 enum MerchOrderStatus {

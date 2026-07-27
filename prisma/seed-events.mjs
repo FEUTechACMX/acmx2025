@@ -23,7 +23,7 @@ const events = [
     specificObjectives: [
       "To educate the participants about the differences between Artificial Intelligence, Data Science, and Software Engineering in the context of pursuing Computer Science careers.",
       "To inform and explore the participants' knowledge about the rising trends, innovations, technologies, and challenges in the industry.",
-      "To promote ACM X as a student-led initiative creating software solutions for students, encouraging innovation and hands-on tech experience.",
+      "To promote ACMX as a student-led initiative creating software solutions for students, encouraging innovation and hands-on tech experience.",
       "To instruct participants in ethically leveraging the use of Artificial Intelligence in the industry.",
     ],
     description:

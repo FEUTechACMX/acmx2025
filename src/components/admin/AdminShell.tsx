@@ -4,18 +4,26 @@ import React, { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { safeUser } from "@/types/auth";
-import { roleLabel } from "@/types/auth";
+import { isAdmin, roleLabel } from "@/types/auth";
 import { useTheme } from "@/components/ThemeProvider";
 import { useDS } from "@/components/ds";
 import { type as t, font, motion, texture } from "@/styles/design-system";
 import { runBlinkIn } from "@/lib/blink";
 import Icon, { type IconName } from "./icons";
 
-type NavKey = "overview" | "events" | "merchandise" | "media" | "people" | "videos";
+type NavKey =
+  | "overview"
+  | "events"
+  | "committees"
+  | "merchandise"
+  | "media"
+  | "people"
+  | "videos";
 
 const NAV: { key: NavKey; label: string; href: string; icon: IconName }[] = [
   { key: "overview", label: "Overview", href: "/admin", icon: "overview" },
   { key: "events", label: "Events", href: "/admin/events", icon: "events" },
+  { key: "committees", label: "Committees", href: "/admin/committees", icon: "committees" },
   { key: "merchandise", label: "Merchandise", href: "/admin/merchandise", icon: "bag" },
   { key: "media", label: "Media Library", href: "/admin/media", icon: "media" },
   { key: "people", label: "People & Roles", href: "/admin/people", icon: "people" },
@@ -30,17 +38,33 @@ export default function AdminShell({
   user,
   breadcrumb,
   searchPlaceholder = "Search…",
+  searchValue,
+  onSearchChange,
   children,
 }: {
   user: safeUser;
   breadcrumb: string;
   searchPlaceholder?: string;
+  /**
+   * Wire these to make the top-bar search real. A page that doesn't pass
+   * `onSearchChange` gets no search box at all — this used to render a styled
+   * div that looked exactly like an input and did nothing, which is worse than
+   * having no search: it tells the user the feature exists.
+   */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   children: React.ReactNode;
 }) {
   const { c, isDark } = useDS();
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const tex = isDark ? texture.dark : texture.light;
+
+  // A committee head reaches the console through their seat, not through a
+  // chapter role, so the sidebar shows them the one section they can open. The
+  // layout enforces the same boundary server-side.
+  const admin = isAdmin(user?.role);
+  const nav = admin ? NAV : NAV.filter((n) => n.key === "committees");
 
   const activeKey: NavKey =
     NAV.slice(1).find((n) => pathname.startsWith(n.href))?.key ?? "overview";
@@ -98,7 +122,7 @@ export default function AdminShell({
                 padding: "3px 8px",
               }}
             >
-              ADMIN
+              {admin ? "ADMIN" : "COMMITTEE"}
             </span>
           </div>
 
@@ -107,7 +131,7 @@ export default function AdminShell({
             <span style={{ ...t.label, fontSize: 10, color: c.faint, padding: "4px 10px 10px" }}>
               MANAGE
             </span>
-            {NAV.map((n) => {
+            {nav.map((n) => {
               const active = n.key === activeKey;
               return (
                 <Link
@@ -175,13 +199,48 @@ export default function AdminShell({
             <span style={{ ...t.label, color: c.text }}>{breadcrumb}</span>
           </div>
           <div className="flex items-center" style={{ gap: 14 }}>
-            <div
-              className="hidden sm:flex items-center"
-              style={{ gap: 8, padding: "8px 12px", width: 220, border: `1px solid ${c.rule}`, color: c.faint }}
-            >
-              <Icon name="search" size={14} />
-              <span style={{ ...t.bodySmall, color: c.faint }}>{searchPlaceholder}</span>
-            </div>
+            {onSearchChange && (
+              <div
+                className="hidden sm:flex items-center"
+                style={{ gap: 8, padding: "0 12px", width: 260, border: `1px solid ${c.rule}` }}
+              >
+                <span style={{ color: c.faint, display: "flex" }}>
+                  <Icon name="search" size={14} />
+                </span>
+                <input
+                  value={searchValue ?? ""}
+                  placeholder={searchPlaceholder}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  aria-label={searchPlaceholder}
+                  style={{
+                    ...t.bodySmall,
+                    flex: 1,
+                    minWidth: 0,
+                    padding: "9px 0",
+                    color: c.text,
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                  }}
+                />
+                {searchValue && (
+                  <button
+                    aria-label="Clear search"
+                    onClick={() => onSearchChange("")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: c.faint,
+                      cursor: "pointer",
+                      padding: 0,
+                      display: "flex",
+                    }}
+                  >
+                    <Icon name="x" size={13} />
+                  </button>
+                )}
+              </div>
+            )}
             <span style={{ color: c.muted, display: "flex" }}><Icon name="bell" size={17} /></span>
             <button
               onClick={toggleTheme}

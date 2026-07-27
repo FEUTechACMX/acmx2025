@@ -164,7 +164,7 @@ export default function OverviewTab({
           <div style={{ height: 2, backgroundColor: c.accent }} />
           <div className="flex flex-col" style={{ padding: "1.4rem", gap: "1.1rem" }}>
             <span style={{ ...t.label, color: c.faint, textTransform: "uppercase" }}>
-              ACM X Membership
+              ACM Membership
             </span>
             <span style={{ ...t.subheading, fontSize: "1.5rem", color: c.text }}>
               {loading ? "—" : data?.account.studentId}
