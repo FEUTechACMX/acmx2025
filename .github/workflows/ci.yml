@@ -31,9 +31,9 @@ jobs:
       NEXT_SUPABASE_SERVICE_ROLE_KEY: "placeholder"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -55,8 +55,12 @@ jobs:
       - name: Build
         run: npm run build
 
-  # Guards the thing that silently broke once already: an applied migration
-  # being edited afterwards, which makes `prisma migrate deploy` refuse to run.
+  # Asserts that prisma/migrations and schema.prisma describe the same database,
+  # so a schema edit cannot land without a migration behind it.
+  #
+  # Note what this does *not* cover: it never connects to the live database, and
+  # `migrate diff` compares declarations rather than enum value order, so it will
+  # not catch drift between the reconstructed baseline and production.
   migrations:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -65,9 +69,9 @@ jobs:
       DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm

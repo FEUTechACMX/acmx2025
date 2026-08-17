@@ -4,8 +4,9 @@ import { EventWithCount, getEventStatus } from "@/types/events";
 import AttendButton from "./AttendButton";
 import PastEventExperience from "./PastEventExperience";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { isOfficer, isEventAdmin } from "@/types/auth";
+import { useSession } from "@/components/sessionClient";
 import ReactMarkdown from "react-markdown";
 import {
   Surface,
@@ -111,27 +112,17 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
   const { c } = useDS();
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const [priceTier, setPriceTier] = useState<"officer" | "member" | "nonmember">("nonmember");
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [activeTab, setActiveTab] = useState("");
+  const { user } = useSession();
 
-  useEffect(() => {
-    async function fetchUserRole() {
-      try {
-        const res = await fetch("/api/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setPriceTier(isOfficer(data.user.role) ? "officer" : "member");
-            setShowAdminPanel(isEventAdmin(data.user.role));
-          }
-        }
-      } catch {
-        /* not logged in */
-      }
-    }
-    fetchUserRole();
-  }, []);
+  // Both derived from the shared session read, which replaces this component's
+  // own /api/me request.
+  const priceTier: "officer" | "member" | "nonmember" = !user
+    ? "nonmember"
+    : isOfficer(user.role)
+      ? "officer"
+      : "member";
+  const showAdminPanel = !!user && isEventAdmin(user.role);
 
   const status = getEventStatus(event);
   const isFinished = status === "finished";

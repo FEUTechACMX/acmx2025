@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { committeeScope } from "@/lib/committee-access";
 import type { MemberSearchResultDTO } from "@/types/committee";
 
@@ -21,11 +21,13 @@ const LIMIT = 25;
  * It returns nothing an officer can't already see on People & Roles.
  */
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const scope = await committeeScope(user);
-  if (!scope.hasAny) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  if (!scope.hasAny)
+    return NextResponse.json({ error: "You don't have access to this." }, { status: 403 });
 
   try {
     const url = new URL(req.url);

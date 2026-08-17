@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/UI/NavBar";
-import { getCurrentUser } from "@/lib/auth";
-import { toSafeUser } from "@/lib/userMapper";
 import ThemeProvider from "@/components/ThemeProvider";
 
 const geistSans = Geist({
@@ -21,13 +19,17 @@ export const metadata: Metadata = {
   description: "The official website of the FEU Tech ACM Student Chapter.",
 };
 
-export default async function RootLayout({
+/**
+ * Note the absence of a session read here. The nav needs the current member,
+ * but fetching it in this layout opted every route in the app out of static
+ * rendering — see `components/sessionClient` and CLEANUP.md §5.1. NavBar now
+ * asks for the user itself.
+ */
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const dbUser = await getCurrentUser();
-  const user = dbUser ? toSafeUser(dbUser) : null;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -48,7 +50,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          <NavBar user={user} />
+          <NavBar />
           {children}
         </ThemeProvider>
       </body>

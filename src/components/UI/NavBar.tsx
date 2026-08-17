@@ -2,18 +2,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { safeUser } from "@/types/auth";
 import LoginModal from "@/components/login/modal/LogInModal";
+import { useSession } from "@/components/sessionClient";
 import ProfileMenu from "./ProfileMenu";
 import { useTheme } from "@/components/ThemeProvider";
 import { useDS } from "@/components/ds";
 import Icon from "@/components/admin/icons";
 import { useCart } from "@/components/merch/cartClient";
 import { type as t, motion, layout } from "@/styles/design-system";
-
-type NavBarProps = {
-  user: safeUser | null;
-};
 
 type NavItem = { label: string; href: string };
 
@@ -75,7 +71,8 @@ function NavLink({
   );
 }
 
-export default function NavBar({ user }: NavBarProps) {
+export default function NavBar() {
+  const { user, loading } = useSession();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAcmDropdownOpen, setIsAcmDropdownOpen] = useState(false);
@@ -87,7 +84,9 @@ export default function NavBar({ user }: NavBarProps) {
   const { c, isDark } = useDS();
 
   // Home points straight at the user's landing page — no "/" redirect round-trip.
-  const homeHref = user ? "/dashboard" : "/hero";
+  // Until the session resolves we don't know which that is, so fall back to "/"
+  // and let it redirect; guessing "/hero" would send members to the wrong page.
+  const homeHref = loading ? "/" : user ? "/dashboard" : "/hero";
   const navLinks: NavItem[] = [{ label: "Home", href: homeHref }, ...BASE_LINKS];
 
   const isActive = (href: string) => {
@@ -231,7 +230,12 @@ export default function NavBar({ user }: NavBarProps) {
         <div className="hidden lg:flex items-center" style={{ gap: "1.25rem" }}>
           {user && <CartLink />}
           <ThemeToggle theme={theme} onToggle={toggleTheme} color={c.text} />
-          {user ? (
+          {loading ? (
+            /* Session not resolved yet. Rendering either branch would be a
+               guess, and the wrong guess flashes a LOG IN button at a signed-in
+               member on every page load — so hold the space instead. */
+            <div style={{ width: "6.5rem" }} aria-hidden />
+          ) : user ? (
             <ProfileMenu user={user} />
           ) : (
             <button
@@ -345,7 +349,9 @@ export default function NavBar({ user }: NavBarProps) {
           <div className="flex items-center" style={{ gap: "1rem", marginTop: "1.5rem" }}>
             <ThemeToggle theme={theme} onToggle={toggleTheme} color={c.text} />
             <div className="flex-1">
-              {user ? (
+              {loading ? (
+                <div style={{ height: "2.6rem" }} aria-hidden />
+              ) : user ? (
                 <ProfileMenu user={user} />
               ) : (
                 <button

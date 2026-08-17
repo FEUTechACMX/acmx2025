@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -7,10 +7,9 @@ export const dynamic = "force-dynamic";
 
 // Overview metrics + a lightweight activity feed for the admin dashboard.
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser(req);
-  if (!user || !isAdmin(user.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const [events, registrations, attendance, members] = await Promise.all([

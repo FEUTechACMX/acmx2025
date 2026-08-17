@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES } from "@/types/auth";
+import { requireRole } from "@/lib/auth";
+import { isEventAdmin } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,13 +10,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ eventId: string }> }
 ) {
-  const user = await getCurrentUser(req);
-  if (!user || !EVENT_ADMIN_ROLES.includes(user.role)) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
+  // `NextResponse` is a `Response`, so the gate's rejection can be returned from
+  // this handler unchanged even though the success path is a raw stream.
+  const auth = await requireRole(req, isEventAdmin);
+  if (!auth.ok) return auth.response;
 
   const { eventId } = await params;
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole, requireUser } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import { committeeScope } from "@/lib/committee-access";
 import {
@@ -25,11 +25,13 @@ export const dynamic = "force-dynamic";
 // committees they hold a seat on, each stamped with EDIT or VIEW so the console
 // knows whether to render the editor or a read-only record.
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   const scope = await committeeScope(user);
-  if (!scope.hasAny) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  if (!scope.hasAny)
+    return NextResponse.json({ error: "You don't have access to this." }, { status: 403 });
 
   try {
     const committees = await prisma.committee.findMany({
@@ -57,10 +59,9 @@ export async function GET(req: NextRequest) {
 // Only the name is required. A committee added with nothing else still renders
 // a complete page: every block on the plate has its own empty state.
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser(req);
-  if (!user || !isAdmin(user.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const body = (await req.json()) ?? {};

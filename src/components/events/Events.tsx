@@ -1,35 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import EventsList from "./EventsList";
 import EventSelector from "./EventSelector";
 import EventCreationModal from "./EventCreationModal";
 import { isEventAdmin } from "@/types/auth";
+import { useSession } from "@/components/sessionClient";
 import { Column, PageHeader, Button } from "@/components/ds";
 import { layout } from "@/styles/design-system";
 
 export default function Events() {
   const [semester, setSemester] = useState("3rd");
   const [showCreate, setShowCreate] = useState(false);
-  const [canCreate, setCanCreate] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { user } = useSession();
 
-  useEffect(() => {
-    async function checkRole() {
-      try {
-        const res = await fetch("/api/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user && isEventAdmin(data.user.role)) {
-            setCanCreate(true);
-          }
-        }
-      } catch {
-        /* not logged in */
-      }
-    }
-    checkRole();
-  }, []);
+  // Derived, not stored: this used to be state filled in by its own /api/me
+  // request, one of three on this page for the same session.
+  const canCreate = !!user && isEventAdmin(user.role);
 
   return (
     <Column>

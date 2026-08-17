@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import {
   readCategory,
@@ -13,17 +13,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
-async function gate(req: NextRequest) {
-  const user = await getCurrentUser(req);
-  return user && isAdmin(user.role) ? user : null;
-}
-
 // GET /api/admin/merch/items — every item including HIDDEN ones, with the
 // restock-list count so officers can see demand on sold-out lines.
 export async function GET(req: NextRequest) {
-  if (!(await gate(req))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
 
   try {
     const items = await prisma.merchItem.findMany({
@@ -49,9 +43,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/merch/items — create an item and its variant rows.
 export async function POST(req: NextRequest) {
-  if (!(await gate(req))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
 
   try {
     const body = (await req.json()) ?? {};

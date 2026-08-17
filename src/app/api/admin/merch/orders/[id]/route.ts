@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import { serializeOrder } from "@/lib/merch";
 import { MERCH_ORDER_STATUSES } from "@/types/merch";
@@ -16,10 +16,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser(req);
-  if (!user || !isAdmin(user.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const { id } = await params;

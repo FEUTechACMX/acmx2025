@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole, requireUser } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import { committeeAccess, restrictToLeadFields } from "@/lib/committee-access";
 import {
@@ -22,13 +22,18 @@ export const dynamic = "force-dynamic";
 // GET /api/admin/committees/[id] — one committee, HIDDEN included, for anyone
 // with a seat on it.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const { id } = await params;
     const access = await committeeAccess(user, id);
-    if (access === "NONE") return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (access === "NONE")
+      return NextResponse.json(
+        { error: "You don't have access to this committee." },
+        { status: 403 }
+      );
 
     const committee = await prisma.committee.findUnique({ where: { id }, include: committeeInclude });
 
@@ -55,8 +60,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 // foreign-keys into these rows, so replacing them costs no references — unlike
 // merch variants, which have to be reconciled by label to survive in carts.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const { id } = await params;
@@ -198,10 +204,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // HIDDEN is the reversible way to take a committee off the site; this drops the
 // record and its roster for good, so the console asks before calling it.
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser(req);
-  if (!user || !isAdmin(user.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const { id } = await params;

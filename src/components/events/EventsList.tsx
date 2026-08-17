@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import EventCards from "./EventCards";
 import type { EventWithCount } from "@/types/events";
 import { isOfficer } from "@/types/auth";
+import { useSession } from "@/components/sessionClient";
 import { Panel, Body, Label, useDS } from "@/components/ds";
 
 type PriceTier = "officer" | "member" | "nonmember";
@@ -29,25 +30,16 @@ function Loader() {
 export default function EventsList({ semester }: { semester: string }) {
   const [events, setEvents] = useState<EventWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [priceTier, setPriceTier] = useState<PriceTier>("nonmember");
   const { c } = useDS();
+  const { user } = useSession();
 
-  useEffect(() => {
-    async function fetchUserRole() {
-      try {
-        const res = await fetch("/api/me");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setPriceTier(isOfficer(data.user.role) ? "officer" : "member");
-          }
-        }
-      } catch {
-        /* not logged in */
-      }
-    }
-    fetchUserRole();
-  }, []);
+  // Derived from the shared session read rather than this component's own
+  // /api/me request. Signed-out visitors see the non-member rate.
+  const priceTier: PriceTier = !user
+    ? "nonmember"
+    : isOfficer(user.role)
+      ? "officer"
+      : "member";
 
   // Switching semester puts the list back into its loading state. Adjusted
   // during render so the previous semester's events aren't shown for a frame

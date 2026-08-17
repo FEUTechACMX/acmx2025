@@ -25,7 +25,8 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | `eslint src` | 6 errors, 14 warnings | **0 errors, 11 warnings** |
 | dependencies | 18 + 12 | **9 + 10** |
 | lines in `src/` | 24,905 | **22,957** (net of ~200 lines of new walk-in code) |
-| `next build` | not run | **passes** |
+| `next build` | not run | **passes on Turbopack** (`--webpack` opt-out removed) |
+| prerendered page routes | 0 | **7** |
 
 ### Closed
 
@@ -59,6 +60,10 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | 12.4 | `eslint-config-next` a major behind | Bumped to 16; `eslint.config.mjs` rewritten to native flat config, which had been throwing before it linted a single file |
 | 13.2 | No CI | `.github/workflows/ci.yml` — typecheck, lint, build, plus a job asserting the migration history still reproduces `schema.prisma` |
 | 13.3 | `npm run lint` linted nothing | Now `eslint src` |
+| 5.1 | Every page dynamic because the root layout hit the DB | Session read moved out of the layout into `components/sessionClient`. Six page routes plus `/_not-found` now prerender: `/about`, `/events`, `/hero`, `/login`, `/officers`, `/settings` |
+| 13.5 | Build opted out of Turbopack | The `--webpack` flag was masking a real error: `registrations/complete` re-exported `dynamic`, which route segment config forbids. Fixed at the cause; builds on Turbopack |
+| 5.4 | Role gating expressed four different ways | One `requireRole(req, guard)` in `lib/auth.ts`, plus `requireUser` for session-only routes. 27 route files adopted it. A fifth vocabulary turned up during the work — a local `gate()` helper duplicated across the two merch-item routes — and went with the rest |
+| 9.1 | 403 returned where 401 is meant | Falls out of §5.4: 401 when there is no session, 403 only when a real role check fails. Verified against a running server — every gated route answers an unauthenticated caller with 401 and a message, and the only remaining 403s are genuine committee-scope denials |
 
 ### A note on the 19 react-hooks errors
 
@@ -88,35 +93,69 @@ Suppressions are greppable:
 
 ### Still open
 
-Everything else, notably: **§5.1** (the root layout still queries the session,
-so every route is `ƒ (Dynamic)` — caching removed the duplicate queries, not the
-dynamism), **§8.1/§8.2** (the 50/50 theming split and its ~60 `!important`
-overrides), **§8.4** (six `<img>`, the bulk of the remaining warnings),
-**§13.1** (still no tests), **§5.4/§9.1** (four role-gating vocabularies, and
-403 returned where 401 is meant).
+Everything else, notably: **§8.1/§8.2** (the 50/50 theming split and its ~60
+`!important` overrides), **§8.4** (six `<img>`, the bulk of the remaining
+warnings), **§13.1** (still no tests).
+
+Nine API routes still read the session directly rather than through
+`requireRole`, and all nine are deliberate: `/api/me`, `check-registration` and
+`registrations` answer anonymous callers by design rather than refusing them,
+and the rest (`change-password`, `merch/cart`, `merch/checkout`, `merch/notify`,
+`registration-prefill`, `profile`'s third read) already returned 401 with copy
+better than the generic helper's.
+
+### A note on §5.1 and where the session is read
+
+The layout no longer reads the session, so the public pages prerender again. The
+cost is that the nav's signed-in state now arrives after hydration rather than
+in the first HTML. The nav holds an empty slot while the answer is unknown
+instead of assuming "signed out" — assuming would flash a LOG IN button at every
+member on every page load, which is worse than a brief gap.
+
+`useSession` also replaced three ad-hoc `/api/me` fetches in the events tree
+(`Events`, `EventsList`, `SelectedEvent`), each of which had its own effect and
+its own copy of the role-to-price-tier rule. Measured on `/events`: three
+session requests per load became one, and all three flags are now derived
+during render rather than stored in state.
+
+The better long-term answer is PPR — a static shell with the nav streaming into
+a Suspense hole, which would keep the user in the first response *and* keep the
+pages cacheable. That means enabling `cacheComponents` app-wide, which is too
+broad a change to make without tests.
 
 ### Carried forward
 
-- **`20260817000000_drop_lesson_and_schedule` and
-  `20260817010000_session_references_user_id` are written but unapplied.** They
-  land on the next `prisma migrate deploy`. Both are safe: all three affected
-  tables were verified empty.
+- ~~`20260817000000_drop_lesson_and_schedule` and
+  `20260817010000_session_references_user_id` are written but unapplied.~~
+  **Applied 2026-08-17.** `prisma migrate status` reports the schema up to date,
+  and the result was verified directly against the database: `Lesson` and
+  `Schedule` are gone, `Session.userId` now references `User.id` with
+  `ON DELETE CASCADE`, `Session_userId_idx` exists, and there are no orphaned
+  session rows. `Session` was empty, so the student-number translation step was
+  a no-op and no one was signed out.
+
+  Worth recording, because it was the risk going in: rewriting the baseline
+  migration after it had already been applied did **not** trigger a checksum
+  mismatch, so `migrate deploy` ran without complaint.
 - **`DOCUMENTATION.md` is now stale** in the places that describe deleted code —
   its §10 "Known rough edges" lists several items closed above.
 - **Walk-in registration is untested at runtime.** It compiles and builds; the
   flow has not been exercised against a live event.
 - **`seed-members-2526.mjs` hardcodes an absolute path** into a local Downloads
   folder, so it only runs on one machine.
-- **The CI migrations job has never run.** It asserts the migration history
-  still reproduces `schema.prisma` by replaying it against a throwaway Postgres
-  — the check that could not be run locally, since the only database reachable
-  from this machine is the live one and `migrate diff` resets whatever it is
-  pointed at. If it goes red on the first run, the likely cause is enum value
-  *ordering*: the live `UserRole` has `ADMIN` before `VP_EXTERNAL` (the VPs were
-  appended by a later migration) while `schema.prisma` declares `ADMIN` last.
-  Prisma has tolerated that drift on the live database, so it probably tolerates
-  it here too — but it is the one part of the baseline reconstruction that is
-  reasoned rather than executed.
+- **The CI migrations job has never been read.** It runs `prisma migrate diff
+  --from-migrations --to-schema-datamodel --exit-code` against a throwaway
+  Postgres, which asserts that the migration folder and `schema.prisma` describe
+  the same database — i.e. it catches a schema edit with no migration behind it.
+
+  An earlier draft of this note claimed the job also validates the reconstructed
+  baseline against the live database's enum ordering. It does not: it never
+  connects to the live database, and `migrate diff` compares declarations rather
+  than value order. So the `UserRole` ordering question — the live enum has
+  `ADMIN` before the VPs, `schema.prisma` declares it last — remains genuinely
+  unverified, and CI is not the thing that will answer it. Prisma has tolerated
+  the drift in practice; it is still the one part of the baseline reconstruction
+  that is reasoned rather than executed.
 
 ---
 

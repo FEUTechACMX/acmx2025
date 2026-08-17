@@ -13,4 +13,13 @@
  *
  * Safe to remove once the access logs show no traffic on it.
  */
-export { POST, dynamic } from "../route";
+export { POST } from "../route";
+
+/**
+ * Declared here rather than re-exported from `../route`. Route segment config
+ * has to be statically parseable, and `export { dynamic } from …` defeats that:
+ * Turbopack rejects it outright ("mustn't be reexported"), while the webpack
+ * builder silently accepted it — so this only surfaced once the build was run
+ * without `--webpack`.
+ */
+export const dynamic = "force-dynamic";

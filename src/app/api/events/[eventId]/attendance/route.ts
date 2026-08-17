@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES } from "@/types/auth";
+import { requireRole } from "@/lib/auth";
+import { EVENT_ADMIN_ROLES, isEventAdmin } from "@/types/auth";
 
 // GET — fetch attendance records (safe fields only)
 export async function GET(
@@ -9,10 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ eventId: string }> }
 ) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user || !EVENT_ADMIN_ROLES.includes(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    const auth = await requireRole(req, isEventAdmin);
+    if (!auth.ok) return auth.response;
+    const user = auth.user;
 
     const { eventId } = await params;
 

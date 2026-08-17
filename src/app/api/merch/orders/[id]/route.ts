@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { serializeOrder } from "@/lib/merch";
 
 export const dynamic = "force-dynamic";
@@ -14,10 +14,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser(req);
-  if (!user) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+  const user = auth.user;
 
   try {
     const { id } = await params;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validateAccount } from "@/lib/validation";
 
@@ -9,11 +9,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const dbUser = await getCurrentUser();
-
-    if (!dbUser) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+    const dbUser = auth.user;
 
     const cookieStore = await cookies();
     const currentSessionId = cookieStore.get("session")?.value;
@@ -118,17 +116,15 @@ export async function GET() {
 /**
  * Updates the caller's own account details.
  *
- * Scoped to `getCurrentUser()` rather than an id in the body — there is no
+ * Scoped to the session via `requireUser()` rather than an id in the body — there is no
  * request shape that lets one member edit another. `validateAccount` drops
  * unknown keys, so `role` and `points` cannot ride along in the payload.
  */
 export async function PATCH(req: Request) {
   try {
-    const dbUser = await getCurrentUser();
-
-    if (!dbUser) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
+    const auth = await requireUser();
+    if (!auth.ok) return auth.response;
+    const dbUser = auth.user;
 
     let body: unknown;
     try {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getCurrentUser } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES } from "@/types/auth";
+import { requireRole } from "@/lib/auth";
+import { EVENT_ADMIN_ROLES, isEventAdmin } from "@/types/auth";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -13,10 +13,9 @@ export async function POST(req: NextRequest) {
       process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const user = await getCurrentUser(req);
-    if (!user || !EVENT_ADMIN_ROLES.includes(user.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    const auth = await requireRole(req, isEventAdmin);
+    if (!auth.ok) return auth.response;
+    const user = auth.user;
 
     const formData = await req.formData();
     const bucket = formData.get("bucket") as string;

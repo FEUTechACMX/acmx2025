@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import {
   readCategory,
@@ -13,11 +13,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-async function gate(req: NextRequest) {
-  const user = await getCurrentUser(req);
-  return user && isAdmin(user.role) ? user : null;
-}
-
 // PATCH /api/admin/merch/items/[id] — save the editor.
 //
 // Variants are reconciled by label rather than replaced wholesale: an existing
@@ -27,9 +22,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await gate(req))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
 
   try {
     const { id } = await params;
@@ -141,9 +135,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await gate(req))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+  const auth = await requireRole(req, isAdmin);
+  if (!auth.ok) return auth.response;
 
   try {
     const { id } = await params;

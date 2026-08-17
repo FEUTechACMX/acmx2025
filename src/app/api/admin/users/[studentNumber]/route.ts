@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { isSecretariatOrAbove } from "@/types/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -8,10 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ studentNumber: string }> }
 ) {
   try {
-    const sessionUser = await getCurrentUser(req);
-    if (!sessionUser || !isSecretariatOrAbove(sessionUser.role)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    const auth = await requireRole(req, isSecretariatOrAbove);
+    if (!auth.ok) return auth.response;
+    const sessionUser = auth.user;
 
     const { studentNumber } = await params;
 
