@@ -465,7 +465,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
         {showAdminPanel && (
           <section>
             <SectionLabel>Admin</SectionLabel>
-            <Link href={`/events/${event.eventId}/admin`}>
+            <Link href={`/admin/events/${event.eventId}`}>
               <Button variant="outline">Manage Event →</Button>
             </Link>
           </section>

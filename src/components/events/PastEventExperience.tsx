@@ -15,7 +15,6 @@ import {
 } from "@/components/ds";
 import { useDS } from "@/components/ds/useDS";
 import { type as t, layout, motion } from "@/styles/design-system";
-import AttendanceLookup from "./AttendanceLookup";
 
 /* ──────────────────────────────────────────────────────────────
  * PastEventExperience — "The Memory Doors"
@@ -722,17 +721,11 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
         {isAdmin && (
           <section>
             <SectionLabel>Admin</SectionLabel>
-            <Link href={`/events/${event.eventId}/admin`}>
+            <Link href={`/admin/events/${event.eventId}`}>
               <Button variant="outline">Manage Event →</Button>
             </Link>
           </section>
         )}
-
-        {/* Attendance lookup (retained utility) */}
-        <AttendanceLookup
-          eventId={event.eventId}
-          subEvents={event.subEvents?.map((sub) => ({ eventId: sub.eventId, name: sub.name }))}
-        />
       </Column>
     </Surface>
   );
