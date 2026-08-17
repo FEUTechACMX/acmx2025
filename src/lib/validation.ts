@@ -146,6 +146,61 @@ export const integerBetween =
     return null;
   };
 
+/**
+ * Membership of a fixed set — Prisma enums, mostly.
+ *
+ * Without this, an unrecognised `eventSemester` or category reached the database
+ * and came back as a constraint violation, which the route then reported as a
+ * 500. A rejected enum value is a bad request, not a server fault.
+ */
+export const oneOf =
+  (label: string, allowed: readonly string[]): Rule =>
+  (v) =>
+    allowed.includes(str(v))
+      ? null
+      : `${label} must be one of: ${allowed.join(", ")}.`;
+
+/**
+ * A timestamp the `Date` constructor can actually parse.
+ *
+ * `new Date("tomorrow")` is an Invalid Date, and handing one to Prisma throws
+ * mid-write — so this is the difference between "that date didn't make sense"
+ * and a 500 with a stack trace behind it.
+ */
+export const dateTime =
+  (label: string): Rule =>
+  (v) => {
+    const s = str(v);
+    if (!s) return `${label} is required.`;
+    return Number.isNaN(new Date(s).getTime()) ? `${label} is not a valid date.` : null;
+  };
+
+/** A money amount: a finite number, not negative. `Number("")` is 0, so pair with `required` when the field is mandatory. */
+export const money =
+  (label: string): Rule =>
+  (v) => {
+    const n = typeof v === "number" ? v : Number(str(v));
+    if (!Number.isFinite(n)) return `${label} must be a number.`;
+    if (n < 0) return `${label} cannot be negative.`;
+    return null;
+  };
+
+/**
+ * `b` must not fall before `a`. Expressed over the whole payload rather than one
+ * field, because it is a relationship, not a value.
+ */
+export function notBefore(
+  input: Record<string, unknown>,
+  aKey: string,
+  bKey: string,
+  message: string
+): string | null {
+  const a = new Date(str(input[aKey])).getTime();
+  const b = new Date(str(input[bKey])).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b)) return null; // dateTime reports these
+  return b < a ? message : null;
+}
+
 /* ── Passwords ──────────────────────────────────────────────── */
 
 export const PASSWORD_MIN = 8;
