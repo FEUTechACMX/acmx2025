@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import type { safeUser } from "@/types/auth";
-import { useDS } from "@/components/ds";
+import { useDS, useConfirm } from "@/components/ds";
 import { type as t } from "@/styles/design-system";
 import AdminShell, { AdminContent, AdminPageHeader, SectionLabel, AdminButton } from "./AdminShell";
 import Icon from "./icons";
@@ -18,6 +18,7 @@ type Video = {
 
 export default function VideosManager({ user }: { user: safeUser }) {
   const { c } = useDS();
+  const { confirm, dialog } = useConfirm();
   const [videos, setVideos] = useState<Video[]>([]);
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -69,7 +70,13 @@ export default function VideosManager({ user }: { user: safeUser }) {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Remove this featured video?")) return;
+    const confirmed = await confirm({
+      title: "Remove this featured video?",
+      body: "It comes off the dashboard carousel straight away.",
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!confirmed) return;
     const res = await fetch(`/api/videos/${id}`, { method: "DELETE" });
     if (res.ok) load();
   };
@@ -81,6 +88,7 @@ export default function VideosManager({ user }: { user: safeUser }) {
 
   return (
     <AdminShell user={user} breadcrumb="Videos" searchPlaceholder="Search videos…">
+      {dialog}
       <AdminContent>
         <AdminPageHeader
           eyebrow={`${videos.length} FEATURED VIDEOS`}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { safeUser } from "@/types/auth";
 import { isAdmin, roleLabel } from "@/types/auth";
-import { useDS } from "@/components/ds";
+import { useDS, useConfirm } from "@/components/ds";
 import { type as t, motion } from "@/styles/design-system";
 import AdminShell, { AdminContent, AdminButton, SectionLabel } from "./AdminShell";
 import Icon, { type IconName } from "./icons";
@@ -74,6 +74,7 @@ const TABS: { key: Tab; label: string; icon: IconName }[] = [
  */
 export default function CommitteeEditor({ user, id }: { user: safeUser; id: string }) {
   const { c } = useDS();
+  const { confirm, dialog } = useConfirm();
   const router = useRouter();
   const admin = isAdmin(user?.role);
   const creating = id === "new";
@@ -147,13 +148,13 @@ export default function CommitteeEditor({ user, id }: { user: safeUser; id: stri
 
   async function remove() {
     if (!draft?.id) return;
-    if (
-      !window.confirm(
-        `Delete "${draft.name}"? The roster and open call go with it. Hiding it instead keeps the record.`
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: `Delete "${draft.name}"?`,
+      body: "The roster and any open call go with it. Hiding the committee instead keeps the record and pulls it off the public site.",
+      confirmLabel: "Delete committee",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     setBusy(true);
     const res = await fetch(`/api/admin/committees/${draft.id}`, { method: "DELETE" });
@@ -176,6 +177,7 @@ export default function CommitteeEditor({ user, id }: { user: safeUser; id: stri
 
   return (
     <AdminShell user={user} breadcrumb={draft?.name || (creating ? "New committee" : "Committee")}>
+      {dialog}
       <AdminContent>
         <div className="flex flex-col" style={{ gap: 18 }}>
           <Link

@@ -5,5 +5,7 @@ export { Panel, Badge, DataRow } from "./Panel";
 export { Field, Segmented } from "./Field";
 export { default as Modal } from "./Modal";
 export type { ModalMessage, MessageTone } from "./Modal";
+export { useConfirm } from "./useConfirm";
+export type { ConfirmOptions } from "./useConfirm";
 export { Rule, Eyebrow, Display, Title, Heading, Subheading, Body, Label } from "./Text";
 export { useDS } from "./useDS";

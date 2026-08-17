@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { safeUser } from "@/types/auth";
-import { useDS } from "@/components/ds";
+import { useDS, useConfirm } from "@/components/ds";
 import { type as t } from "@/styles/design-system";
 import AdminShell, { AdminContent, AdminPageHeader, AdminButton } from "./AdminShell";
 import Icon from "./icons";
@@ -26,6 +26,7 @@ const fileNameOf = (url: string) => {
 
 export default function MediaLibrary({ user }: { user: safeUser }) {
   const { c } = useDS();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<MediaItem[]>([]);
   const [filter, setFilter] = useState<"all" | "cover" | "card" | "gallery">("all");
   const [uploaded, setUploaded] = useState<string[]>([]);
@@ -64,7 +65,13 @@ export default function MediaLibrary({ user }: { user: safeUser }) {
   };
 
   const takeDown = async (item: MediaItem) => {
-    if (!confirm(`Take down this image from “${item.eventName}”? It will no longer appear on the site.`)) return;
+    const confirmed = await confirm({
+      title: "Take this image down?",
+      body: `It will stop appearing on “${item.eventName}” and anywhere else the site shows it. The file itself stays in storage.`,
+      confirmLabel: "Take down",
+      danger: true,
+    });
+    if (!confirmed) return;
     let body: Record<string, unknown>;
     if (item.kind === "cover") body = { image: null };
     else if (item.kind === "card") body = { cardImage: null };
@@ -89,6 +96,7 @@ export default function MediaLibrary({ user }: { user: safeUser }) {
 
   return (
     <AdminShell user={user} breadcrumb="Media Library" searchPlaceholder="Search images…">
+      {dialog}
       <AdminContent>
         <AdminPageHeader
           eyebrow={`${items.length} IMAGES ON THE SITE`}

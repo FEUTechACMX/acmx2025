@@ -78,6 +78,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [prefilling, setPrefilling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   // Reopening the modal starts at step 1 with no stale error. Adjusted during
   // render rather than in the effect below, which flashed the previous
@@ -88,6 +89,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
     if (isOpen) {
       setStep(1);
       setError(null);
+      setSubmitted(false);
     }
   }
 
@@ -168,11 +170,13 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
         throw new Error(data.error || "Registration failed.");
       }
 
-      // Call success callback to update UI optimistically
+      // The button behind the modal flips to "Registered ✓" straight away.
       onRegistrationSuccess?.();
 
-      onClose();
-      alert("Successfully registered!");
+      // Confirmed in place rather than through `alert()`, which fired *after*
+      // onClose — so the only acknowledgement a registrant got was an unstyled
+      // OS dialog floating over a page that had already moved on (§6.6).
+      setSubmitted(true);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -317,7 +321,67 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
         </div>
 
         {/* Loading state for prefill */}
-        {prefilling ? (
+        {submitted ? (
+          <div className="px-6 py-14 flex flex-col items-center text-center">
+            <div
+              className="flex items-center justify-center mb-4"
+              style={{
+                width: "2.75rem",
+                height: "2.75rem",
+                color: c.accent,
+                border: `1px solid ${c.accent}`,
+              }}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="square"
+                  strokeLinejoin="miter"
+                  strokeWidth={2.5}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <p
+              style={{
+                fontFamily: "'Arian-bold', sans-serif",
+                fontSize: "1.05rem",
+                color: c.text,
+              }}
+            >
+              You&apos;re registered.
+            </p>
+            <p
+              className="mt-2"
+              style={{
+                fontFamily: "'Arian-light', sans-serif",
+                fontSize: "0.875rem",
+                color: c.muted,
+                maxWidth: "26rem",
+              }}
+            >
+              Bring your student number to the door — the desk checks you in from it.
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-6 px-5 py-2 cursor-pointer"
+              style={{
+                fontFamily: "'Arian-bold', sans-serif",
+                fontSize: "0.875rem",
+                backgroundColor: c.accent,
+                color: "#ffffff",
+                border: "none",
+              }}
+            >
+              Done
+            </button>
+          </div>
+        ) : prefilling ? (
           <div className="px-6 py-16 flex flex-col items-center justify-center">
             <div
               className="w-5 h-5 animate-spin mb-3"

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import type { safeUser } from "@/types/auth";
-import { useDS } from "@/components/ds";
+import { useDS, useConfirm } from "@/components/ds";
 import { type as t, motion } from "@/styles/design-system";
 import AdminShell, {
   AdminContent,
@@ -85,6 +85,7 @@ function toDraft(item: AdminItem): Draft {
 
 export default function MerchandiseManager({ user }: { user: safeUser }) {
   const { c } = useDS();
+  const { confirm, dialog } = useConfirm();
   const [items, setItems] = useState<AdminItem[]>([]);
   const [orders, setOrders] = useState<OrderDTO[]>([]);
   const [filter, setFilter] = useState<StatusFilter>("ALL");
@@ -179,7 +180,13 @@ export default function MerchandiseManager({ user }: { user: safeUser }) {
 
   async function remove(d: Draft) {
     if (!d.id) return;
-    if (!window.confirm(`Delete "${d.name}"? This cannot be undone.`)) return;
+    const confirmed = await confirm({
+      title: `Delete "${d.name}"?`,
+      body: "This cannot be undone. Marking it hidden keeps the record and pulls it off the store.",
+      confirmLabel: "Delete item",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     setBusy(true);
     const res = await fetch(`/api/admin/merch/items/${d.id}`, { method: "DELETE" });
@@ -241,6 +248,7 @@ export default function MerchandiseManager({ user }: { user: safeUser }) {
 
   return (
     <AdminShell user={user} breadcrumb="Merchandise" searchPlaceholder="Search items…">
+      {dialog}
       <AdminContent>
       <AdminPageHeader
         eyebrow="STORE"
