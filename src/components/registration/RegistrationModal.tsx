@@ -1,6 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { useDS } from "@/components/ds";
+import { motion } from "@/styles/design-system";
+
+/**
+ * Ported off the legacy Tailwind palette onto design-system tokens.
+ *
+ * Deliberately a *faithful* port: the five-step wizard, its proportions, spacing
+ * and the Arian type are unchanged — this is the flow non-members use to
+ * register, so it is the wrong place for a redesign. What changed is where the
+ * colours come from. Every `bg-white` / `text-gray-*` / `bg-gray-*` / `bg-black`
+ * / `*-red-*` class is gone, because those were the classes `globals.css` was
+ * patching with ~60 `!important` dark-mode overrides (CLEANUP.md §8.1/§8.2).
+ * Layout utilities (flex, padding, spacing) stay as Tailwind — they were never
+ * what the overrides targeted.
+ */
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -11,7 +26,6 @@ interface RegistrationModalProps {
 
 interface FormData {
   eventId: string;
-  userId: string;
   studentNumber: string;
   fullName: string;
   schoolEmail: string;
@@ -33,16 +47,23 @@ const STEP_LABELS = [
 
 const TOTAL_STEPS = 5;
 
+const LABEL_STYLE = {
+  fontFamily: "'Arian-bold', sans-serif",
+  fontSize: "0.75rem",
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.05em",
+};
+
 const RegistrationModal: React.FC<RegistrationModalProps> = ({
   isOpen,
   onClose,
   eventId,
   onRegistrationSuccess,
 }) => {
+  const { c } = useDS();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     eventId,
-    userId: "",
     studentNumber: "",
     fullName: "",
     schoolEmail: "",
@@ -57,7 +78,6 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [prefilling, setPrefilling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Reopening the modal starts at step 1 with no stale error. Adjusted during
   // render rather than in the effect below, which flashed the previous
@@ -83,7 +103,6 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
           const data = await res.json();
           setFormData((prev) => ({
             ...prev,
-            userId: data.userId || "",
             studentNumber: data.studentNumber || "",
             fullName: data.fullName || "",
             schoolEmail: data.schoolEmail || "",
@@ -94,18 +113,15 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
             professor: data.professor || "",
             degreeProgram: data.degreeProgram || "",
           }));
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
         }
       } catch {
-        setIsLoggedIn(false);
+        /* signed out — the form stays empty and they type it themselves */
       } finally {
         setPrefilling(false);
       }
     }
 
-    prefill();
+    void prefill();
   }, [isOpen]);
 
   const handleChange = (
@@ -137,16 +153,13 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
     }
 
     try {
-      // Build payload — only include userId if logged in
-      const payload = {
-        ...formData,
-        userId: isLoggedIn ? formData.userId : undefined,
-      };
-
+      // No `userId` in the payload: the endpoint derives identity from the
+      // session and ignores anything the body claims (CLEANUP.md §2.2), so
+      // sending one only implied it still mattered.
       const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
@@ -183,21 +196,37 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4"
+      className="fixed inset-0 flex justify-center items-center z-50 p-4"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.6)" }}
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-md relative overflow-hidden"
+        className="w-full max-w-md relative overflow-hidden"
+        style={{ backgroundColor: c.surface }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="border-b border-gray-100 px-6 py-5 flex items-center justify-between">
-          <h2 className="text-lg font-['Arian-bold'] text-gray-900 tracking-tight">
+        <div
+          className="px-6 py-5 flex items-center justify-between"
+          style={{ borderBottom: `1px solid ${c.rule}` }}
+        >
+          <h2
+            style={{
+              fontFamily: "'Arian-bold', sans-serif",
+              fontSize: "1.125rem",
+              color: c.text,
+              letterSpacing: "-0.01em",
+            }}
+          >
             Event Registration
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center cursor-pointer"
+            style={{ color: c.faint, transition: `color ${motion.fast}` }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = c.faint)}
+            aria-label="Close"
           >
             <svg
               className="w-4 h-4"
@@ -225,13 +254,18 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
               return (
                 <div key={label} className="flex flex-col items-center flex-1">
                   <div
-                    className={`w-7 h-7 flex items-center justify-center text-xs font-['Arian-bold'] transition-colors ${
-                      isActive
-                        ? "bg-[#CF78EC] text-white"
+                    className="w-7 h-7 flex items-center justify-center"
+                    style={{
+                      fontFamily: "'Arian-bold', sans-serif",
+                      fontSize: "0.75rem",
+                      transition: `background-color ${motion.fast}, color ${motion.fast}`,
+                      backgroundColor: isActive
+                        ? c.accent
                         : isComplete
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-100 text-gray-400"
-                    }`}
+                          ? c.text
+                          : c.panel,
+                      color: isActive || isComplete ? c.surface : c.faint,
+                    }}
                   >
                     {isComplete ? (
                       <svg
@@ -252,13 +286,12 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     )}
                   </div>
                   <span
-                    className={`text-[10px] mt-1.5 font-['Arian-light'] ${
-                      isActive
-                        ? "text-[#CF78EC]"
-                        : isComplete
-                          ? "text-gray-900"
-                          : "text-gray-300"
-                    }`}
+                    className="mt-1.5"
+                    style={{
+                      fontFamily: "'Arian-light', sans-serif",
+                      fontSize: "10px",
+                      color: isActive ? c.accent : isComplete ? c.text : c.faint,
+                    }}
                   >
                     {label}
                   </span>
@@ -268,10 +301,17 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
           </div>
 
           {/* Progress bar */}
-          <div className="mt-3 h-[2px] bg-gray-100 relative">
+          <div
+            className="mt-3 relative"
+            style={{ height: 2, backgroundColor: c.panel }}
+          >
             <div
-              className="absolute top-0 left-0 h-full bg-[#CF78EC] transition-all duration-300"
-              style={{ width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%` }}
+              className="absolute top-0 left-0 h-full"
+              style={{
+                width: `${((step - 1) / (TOTAL_STEPS - 1)) * 100}%`,
+                backgroundColor: c.accent,
+                transition: `width ${motion.base} ${motion.ease}`,
+              }}
             />
           </div>
         </div>
@@ -279,8 +319,20 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
         {/* Loading state for prefill */}
         {prefilling ? (
           <div className="px-6 py-16 flex flex-col items-center justify-center">
-            <div className="w-5 h-5 border-2 border-gray-200 border-t-[#CF78EC] animate-spin mb-3" />
-            <p className="text-sm text-gray-400 font-['Arian-light']">
+            <div
+              className="w-5 h-5 animate-spin mb-3"
+              style={{
+                border: `2px solid ${c.rule}`,
+                borderTopColor: c.accent,
+              }}
+            />
+            <p
+              style={{
+                fontFamily: "'Arian-light', sans-serif",
+                fontSize: "0.875rem",
+                color: c.faint,
+              }}
+            >
               Loading your details...
             </p>
           </div>
@@ -351,14 +403,28 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-['Arian-bold'] text-gray-500 uppercase tracking-wider mb-1.5">
-                      Year Level <span className="text-[#CF78EC]">*</span>
+                    <label
+                      className="block mb-1.5"
+                      style={{ ...LABEL_STYLE, color: c.muted }}
+                    >
+                      Year Level <span style={{ color: c.accent }}>*</span>
                     </label>
                     <select
                       name="yearLevel"
                       value={formData.yearLevel}
                       onChange={handleChange}
-                      className="w-full border border-gray-200 px-3 py-2.5 text-sm font-['Arian-light'] text-gray-900 bg-white focus:outline-none focus:border-[#CF78EC] transition-colors appearance-none cursor-pointer"
+                      className="w-full px-3 py-2.5 appearance-none cursor-pointer"
+                      style={{
+                        border: `1px solid ${c.rule}`,
+                        backgroundColor: c.surface,
+                        color: c.text,
+                        fontFamily: "'Arian-light', sans-serif",
+                        fontSize: "0.875rem",
+                        outline: "none",
+                        transition: `border-color ${motion.fast}`,
+                      }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = c.accent)}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = c.rule)}
                       required
                     >
                       <option value="">Select Year Level</option>
@@ -404,7 +470,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
               {/* Step 5: Review & Confirm */}
               {step === 5 && (
                 <div className="space-y-3">
-                  <p className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-wider mb-3">
+                  <p className="mb-3" style={{ ...LABEL_STYLE, color: c.faint }}>
                     Please review your details
                   </p>
                   <ReviewRow
@@ -412,10 +478,7 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                     value={formData.studentNumber}
                   />
                   <ReviewRow label="Full Name" value={formData.fullName} />
-                  <ReviewRow
-                    label="School Email"
-                    value={formData.schoolEmail}
-                  />
+                  <ReviewRow label="School Email" value={formData.schoolEmail} />
                   <ReviewRow
                     label="Contact Number"
                     value={formData.contactNumber}
@@ -445,19 +508,41 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
             {/* Error */}
             {error && (
               <div className="px-6 pb-2">
-                <p className="text-sm text-red-600 font-['Arian-light'] bg-red-50 border border-red-100 px-3 py-2">
+                <p
+                  className="px-3 py-2"
+                  style={{
+                    fontFamily: "'Arian-light', sans-serif",
+                    fontSize: "0.875rem",
+                    color: c.danger,
+                    backgroundColor: c.dangerWash,
+                    border: `1px solid ${c.danger}`,
+                  }}
+                >
                   {error}
                 </p>
               </div>
             )}
 
             {/* Footer Actions */}
-            <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-between">
+            <div
+              className="px-6 py-4 flex items-center justify-between"
+              style={{ borderTop: `1px solid ${c.rule}` }}
+            >
               {step > 1 ? (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-4 py-2 text-sm font-['Arian-bold'] text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
+                  className="px-4 py-2 cursor-pointer"
+                  style={{
+                    fontFamily: "'Arian-bold', sans-serif",
+                    fontSize: "0.875rem",
+                    color: c.muted,
+                    backgroundColor: "transparent",
+                    border: "none",
+                    transition: `color ${motion.fast}`,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = c.text)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = c.muted)}
                 >
                   ← Back
                 </button>
@@ -469,7 +554,17 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-5 py-2 text-sm font-['Arian-bold'] bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
+                  className="px-5 py-2 cursor-pointer"
+                  style={{
+                    fontFamily: "'Arian-bold', sans-serif",
+                    fontSize: "0.875rem",
+                    backgroundColor: c.text,
+                    color: c.surface,
+                    border: "none",
+                    transition: `opacity ${motion.fast}`,
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
                   Next →
                 </button>
@@ -477,7 +572,22 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 text-sm font-['Arian-bold'] bg-[#CF78EC] text-white hover:bg-[#b560d4] transition-colors disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 cursor-pointer"
+                  style={{
+                    fontFamily: "'Arian-bold', sans-serif",
+                    fontSize: "0.875rem",
+                    backgroundColor: c.accent,
+                    color: "#ffffff",
+                    border: "none",
+                    opacity: loading ? 0.5 : 1,
+                    transition: `background-color ${motion.fast}`,
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = c.accentHover)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = c.accent)
+                  }
                 >
                   {loading ? "Submitting..." : "Submit Registration"}
                 </button>
@@ -509,10 +619,11 @@ function FieldGroup({
   placeholder?: string;
   required?: boolean;
 }) {
+  const { c } = useDS();
   return (
     <div>
-      <label className="block text-xs font-['Arian-bold'] text-gray-500 uppercase tracking-wider mb-1.5">
-        {label} {required && <span className="text-[#CF78EC]">*</span>}
+      <label className="block mb-1.5" style={{ ...LABEL_STYLE, color: c.muted }}>
+        {label} {required && <span style={{ color: c.accent }}>*</span>}
       </label>
       <input
         type={type}
@@ -521,19 +632,39 @@ function FieldGroup({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className="w-full border border-gray-200 px-3 py-2.5 text-sm font-['Arian-light'] text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-[#CF78EC] transition-colors"
+        className="w-full px-3 py-2.5"
+        style={{
+          border: `1px solid ${c.rule}`,
+          backgroundColor: c.surface,
+          color: c.text,
+          fontFamily: "'Arian-light', sans-serif",
+          fontSize: "0.875rem",
+          outline: "none",
+          transition: `border-color ${motion.fast}`,
+        }}
+        onFocus={(e) => (e.currentTarget.style.borderColor = c.accent)}
+        onBlur={(e) => (e.currentTarget.style.borderColor = c.rule)}
       />
     </div>
   );
 }
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
+  const { c } = useDS();
   return (
-    <div className="flex items-start justify-between py-1.5 border-b border-gray-50">
-      <span className="text-xs font-['Arian-bold'] text-gray-400 uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="text-sm font-['Arian-light'] text-gray-900 text-right max-w-[60%] break-words">
+    <div
+      className="flex items-start justify-between py-1.5"
+      style={{ borderBottom: `1px solid ${c.rule}` }}
+    >
+      <span style={{ ...LABEL_STYLE, color: c.faint }}>{label}</span>
+      <span
+        className="text-right max-w-[60%] break-words"
+        style={{
+          fontFamily: "'Arian-light', sans-serif",
+          fontSize: "0.875rem",
+          color: c.text,
+        }}
+      >
         {value || "—"}
       </span>
     </div>

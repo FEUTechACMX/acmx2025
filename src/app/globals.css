@@ -69,111 +69,35 @@ p {
   line-height: 1.6;
 }
 
-/* ── Global dark mode overrides ─────────────────────────────────── */
-/* These override Tailwind's hardcoded utility classes site-wide    */
-/* so components don't need individual changes.                     */
-
-.dark .bg-white { background-color: var(--surface) !important; }
-.dark .bg-\[\#FFF\] { background-color: var(--surface) !important; }
-.dark .bg-\[\#fff\] { background-color: var(--surface) !important; }
-.dark .bg-\[\#ffffff\] { background-color: var(--surface) !important; }
-.dark .bg-gray-50 { background-color: var(--surface-secondary) !important; }
-.dark .bg-gray-100 { background-color: var(--surface-secondary) !important; }
-.dark .bg-gray-900 { background-color: #e5e5e5 !important; }
-
-/* Event cards should NOT be affected by dark mode */
-.dark-exempt, .dark-exempt * {
-  --background: #ffffff !important;
-  --foreground: #0a0a0a !important;
-  --surface: #ffffff !important;
-  --text-primary: #111827 !important;
-  --text-secondary: #6b7280 !important;
-  --border: #e5e7eb !important;
-}
-.dark .dark-exempt .bg-white { background-color: #ffffff !important; }
-.dark .dark-exempt .text-black { color: #000000 !important; }
-.dark .dark-exempt .bg-gray-900 { background-color: #111827 !important; }
-.dark .dark-exempt .bg-gray-900.text-white { background-color: #111827 !important; color: #ffffff !important; }
-.dark .dark-exempt .text-gray-900 { color: #111827 !important; }
-.dark .dark-exempt .text-gray-800 { color: #1f2937 !important; }
-.dark .dark-exempt .text-gray-700 { color: #374151 !important; }
-.dark .dark-exempt .text-gray-600 { color: #4b5563 !important; }
-.dark .dark-exempt .text-gray-500 { color: #6b7280 !important; }
-.dark .dark-exempt .text-gray-400 { color: #9ca3af !important; }
-.dark .dark-exempt .border-gray-100 { border-color: #f3f4f6 !important; }
-.dark .dark-exempt .border-gray-200 { border-color: #e5e7eb !important; }
-
-.dark .text-black { color: var(--text-primary) !important; }
-.dark .text-gray-900 { color: var(--text-primary) !important; }
-.dark .text-gray-800 { color: #d4d4d4 !important; }
-.dark .text-gray-700 { color: #a3a3a3 !important; }
-.dark .text-gray-600 { color: #a3a3a3 !important; }
-.dark .text-gray-500 { color: #737373 !important; }
-.dark .text-gray-400 { color: #737373 !important; }
-.dark .text-gray-300 { color: #525252 !important; }
-
-.dark .border-gray-100 { border-color: var(--border) !important; }
-.dark .border-gray-200 { border-color: var(--border) !important; }
-.dark .border-gray-300 { border-color: #404040 !important; }
-
-.dark .bg-white\/90 { background-color: rgba(20, 20, 20, 0.9) !important; }
-
-/* Hover states */
-.dark .hover\:bg-gray-50:hover { background-color: var(--surface-hover) !important; }
-.dark .hover\:bg-gray-100:hover { background-color: var(--surface-secondary) !important; }
-.dark .hover\:border-gray-200:hover { border-color: #404040 !important; }
-.dark .hover\:bg-gray-800:hover { background-color: #d4d4d4 !important; }
-
-/* Border colors for dashed upload areas */
-.dark .border-dashed { border-color: #404040 !important; }
-.dark .hover\:border-\[\#CF78EC\]:hover { border-color: #CF78EC !important; }
-
-/* Shadow adjustments */
-.dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important; }
-
-/* Input/select dark mode */
-.dark input, .dark select, .dark textarea {
-  background-color: var(--surface) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border) !important;
-}
-.dark input::placeholder, .dark textarea::placeholder {
-  color: var(--text-tertiary) !important;
-}
-.dark select option {
-  background-color: var(--surface) !important;
-  color: var(--text-primary) !important;
-}
-
-/* Table row hover */
-.dark .hover\:bg-gray-50\/50:hover { background-color: rgba(30, 30, 30, 0.5) !important; }
-
-/* Specific overrides */
-.dark .bg-\[\#CF78EC\]\/5 { background-color: rgba(207, 120, 236, 0.12) !important; }
-.dark .text-black\/40 { color: rgba(245, 245, 245, 0.4) !important; }
-.dark .text-black\/25 { color: rgba(245, 245, 245, 0.25) !important; }
-.dark .border-black\/20 { border-color: rgba(245, 245, 245, 0.15) !important; }
-.dark .border-black\/10 { border-color: rgba(245, 245, 245, 0.08) !important; }
-.dark .hover\:border-black\/40:hover { border-color: rgba(245, 245, 245, 0.3) !important; }
-.dark .hover\:text-black:hover { color: var(--text-primary) !important; }
-.dark .text-black\/50 { color: rgba(245, 245, 245, 0.5) !important; }
-.dark .bg-black\/50 { background-color: rgba(250, 250, 250, 0.5) !important; }
-
-/* Hamburger menu lines */
-.dark .bg-black { background-color: var(--text-primary) !important; }
-
-/* White text on dark bg buttons should invert */
-.dark .bg-gray-900.text-white { background-color: #e5e5e5 !important; color: #0a0a0a !important; }
-.dark .hover\:bg-gray-800:hover.text-white { background-color: #d4d4d4 !important; color: #0a0a0a !important; }
-
-/* Login modal dark mode */
-.dark .bg-gradient-to-br.from-white.to-gray-50 {
-  background: linear-gradient(to bottom right, var(--surface), var(--surface-secondary)) !important;
-}
-.dark .hover\:bg-gray-200:hover { background-color: #333 !important; }
-.dark .bg-red-50 { background-color: rgba(220, 38, 38, 0.1) !important; }
-.dark .border-red-100 { border-color: rgba(220, 38, 38, 0.2) !important; }
-.dark .bg-gray-50\/50 { background-color: rgba(30, 30, 30, 0.5) !important; }
+/* ── Dark mode ──────────────────────────────────────────────────── */
+/*
+ * There is no override block here any more, and that is the point.
+ *
+ * Roughly 68 `!important` rules used to sit at this spot, patching Tailwind's
+ * hardcoded utilities (`.dark .bg-white`, `.dark .text-gray-500`, and so on) so
+ * that light-mode components would pass for dark ones. Dark mode was implemented
+ * by correcting the output of the light theme: every new `bg-gray-*` anyone wrote
+ * needed a matching patch added here, and nothing could tell you when one was
+ * missing (CLEANUP.md §8.1/§8.2).
+ *
+ * They are gone because their subjects are gone. Every component now takes its
+ * colours from `styles/design-system.ts` via `useDS()`; the last two holdouts
+ * were the registration and event-creation modals.
+ *
+ * Three of the removed rules were element selectors — `.dark input, .dark
+ * select, .dark textarea` — and those were not merely redundant but actively
+ * wrong. Being `!important` on a bare element, they beat the inline styles of
+ * the DS `Field` primitive, so every form field in the app rendered the legacy
+ * palette (#141414 ground, #2a2a2a border) rather than the system's. Deleting
+ * them fixed that.
+ *
+ * A companion block of `.dark-exempt` rules went too: the class was applied by
+ * nothing in the codebase, so it opted no subtree out of anything.
+ *
+ * The `.dark { --* }` custom properties above are kept — globals.css still owns
+ * the page ground and the scrollbar. Anything component-level belongs in the
+ * design system, not here.
+ */
 
 /* ── Font faces ─────────────────────────────────────────────────── */
 
