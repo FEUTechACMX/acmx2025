@@ -32,11 +32,14 @@ async function read(): Promise<Session> {
   try {
     const res = await fetch("/api/me", { credentials: "include" });
     if (!res.ok) return { user: null };
-    const data: { user?: Member } = await res.json();
-    // A signed-out caller gets `{}` with a 200, so absence is the tell rather
-    // than the status code — see CLEANUP.md §9.2.
+    // `{ ok: true, user }` where user is the member or an explicit null. The
+    // route used to answer a bare `{}` for both "signed out" and "server error",
+    // which is why this reads the field rather than inferring from the status.
+    const data: { ok?: boolean; user?: Member | null } = await res.json();
     return { user: data.user ?? null };
   } catch {
+    // Network failure and signed-out both land here, and for the nav's purposes
+    // they mean the same thing: render nothing member-specific.
     return { user: null };
   }
 }

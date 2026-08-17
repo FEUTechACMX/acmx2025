@@ -72,6 +72,7 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | 2.8 | Service-role client built per request, before the auth check | Moved to module scope; the gate is now the handler's first statement |
 | 3.7 | `EventsManager` shipped a placeholder as a primary action | The `alert()` is gone; NEW EVENT links to `/events`, where creation actually lives. It moves into the console once `EventCreationModal` is ported off Tailwind (§8.1) |
 | 6.5 | Two Button and two Modal implementations | Not parallel systems — `UI/Button.tsx` and `Modal/Modal.tsx` had **zero importers**. Both deleted |
+| 9.2 (partly) | Response envelopes differ per route family | The defective part is fixed; the cosmetic part is deliberately left. See the note below |
 | 2.7 | Rate limiting on exactly one route | Extracted into `lib/rate-limit.ts` and applied to `/api/login`, which had none — the endpoint an attacker would actually target. Two buckets, because either alone is wrong: **per account** (8 per 15 min) does the real work, **per address** (60 per 15 min) is deliberately loose because the chapter shares campus NAT and a tight IP limit would lock out everyone behind one address. A success resets the account bucket. 429 carries `Retry-After`. `change-password` now shares the implementation instead of holding its own copy. The honest limits — module memory, so per-instance and reset on redeploy — are documented at the top of the file, with a durable store named as the upgrade path. 14 tests |
 | — | **Login leaked which accounts exist** | Not in the audit. `login()` throws "Invalid Credentials" for an unknown student number and "Invalid Password" for a real one, and the route returned `err.message` verbatim — so the two were distinguishable from outside. Since student numbers here are sequential, that let anyone walk the range and learn which are real before guessing a password. One fixed message for every failure now; verified identical for a real account with a wrong password and a number that cannot exist |
 | 2.3 / 2.4 | Middleware authenticated on cookie *presence*; `authApiRoutes` was dead | Both closed by being honest rather than by adding a database read. Every page behind the matcher already calls `getCurrentUser()` and every API route goes through `requireRole`, so validating the session here would have cost a query per request for no security gain. What was actually wrong is that it *read* like authentication: `isAuthed` is now `hasSessionCookie`, and the file opens with "**Not a security boundary**" and the warning that a route added to the matcher gets no protection from it. The unreachable API branch — `authApiRoutes` was `[]` and `/api` was never matched — is deleted |
@@ -126,6 +127,38 @@ Nine API routes still read the session directly rather than through
 and the rest (`change-password`, `merch/cart`, `merch/checkout`, `merch/notify`,
 `registration-prefill`, `profile`'s third read) already returned 401 with copy
 better than the generic helper's.
+
+### §9.2 — the convention, and why the sweep was declined
+
+Re-measured before touching anything, because the entry below overstates the
+mess. Errors are **already uniform**: `{ error: string }`, at 97 call sites, with
+the status code carrying the rest. Success is `{ ok: true, … }` at 23 sites
+against `{ success: true, … }` at 4.
+
+**The convention, for anything new:**
+
+```
+success  →  { ok: true, <payload keyed by name> }
+failure  →  { error: "A sentence the user could read." }   + a real status code
+absence  →  an explicit null field, never an empty object
+```
+
+**What was actually broken, and is fixed:** `/api/me` answered a bare `{}` both
+for a signed-out caller (200) and for an internal failure (500). One
+indistinguishable body for two unrelated situations — nothing in the payload said
+which, so a client had to infer it from the status. It now returns
+`{ ok: true, user: Member | null }`, or `{ ok: false, error }` on failure. It had
+exactly one consumer (`components/sessionClient`), which made this safe.
+
+**What was left, on purpose:** the four routes still using `success` are
+`login`, `logout`, `change-password` and `attendance/manual`. Renaming the field
+is mechanical, but three of those four cannot be verified from here — a
+successful login can't be exercised without credentials, changing a password
+means changing a real one, and testing logout destroys the session under test. A
+missed call site on the login path means nobody can sign in. Cosmetic gain,
+expensive failure, no way to check: not a trade worth taking. They are a
+documented exception rather than an oversight, and the right moment to convert
+them is when there are tests around the auth flows.
 
 ### §8.1/§8.2 — how much smaller this turned out to be (now closed)
 
