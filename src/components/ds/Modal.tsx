@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { type as t, motion } from "@/styles/design-system";
 import { runBlinkIn } from "@/lib/blink";
@@ -15,6 +15,24 @@ export type ModalMessage = {
 
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+/**
+ * "Are we past the server render?" — the gate for `createPortal`, which needs a
+ * real `document`.
+ *
+ * This is a read of an external fact (which environment we are in), not state
+ * the component owns, so it reads as one. The previous `useEffect(() => setMounted(true), [])`
+ * expressed the same idea as a state write during mount, which costs an extra
+ * render pass on every dialog in the app.
+ */
+const NEVER_CHANGES = () => () => {};
+function useIsClient() {
+  return useSyncExternalStore(
+    NEVER_CHANGES,
+    () => true,
+    () => false
+  );
+}
 
 /**
  * The system's dialog: hairline card on a dimmed substrate, accent cap on top,
@@ -60,10 +78,17 @@ export default function Modal({
   const cardRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const returnFocusTo = useRef<HTMLElement | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [confirming, setConfirming] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  // Reset the dirty-guard prompt whenever the dialog opens or closes. Adjusting
+  // state during render is React's documented answer to "derive from a prop
+  // change"; doing it in an effect renders the stale value first.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    setConfirming(false);
+  }
 
   /** Dismissal request from Esc or the scrim — routed through the dirty guard. */
   const requestClose = useCallback(() => {
@@ -79,7 +104,6 @@ export default function Modal({
     if (!open) return;
 
     returnFocusTo.current = document.activeElement as HTMLElement | null;
-    setConfirming(false);
 
     const first = cardRef.current?.querySelector<HTMLElement>(FOCUSABLE);
     first?.focus();

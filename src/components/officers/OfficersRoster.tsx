@@ -345,11 +345,17 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
   const go = useCallback((delta: number) => setActive((i) => (i + delta + total) % total), [total]);
 
   // Deep-link: read hash on mount, keep it in sync as officers change.
+  //
+  // `active` is seeded from the URL once and is the user's own state after
+  // that, so it can't be derived — and the hash isn't readable during the
+  // server render. One setState on mount is a single extra pass, not the
+  // cascade the rule guards against.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const id = window.location.hash.replace(/^#/, "");
     const found = officers.findIndex((o) => o.id === id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (found >= 0) setActive(found);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const id = officers[active]?.id;

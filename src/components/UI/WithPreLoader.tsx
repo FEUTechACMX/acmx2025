@@ -1,28 +1,46 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useSyncExternalStore } from "react";
 import Animation from "./Animation";
 import { gsap } from "gsap";
+
+/**
+ * Whether the intro has already played this browser session.
+ *
+ * This is a read of sessionStorage — an external store — so it reads as one.
+ * As an effect it required two extra states (`isChecking` to suppress the
+ * flicker, `showPreloader` to hold the answer) and two renders to settle; the
+ * server snapshot is simply "already seen", which is the no-overlay branch.
+ */
+const NEVER_CHANGES = () => () => {};
+function useHasSeenIntro() {
+  return useSyncExternalStore(
+    NEVER_CHANGES,
+    () => {
+      try {
+        return sessionStorage.getItem("hasSeenIntro") !== null;
+      } catch {
+        // Storage disabled — treat as seen rather than replaying every render.
+        return true;
+      }
+    },
+    () => true
+  );
+}
 
 export default function WithPreloader({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [showPreloader, setShowPreloader] = useState(false);
-  const [isChecking, setIsChecking] = useState(true); // prevent flicker
+  const hasSeenIntro = useHasSeenIntro();
+  // Only ever set once the intro has finished playing — the initial answer
+  // comes from sessionStorage, not from state.
+  const [dismissed, setDismissed] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const hasSeenIntro = sessionStorage.getItem("hasSeenIntro"); // <- sessionStorage
-
-    if (!hasSeenIntro) {
-      // First visit of this browser session → show preloader
-      setShowPreloader(true);
-    }
-
-    setIsChecking(false);
-  }, []);
+  const showPreloader = !hasSeenIntro && !dismissed;
+  const setShowPreloader = (next: boolean) => setDismissed(!next);
 
   const handleComplete = () => {
     // Glitch blink the entire overlay before dismissing (synced with Animation's 3×0.05s)
@@ -43,8 +61,6 @@ export default function WithPreloader({
       setShowPreloader(false);
     }
   };
-
-  if (isChecking) return null; // avoid layout flash on first render
 
   return (
     <div className="relative">

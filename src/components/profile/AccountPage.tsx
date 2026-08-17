@@ -62,6 +62,10 @@ export default function AccountPage({ user }: { user: safeUser }) {
   }, []);
 
   useEffect(() => {
+    // `load`'s setState calls all run after an await, so this is not the
+    // synchronous cascade the rule looks for — it can't see through the async
+    // boundary. The real fix is fetching on the server (CLEANUP.md §5.1).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
 
@@ -72,11 +76,15 @@ export default function AccountPage({ user }: { user: safeUser }) {
     router.replace(`/profile${query}`, { scroll: false });
   };
 
-  useEffect(() => {
-    if (isTab(requested) && requested !== tab) setTab(requested);
-    // Responding only to the URL changing underneath us (back button).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requested]);
+  // Follow the URL when it changes underneath us — the back button, or a link
+  // into a specific tab. Compared against the previous `?tab=` rather than
+  // against `tab` itself, so a click that sets the tab and then rewrites the
+  // URL doesn't bounce back through here.
+  const [prevRequested, setPrevRequested] = useState(requested);
+  if (requested !== prevRequested) {
+    setPrevRequested(requested);
+    if (isTab(requested)) setTab(requested);
+  }
 
   const panelRef = React.useRef<HTMLDivElement>(null);
   useEffect(() => {

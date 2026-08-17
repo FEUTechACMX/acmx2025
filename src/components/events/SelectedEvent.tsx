@@ -80,13 +80,23 @@ function getUserPrice(event: EventWithCount, tier: "officer" | "member" | "nonme
   return amount === 0 ? "Free" : `₱${amount}`;
 }
 
-/** Deterministic decorative barcode — pure ornament on the ticket stub. */
-function Barcode({ color }: { color: string }) {
+/**
+ * The bar widths are a fixed sequence, so they are computed once at module load
+ * rather than re-derived on every render. Building them inside the component
+ * meant mutating `seed` during render — the exact shape React's compiler flags,
+ * since a render pass is supposed to be free of side effects.
+ */
+const BARCODE_BARS = (() => {
   let seed = 7;
-  const bars = Array.from({ length: 46 }, () => {
+  return Array.from({ length: 46 }, () => {
     seed = (seed * 1103515245 + 12345) % 2147483648;
     return 1 + (seed % 4);
   });
+})();
+
+/** Deterministic decorative barcode — pure ornament on the ticket stub. */
+function Barcode({ color }: { color: string }) {
+  const bars = BARCODE_BARS;
   return (
     <div className="flex items-center" style={{ gap: 2, height: 38 }}>
       {bars.map((w, i) => (

@@ -22,7 +22,7 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 
 | Metric | At audit | Now |
 |---|---|---|
-| `eslint src` | 6 errors, 14 warnings | **2 errors, 7 warnings** |
+| `eslint src` | 6 errors, 14 warnings | **0 errors, 11 warnings** |
 | dependencies | 18 + 12 | **9 + 10** |
 | lines in `src/` | 24,905 | **22,957** (net of ~200 lines of new walk-in code) |
 | `next build` | not run | **passes** |
@@ -50,12 +50,50 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | 7.3 | Unused dependencies | Nine removed, including `xlsx` (unused once the old panel went, and carrying known advisories) |
 | 12.3 | Two lockfiles | `pnpm-lock.yaml` deleted |
 
+| 3.4 | Theme flash on DS-styled screens | `ThemeProvider` reads the `dark` class through `useSyncExternalStore` instead of copying it into state in an effect |
+| 9.x | `.env.example` accuracy | `NEXT_PUBLIC_SUPABASE_ANON_KEY` became dead when `lib/supabase.ts` went; documented, with the grep that regenerates the list |
+| 10.1 | Lint errors | **0 errors.** The `no-explicit-any` pair disappeared with the eslint 16 upgrade (that rule is not in the new preset) — `types/events.ts` still has two `any`, now unflagged |
+| 11.1 | Prisma logged every query in production | Guarded by `NODE_ENV` |
+| 11.2 | N+1 in the admin events list | Single `groupBy` |
+| 11.3 | Session query repeated per request | `getCurrentUser` memoised with React `cache()`, keyed on session id |
+| 12.4 | `eslint-config-next` a major behind | Bumped to 16; `eslint.config.mjs` rewritten to native flat config, which had been throwing before it linted a single file |
+| 13.2 | No CI | `.github/workflows/ci.yml` — typecheck, lint, build, plus a job asserting the migration history still reproduces `schema.prisma` |
+| 13.3 | `npm run lint` linted nothing | Now `eslint src` |
+
+### A note on the 19 react-hooks errors
+
+The eslint 16 upgrade enabled React Compiler rules and surfaced 20 new errors.
+They were not one problem:
+
+- **Ten were genuine** — synchronous `setState` in an effect body. Fixed
+  properly, mostly via React's documented "adjust state during render" pattern
+  (`ds/Modal`, `PeopleRoles`, `RegistrationModal`, `VideoCarousel`,
+  `AccountPage`, `EventsList`, `CommitteeEditor`'s search) or by reading an
+  external store directly (`WithPreLoader`, `ThemeProvider`). The
+  `immutability` error in `SelectedEvent` was a barcode built by mutating a
+  seed during render; it is now computed once at module load.
+- **Nine were false positives** — `void load()` in a mount effect, where every
+  `setState` runs after an `await`. The rule's analysis is interprocedural and
+  cannot see through the async boundary. These carry an explicit
+  `eslint-disable-next-line` with the reason, because rewriting nine components
+  (several with three or four manual-refresh call sites) to satisfy a check
+  that is wrong about them would be churn with real regression risk and no
+  tests. The genuine fix is server-side data fetching — §5.1.
+- **One was a judgement call** — `OfficersRoster` seeds its index from
+  `window.location.hash` on mount, then owns it. Not derivable, not readable
+  during the server render; suppressed with that reasoning recorded.
+
+Suppressions are greppable:
+`grep -rn "set-state-in-effect" src`.
+
 ### Still open
 
-Everything else, notably: **§5.1** (root layout makes every route dynamic),
-**§8.1/§8.2** (the 50/50 theming split and its ~60 `!important` overrides),
-**§11.1** (Prisma logs every query in production), **§11.2** (N+1 in the admin
-events list), **§13.1/§13.2** (no tests, no CI).
+Everything else, notably: **§5.1** (the root layout still queries the session,
+so every route is `ƒ (Dynamic)` — caching removed the duplicate queries, not the
+dynamism), **§8.1/§8.2** (the 50/50 theming split and its ~60 `!important`
+overrides), **§8.4** (six `<img>`, the bulk of the remaining warnings),
+**§13.1** (still no tests), **§5.4/§9.1** (four role-gating vocabularies, and
+403 returned where 401 is meant).
 
 ### Carried forward
 
@@ -69,6 +107,16 @@ events list), **§13.1/§13.2** (no tests, no CI).
   flow has not been exercised against a live event.
 - **`seed-members-2526.mjs` hardcodes an absolute path** into a local Downloads
   folder, so it only runs on one machine.
+- **The CI migrations job has never run.** It asserts the migration history
+  still reproduces `schema.prisma` by replaying it against a throwaway Postgres
+  — the check that could not be run locally, since the only database reachable
+  from this machine is the live one and `migrate diff` resets whatever it is
+  pointed at. If it goes red on the first run, the likely cause is enum value
+  *ordering*: the live `UserRole` has `ADMIN` before `VP_EXTERNAL` (the VPs were
+  appended by a later migration) while `schema.prisma` declares `ADMIN` last.
+  Prisma has tolerated that drift on the live database, so it probably tolerates
+  it here too — but it is the one part of the baseline reconstruction that is
+  reasoned rather than executed.
 
 ---
 

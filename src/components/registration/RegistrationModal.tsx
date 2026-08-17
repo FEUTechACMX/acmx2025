@@ -59,12 +59,21 @@ const RegistrationModal: React.FC<RegistrationModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Reopening the modal starts at step 1 with no stale error. Adjusted during
+  // render rather than in the effect below, which flashed the previous
+  // attempt's step and error for a frame before resetting them.
+  const [prevOpen, setPrevOpen] = useState(isOpen);
+  if (isOpen !== prevOpen) {
+    setPrevOpen(isOpen);
+    if (isOpen) {
+      setStep(1);
+      setError(null);
+    }
+  }
+
   // Auto-fill for logged-in users
   useEffect(() => {
     if (!isOpen) return;
-
-    setStep(1);
-    setError(null);
 
     async function prefill() {
       setPrefilling(true);

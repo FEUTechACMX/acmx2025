@@ -41,23 +41,28 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const withAttendance = await Promise.all(
-      events.map(async (e) => {
-        const attendance = await prisma.attendance.count({
-          where: { eventId: e.eventId },
-        });
-        return {
-          eventId: e.eventId,
-          name: e.name,
-          type: e.type,
-          startDate: e.startDate,
-          image: e.image ?? e.cardImage ?? null,
-          registered: e._count.registrations,
-          attended: attendance,
-          status: deriveStatus(e.statusOverride, e.startDate, e.endDate),
-        };
-      })
+    // One grouped count for the whole list. This used to be a per-event
+    // `attendance.count()` inside a Promise.all — 40 events meant 41 queries.
+    const attendanceByEvent = await prisma.attendance.groupBy({
+      by: ["eventId"],
+      where: { eventId: { in: events.map((e) => e.eventId) } },
+      _count: { _all: true },
+    });
+
+    const attended = new Map(
+      attendanceByEvent.map((row) => [row.eventId, row._count._all])
     );
+
+    const withAttendance = events.map((e) => ({
+      eventId: e.eventId,
+      name: e.name,
+      type: e.type,
+      startDate: e.startDate,
+      image: e.image ?? e.cardImage ?? null,
+      registered: e._count.registrations,
+      attended: attended.get(e.eventId) ?? 0,
+      status: deriveStatus(e.statusOverride, e.startDate, e.endDate),
+    }));
 
     return NextResponse.json({ events: withAttendance });
   } catch (err) {

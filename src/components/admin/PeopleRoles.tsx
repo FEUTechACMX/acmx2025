@@ -48,10 +48,19 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
 
   const selectedMember = members.find((m) => m.studentId === selected) ?? null;
 
-  useEffect(() => {
-    setPendingRole(selectedMember?.role ?? null);
+  // Picking a different member resets the pending role and clears any error.
+  // Adjusted during render rather than in an effect, which would show the
+  // previous member's role for one frame after the selection changed.
+  const memberRole = selectedMember?.role ?? null;
+  const [prevSelection, setPrevSelection] = useState<[string | null, string | null]>([
+    selected,
+    memberRole,
+  ]);
+  if (prevSelection[0] !== selected || prevSelection[1] !== memberRole) {
+    setPrevSelection([selected, memberRole]);
+    setPendingRole(memberRole);
     setError(null);
-  }, [selected, selectedMember?.role]);
+  }
 
   /**
    * The roll runs to four figures, so the list is unusable without this. Each

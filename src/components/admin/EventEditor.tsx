@@ -145,6 +145,10 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
   }, [eventId]);
 
   useEffect(() => {
+    // The loader's setState calls all run after an await, so this is not the
+    // synchronous cascade the rule looks for — it can't see through the async
+    // boundary. The real fix is fetching on the server (CLEANUP.md §5.1).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

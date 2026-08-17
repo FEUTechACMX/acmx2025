@@ -45,10 +45,14 @@ export default function VideoCarousel({ videos, isAdmin, onManage, fillHeight = 
     ? { height: "100%", minHeight: 220 }
     : { aspectRatio: "16 / 9" };
 
-  // Keep the clamped index valid if the list length changes.
-  useEffect(() => {
+  // Keep the clamped index valid if the list length changes. Adjusted during
+  // render: as an effect this rendered one frame against an out-of-range index,
+  // which is the frame where `videos[index]` is undefined.
+  const [prevCount, setPrevCount] = useState(count);
+  if (count !== prevCount) {
+    setPrevCount(count);
     if (index > count - 1) setIndex(0);
-  }, [count, index]);
+  }
 
   // Re-apply muted state and (re)start playback whenever the slide changes.
   useEffect(() => {

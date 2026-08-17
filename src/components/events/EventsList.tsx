@@ -49,8 +49,16 @@ export default function EventsList({ semester }: { semester: string }) {
     fetchUserRole();
   }, []);
 
-  useEffect(() => {
+  // Switching semester puts the list back into its loading state. Adjusted
+  // during render so the previous semester's events aren't shown for a frame
+  // under the new semester's heading.
+  const [prevSemester, setPrevSemester] = useState(semester);
+  if (semester !== prevSemester) {
+    setPrevSemester(semester);
     setLoading(true);
+  }
+
+  useEffect(() => {
     async function loadEvents() {
       try {
         const res = await fetch(`/api/events/semester/${semester}`);

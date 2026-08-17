@@ -93,6 +93,10 @@ export default function CommitteeEditor({ user, id }: { user: safeUser; id: stri
   }, [id]);
 
   useEffect(() => {
+    // The loader's setState calls all run after an await, so this is not the
+    // synchronous cascade the rule looks for — it can't see through the async
+    // boundary. The real fix is fetching on the server (CLEANUP.md §5.1).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!creating) void load();
   }, [creating, load]);
 
@@ -1000,17 +1004,24 @@ function MemberPicker({
   const [error, setError] = useState<string | null>(null);
   const excludeKey = exclude.join(",");
 
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) {
+  // Typing moves the panel straight into its searching (or cleared) state.
+  // Adjusted during render: as effect work it showed the previous query's
+  // results for a frame, so a cleared box briefly still listed people.
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
+    setError(null);
+    if (query.trim()) {
+      setSearching(true);
+    } else {
       setResults([]);
       setSearching(false);
-      setError(null);
-      return;
     }
+  }
 
-    setSearching(true);
-    setError(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
 
     // Aborting the in-flight request is what keeps a slow early reply from
     // landing on top of a newer one — and it cancels the work server-side too.
