@@ -46,9 +46,9 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      # Errors block the build. Warnings do not — there are 11 today (mostly
-      # <img> that wants converting to next/image, CLEANUP.md §8.4). Once those
-      # are cleared, add `--max-warnings 0` here so they cannot creep back.
+      # `--max-warnings 0`, so a warning fails the build like an error. The count
+      # reached zero when §8.4 (next/image) and §8.3 (dead fonts) were cleared;
+      # the point of the flag is that it cannot silently climb back.
       - name: Lint
         run: npm run lint
 

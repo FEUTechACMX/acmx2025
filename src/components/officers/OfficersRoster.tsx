@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Surface } from "@/components/ds";
 import { useDS } from "@/components/ds/useDS";
 import { runBlinkIn } from "@/lib/blink";
@@ -165,8 +166,13 @@ function PortraitStage({ officer, index, total }: { officer: Officer; index: num
         }}
       >
         {officer.photo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={officer.photo} alt={officer.name} className="absolute inset-0 w-full h-full object-cover" />
+          <Image
+            src={officer.photo}
+            alt={officer.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
+          />
         ) : (
           <>
             <span style={{ color: c.faint }}>
@@ -344,18 +350,21 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
 
   const go = useCallback((delta: number) => setActive((i) => (i + delta + total) % total), [total]);
 
-  // Deep-link: read hash on mount, keep it in sync as officers change.
+  // Deep-link: read the hash on mount, then keep it in sync as `active` moves.
   //
-  // `active` is seeded from the URL once and is the user's own state after
-  // that, so it can't be derived — and the hash isn't readable during the
-  // server render. One setState on mount is a single extra pass, not the
-  // cascade the rule guards against.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // `active` is seeded from the URL once and is the user's own state after that,
+  // so it can't be derived — and the hash isn't readable during the server
+  // render. One setState on mount is a single extra pass, not the cascade the
+  // rule guards against.
   useEffect(() => {
     const id = window.location.hash.replace(/^#/, "");
     const found = officers.findIndex((o) => o.id === id);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (found >= 0) setActive(found);
+    // Mount-only on purpose: adding `officers` would drag the selection back to
+    // the hash every time the roster reloaded. The directive sits here because
+    // exhaustive-deps reports on the dependency array, not on the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const id = officers[active]?.id;

@@ -27,6 +27,9 @@ export default function LoginPage() {
         const data = await res.json();
         setError(data.error || "Login failed");
       } else {
+        // Full document load, not router.push — the session is cached per
+        // document in `sessionClient`, so the nav has to start fresh to see it.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = "/dashboard";
       }
     } catch {

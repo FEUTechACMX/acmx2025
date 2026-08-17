@@ -1,18 +1,22 @@
-//Attendance Rules
-//1. User must exist in Registration Table to be recorded in the attendance
-//2. User must have a Time-in record to be allowed a Time-out record
-//3. Members with less than 1 hour of attendance won't be receiving points
-//4. Offline Mode is a Must.
+/**
+ * Attendance: the door desk.
+ *
+ * The rules this actually enforces:
+ *   1. Only a registered attendee can be recorded — attendance is written from
+ *      the registration, never from the scanner's input.
+ *   2. A time-out needs a time-in first, and neither can be recorded twice.
+ *
+ * Two further rules used to be listed here and were never built: points for
+ * attendance over an hour, and an offline mode. They are gone from this comment
+ * rather than left as promises the code does not keep (CLEANUP.md §3.3). The
+ * points economy has a `Transaction` table and no UI; if it ships, the award
+ * belongs at time-out, where the duration is finally known.
+ *
+ * Moved here from `src/services/attendance/` — that directory predated
+ * `src/lib/` and never held anything else (§5.3).
+ */
 
 import { prisma } from "@/lib/prisma";
-
-//1. Check if User Details Exists in Registration Table
-// Parameters taken are Student ID and Current Event ID
-// if studentID + currentEventID exists in the Registration table, return true
-
-//2. Time In
-// If validation is true, fetch all details of user + current time and insert them to the attendance logs.
-// Timeout value would be currently sent to null
 
 export async function recordTimeIn(
   studentNumber: string,

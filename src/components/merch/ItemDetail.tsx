@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Surface, Column, Body, DataRow, Label, Rule, useDS } from "@/components/ds";
@@ -121,11 +122,15 @@ export default function ItemDetail({
               }}
             >
               {cover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={cover}
                   alt={item.name}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  fill
+                  // The hero on this page — worth fetching eagerly rather than
+                  // lazily, since it is the reason the page was opened.
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
                   style={{ filter: item.soldOut ? "grayscale(1)" : undefined }}
                 />
               ) : (
@@ -155,11 +160,13 @@ export default function ItemDetail({
                       transition: `border-color ${motion.fast}`,
                     }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={src}
                       alt={`${item.name} view ${i + 1}`}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      fill
+                      // Four-across thumbnail strip.
+                      sizes="(max-width: 1024px) 25vw, 12vw"
+                      className="object-cover"
                     />
                   </button>
                 ))}

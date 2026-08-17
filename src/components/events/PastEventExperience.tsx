@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import type { EventWithCount } from "@/types/events";
 import {
@@ -344,7 +345,13 @@ function ChapterScene({
       }}
     >
       {image ? (
-        <img src={image} alt={chapter.title || chapter.label} className="w-full h-full object-cover" />
+        <Image
+          src={image}
+          alt={chapter.title || chapter.label}
+          fill
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover"
+        />
       ) : (
         <PhotoPlaceholder />
       )}
@@ -486,7 +493,13 @@ function MemoryWall({ images, eventName }: { images: string[]; eventName: string
             }}
           >
             {has ? (
-              <img src={img as string} alt={`${eventName} ${i + 1}`} className="w-full h-full object-cover" />
+              <Image
+                src={img as string}
+                alt={`${eventName} ${i + 1}`}
+                fill
+                sizes="(max-width: 768px) 33vw, 20vw"
+                className="object-cover"
+              />
             ) : (
               <PhotoPlaceholder label="" />
             )}
@@ -503,6 +516,17 @@ function MemoryWall({ images, eventName }: { images: string[]; eventName: string
           style={{ backgroundColor: "rgba(0,0,0,0.94)" }}
           onClick={() => setOpen(null)}
         >
+          {/*
+            The one surviving <img>, deliberately. This is a lightbox: the photo
+            is shown at its own aspect ratio, bounded by the viewport, and the
+            letterbox area around it must stay clickable so a click outside the
+            photo dismisses. `next/image` needs either fixed dimensions (unknown
+            — these are arbitrary uploads) or `fill`, and `fill` would stretch the
+            element across the whole box, swallowing exactly the clicks that are
+            supposed to close the overlay.
+            eslint-disable-next-line @next/next/no-img-element
+          */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={images[open]}
             alt={`${eventName} ${open + 1}`}
@@ -605,7 +629,15 @@ export default function PastEventExperience({ event, isAdmin }: { event: EventWi
             style={{ aspectRatio: "21 / 9", maxHeight: "26rem", backgroundColor: "#1e1d22", border: `1px solid ${c.rule}` }}
           >
             {heroImage ? (
-              <img src={heroImage} alt={event.name} className="absolute inset-0 w-full h-full object-cover" />
+              <Image
+                src={heroImage}
+                alt={event.name}
+                fill
+                // Above the fold on a past-event page, so eager rather than lazy.
+                priority
+                sizes="100vw"
+                className="object-cover"
+              />
             ) : (
               <div className="absolute inset-0">
                 <PhotoPlaceholder label="OPENING MEMORY · PHOTO ADDED LATER" />

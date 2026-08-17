@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { isEventAdmin } from "@/types/auth";
-import { recordTimeIn, recordTimeOut } from "@/services/attendance/attendanceService";
+import { recordTimeIn, recordTimeOut } from "@/lib/attendance";
 
 export async function POST(
   req: NextRequest,

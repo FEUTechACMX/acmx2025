@@ -1,4 +1,14 @@
-//imports
+/**
+ * Credentials and session issuance.
+ *
+ * Deliberately separate from `lib/auth.ts`, which *reads* and gates sessions:
+ * `auth.ts` is imported by around thirty route handlers, and folding `bcrypt`
+ * into it would drag the hashing library into every one of their bundles. So the
+ * split here is by dependency weight, not by taste — reading a session is cheap
+ * and ubiquitous, minting one is neither.
+ *
+ * Moved from `src/services/identity/` (CLEANUP.md §5.3).
+ */
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 

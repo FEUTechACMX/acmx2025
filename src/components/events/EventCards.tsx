@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { EventWithCount } from "@/types/events";
 import { getEventStatus } from "@/types/events";
@@ -64,10 +65,12 @@ export default function EventCards({ event, priceTier }: EventCardProps) {
       >
         {/* Image plate */}
         <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4 / 3" }}>
-          <img
+          <Image
             src={event.cardImage || "/eventCard/cardBG.png"}
             alt={event.name}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-cover"
             style={{
               filter: status === "finished" ? "grayscale(1)" : undefined,
               opacity: status === "finished" ? 0.55 : 1,

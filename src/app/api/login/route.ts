@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import {
   login,
   createSession,
-} from "@/services/identity/identityService";
+} from "@/lib/identity";
 import { toSafeUser } from "@/lib/userMapper";
 
 export async function POST(req: Request) {

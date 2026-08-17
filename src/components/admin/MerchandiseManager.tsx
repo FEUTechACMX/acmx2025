@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import type { safeUser } from "@/types/auth";
 import { useDS } from "@/components/ds";
 import { type as t, motion } from "@/styles/design-system";
@@ -455,8 +456,15 @@ function ItemsTable({
                     }}
                   >
                     {item.images[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.images[0]} alt="" className="w-full h-full object-cover" />
+                      // A 26px row thumbnail: `fill` would need a positioned
+                      // parent, so the intrinsic size is stated instead.
+                      <Image
+                        src={item.images[0]}
+                        alt=""
+                        width={26}
+                        height={26}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <Icon name="image" size={12} />
                     )}
@@ -726,8 +734,13 @@ function ItemEditor({
           }}
         >
           {draft.images[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={draft.images[0]} alt="" className="w-full h-full object-cover" />
+            <Image
+              src={draft.images[0]}
+              alt=""
+              width={120}
+              height={110}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <Icon name="image" size={22} />
           )}

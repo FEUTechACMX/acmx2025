@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import Image from "next/image";
 import Modal, { type ModalMessage } from "@/components/ds/Modal";
 import { Field, Segmented } from "@/components/ds/Field";
 import Button from "@/components/ds/Button";
@@ -367,13 +368,17 @@ export default function EventCreationModal({ isOpen, onClose, onCreated }: Event
               Cover image
             </span>
             {imageUrl ? (
-              <div className="relative" style={{ border: `1px solid ${c.rule}` }}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- Supabase
-                    upload with no known dimensions; §8.4 converts these wholesale. */}
-                <img
+              // The wrapper carries the height, because `fill` measures its parent.
+              <div
+                className="relative overflow-hidden"
+                style={{ height: 160, border: `1px solid ${c.rule}` }}
+              >
+                <Image
                   src={imageUrl}
                   alt="Event cover"
-                  style={{ width: "100%", height: 160, objectFit: "cover", display: "block" }}
+                  fill
+                  sizes="620px"
+                  className="object-cover"
                 />
                 <button
                   type="button"

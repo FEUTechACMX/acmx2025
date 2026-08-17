@@ -98,6 +98,10 @@ export default function AccountPage({ user }: { user: safeUser }) {
 
   const logOut = async () => {
     await fetch("/api/logout", { method: "POST", credentials: "include" });
+    // Signing out has to discard the whole document: the cached session in
+    // `sessionClient` lives as long as the page does, so a client-side
+    // navigation would keep showing this member as signed in.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = "/";
   };
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { type as t, motion } from "@/styles/design-system";
 import { useDS } from "@/components/ds";
 import Icon from "@/components/admin/icons";
@@ -39,11 +40,14 @@ export default function ProductCard({ item }: { item: MerchItemDTO }) {
         }}
       >
         {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={cover}
             alt={item.name}
-            className="absolute inset-0 w-full h-full object-cover"
+            fill
+            // Three-up on desktop, one-up on mobile — tells the optimiser which
+            // width to actually serve instead of the full upload.
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
             style={{
               filter: item.soldOut ? "grayscale(1)" : undefined,
               transform: hover && !item.soldOut ? "scale(1.03)" : "scale(1)",

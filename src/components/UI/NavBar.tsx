@@ -383,6 +383,12 @@ export default function NavBar() {
         onLoginSuccess={() => {
           setIsLoginOpen(false);
           // Send members straight to the dashboard after signing in.
+          //
+          // Deliberately a full document load rather than router.push: the
+          // session is cached per document in `sessionClient`, so a client-side
+          // navigation would leave this nav rendering the signed-out state until
+          // something else forced a reload.
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = "/dashboard";
         }}
       />

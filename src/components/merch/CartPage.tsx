@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Surface, Column, PageHeader, Body, Label, Rule, useDS } from "@/components/ds";
 import { type as t, layout, motion } from "@/styles/design-system";
 import Icon from "@/components/admin/icons";
@@ -314,11 +315,13 @@ function CartRow({
         style={{ width: 72, height: 78, backgroundColor: c.panel, border: `1px solid ${c.rule}` }}
       >
         {line.itemImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={line.itemImage}
             alt={line.itemName}
-            className="absolute inset-0 w-full h-full object-cover"
+            fill
+            // The thumbnail box is a fixed 72×78, so there is one right width.
+            sizes="72px"
+            className="object-cover"
             style={{ filter: line.purchasable ? undefined : "grayscale(1)" }}
           />
         ) : (
