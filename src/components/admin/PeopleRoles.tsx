@@ -28,6 +28,8 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
   const [pendingRole, setPendingRole] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState("");
   const [search, setSearch] = useState("");
+  /** "" means every role. Narrows the roll to one role at a time. */
+  const [listRole, setListRole] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,13 +60,31 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
    */
   const shown = useMemo(() => {
     const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (terms.length === 0) return members;
 
     return members.filter((m) => {
+      if (listRole && m.role !== listRole) return false;
+      if (terms.length === 0) return true;
       const haystack = `${m.name} ${m.email} ${m.studentId} ${roleLabel(m.role)}`.toLowerCase();
       return terms.every((term) => haystack.includes(term));
     });
-  }, [members, search]);
+  }, [members, search, listRole]);
+
+  /**
+   * The role chips. Officer roles are a handful of people among a four-figure
+   * roll, so a role with nobody in it is left off the row rather than shown as
+   * a dead chip — except the one currently picked, which has to stay clickable
+   * to get back out of.
+   */
+  const roleTabs = useMemo(() => {
+    const tally = members.reduce<Record<string, number>>((acc, m) => {
+      acc[m.role] = (acc[m.role] ?? 0) + 1;
+      return acc;
+    }, {});
+    return USER_ROLES.filter((r) => (tally[r] ?? 0) > 0 || r === listRole).map((r) => ({
+      role: r as string,
+      count: tally[r] ?? 0,
+    }));
+  }, [members, listRole]);
 
   const filteredRoles = useMemo(
     () => USER_ROLES.filter((r) => roleLabel(r).toLowerCase().includes(roleFilter.toLowerCase()) || r.toLowerCase().includes(roleFilter.toLowerCase())),
@@ -112,13 +132,33 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
           subtitle="Assign officer roles to members. Pick a person, choose a role — new roles can be added in the Prisma schema anytime."
         />
 
+        {/* Filter the roll by role */}
+        <div className="flex flex-col" style={{ gap: 10 }}>
+          <span style={{ ...t.label, fontSize: 10, color: c.faint }}>FILTER BY ROLE</span>
+          <div className="flex flex-wrap items-center" style={{ gap: 8 }}>
+            <RoleChip on={listRole === ""} count={members.length} onClick={() => setListRole("")}>
+              All roles
+            </RoleChip>
+            {roleTabs.map((r) => (
+              <RoleChip
+                key={r.role}
+                on={listRole === r.role}
+                count={r.count}
+                onClick={() => setListRole(listRole === r.role ? "" : r.role)}
+              >
+                {roleLabel(r.role)}
+              </RoleChip>
+            ))}
+          </div>
+        </div>
+
         <div className="grid gap-6" style={{ gridTemplateColumns: "minmax(0, 1fr) minmax(0, 380px)" }}>
           {/* Members table */}
           <div style={{ backgroundColor: c.panel, border: `1px solid ${c.rule}`, alignSelf: "start" }}>
             <div className="flex items-center" style={{ padding: "14px 20px", borderBottom: `1px solid ${c.rule}` }}>
               <span className="flex-1" style={{ ...t.label, fontSize: 10, color: c.faint }}>
                 MEMBER
-                {search.trim() && ` · ${shown.length} OF ${members.length}`}
+                {(search.trim() || listRole) && ` · ${shown.length} OF ${members.length}`}
               </span>
               <span style={{ width: 180, ...t.label, fontSize: 10, color: c.faint }}>CURRENT ROLE</span>
               <span style={{ width: 90, ...t.label, fontSize: 10, color: c.faint }}>JOINED</span>
@@ -164,7 +204,9 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
             {members.length > 0 && shown.length === 0 && (
               <div style={{ padding: "24px 20px" }}>
                 <span style={{ ...t.bodySmall, color: c.muted }}>
-                  No member matches “{search.trim()}”. Search by name, email, student number or role.
+                  {listRole && !search.trim()
+                    ? `Nobody holds ${roleLabel(listRole)} right now.`
+                    : `No member matches “${search.trim()}”${listRole ? ` in ${roleLabel(listRole)}` : ""}. Search by name, email, student number or role.`}
                 </span>
               </div>
             )}
@@ -258,5 +300,39 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
         </div>
       </AdminContent>
     </AdminShell>
+  );
+}
+
+/** One role in the filter row, with how many people hold it. */
+function RoleChip({
+  on,
+  count,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  count: number;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  const { c } = useDS();
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={on}
+      className="flex items-center cursor-pointer"
+      style={{
+        ...t.label,
+        fontSize: 10,
+        gap: 8,
+        padding: "8px 12px",
+        color: on ? "#ffffff" : c.muted,
+        backgroundColor: on ? c.accent : "transparent",
+        border: `1px solid ${on ? c.accent : c.rule}`,
+      }}
+    >
+      {children}
+      <span style={{ ...t.mono, fontSize: 10, color: on ? "#ffffff" : c.faint }}>{count}</span>
+    </button>
   );
 }

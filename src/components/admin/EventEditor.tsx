@@ -1,0 +1,659 @@
+"use client";
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { safeUser } from "@/types/auth";
+import { useDS } from "@/components/ds";
+import { type as t, font } from "@/styles/design-system";
+import AdminShell, { AdminContent, AdminButton, SectionLabel } from "./AdminShell";
+import Icon from "./icons";
+
+type Registration = {
+  id: string;
+  fullName: string;
+  studentNumber: string;
+  schoolEmail: string;
+  role: string;
+  attendance: { timeIn: string; timeOut: string | null } | null;
+};
+
+type Form = {
+  name: string;
+  typeStr: string;
+  venue: string;
+  startDate: string;
+  overview: string;
+  mainObjective: string;
+  specificObjectivesStr: string;
+  targetParticipants: string;
+  registrationFees: string;
+  statusOverride: string; // "", UPCOMING, ONGOING, FINISHED
+  image: string | null;
+  status: string;
+};
+
+const toLocalInput = (iso?: string) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+const titleCase = (s: string) => (s ? s[0] + s.slice(1).toLowerCase() : "");
+
+/** Same rule the events list uses: an override wins, otherwise the dates decide. */
+function deriveStatus(override: string | null, start?: string, end?: string): string {
+  if (override) return override;
+  if (!start || !end) return "";
+  const now = Date.now();
+  if (now < new Date(start).getTime()) return "UPCOMING";
+  if (now > new Date(end).getTime()) return "FINISHED";
+  return "ONGOING";
+}
+
+/**
+ * Admin → Events → one event.
+ *
+ * Editing an event means holding its details, its cover and its attendance
+ * sheet at once, and the sheet is a list that grows to hundreds of rows. That
+ * never fitted in a column beside the table, so an event opens as its own page:
+ * details on the left, cover and attendance on the right.
+ */
+export default function EventEditor({ user, eventId }: { user: safeUser; eventId: string }) {
+  const { c } = useDS();
+  const router = useRouter();
+
+  const [form, setForm] = useState<Form | null>(null);
+  const [regs, setRegs] = useState<Registration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [regQuery, setRegQuery] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const [ev, rg] = await Promise.all([
+        fetch(`/api/events/${eventId}`).then((r) => r.json()),
+        fetch(`/api/events/${eventId}/registrations`).then((r) => r.json()),
+      ]);
+
+      if (ev?.error) {
+        setError(ev.error);
+      } else {
+        setForm({
+          name: ev.name ?? "",
+          typeStr: (ev.type ?? []).join(", "),
+          venue: ev.venue ?? "",
+          startDate: toLocalInput(ev.startDate),
+          overview: ev.overview ?? "",
+          mainObjective: ev.mainObjective ?? "",
+          specificObjectivesStr: (ev.specificObjectives ?? []).join("\n"),
+          targetParticipants: ev.targetParticipants ?? "",
+          registrationFees: ev.registrationFees ?? "",
+          statusOverride: ev.statusOverride ?? "",
+          image: ev.image ?? ev.cardImage ?? null,
+          status: deriveStatus(ev.statusOverride ?? null, ev.startDate, ev.endDate),
+        });
+      }
+      setRegs(rg?.registrations ?? []);
+    } catch {
+      setError("Couldn't load this event.");
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const patch = async (body: Record<string, unknown>) => {
+    const res = await fetch(`/api/events/${eventId}/edit`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return res.ok ? res.json() : null;
+  };
+
+  const saveDetails = async () => {
+    if (!form) return;
+    setSaving(true);
+    setError(null);
+    const ok = await patch({
+      name: form.name,
+      venue: form.venue,
+      startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
+      type: form.typeStr.split(",").map((s) => s.trim()).filter(Boolean),
+      overview: form.overview,
+      mainObjective: form.mainObjective,
+      specificObjectives: form.specificObjectivesStr.split("\n").map((s) => s.trim()).filter(Boolean),
+      targetParticipants: form.targetParticipants,
+      registrationFees: form.registrationFees,
+      statusOverride: form.statusOverride || null,
+    });
+    setSaving(false);
+    if (ok) {
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1800);
+      // Re-read: the status badge follows the dates, so it can change as a
+      // side effect of the very edit that was just saved.
+      void load();
+    } else {
+      setError("Couldn't save this event.");
+    }
+  };
+
+  const onPickCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !form) return;
+    const fd = new FormData();
+    fd.append("bucket", "events");
+    fd.append("files", file);
+    const up = await fetch("/api/upload", { method: "POST", body: fd }).then((r) => r.json());
+    const url = up?.urls?.[0];
+    if (url) {
+      await patch({ image: url });
+      setForm({ ...form, image: url });
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const removeCover = async () => {
+    if (!form) return;
+    await patch({ image: null });
+    setForm({ ...form, image: null });
+  };
+
+  const checkIn = async (studentNumber: string) => {
+    const res = await fetch(`/api/events/${eventId}/attendance/manual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentNumber, action: "in" }),
+    });
+    if (res.ok) {
+      const now = new Date().toISOString();
+      setRegs((prev) =>
+        prev.map((r) =>
+          r.studentNumber === studentNumber ? { ...r, attendance: { timeIn: now, timeOut: null } } : r
+        )
+      );
+    }
+  };
+
+  const exportCsv = () => {
+    const rows = [["Full Name", "Student No.", "Email", "Role", "Attended"]].concat(
+      regs.map((r) => [r.fullName, r.studentNumber, r.schoolEmail, r.role, r.attendance ? "Yes" : "No"])
+    );
+    const csv = rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `registrations-${eventId}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const shownRegs = useMemo(() => {
+    const q = regQuery.trim().toLowerCase();
+    if (!q) return regs;
+    return regs.filter((r) =>
+      `${r.fullName} ${r.studentNumber} ${r.schoolEmail}`.toLowerCase().includes(q)
+    );
+  }, [regs, regQuery]);
+
+  const checkedIn = regs.filter((r) => r.attendance).length;
+  const set = (patchForm: Partial<Form>) => setForm((f) => (f ? { ...f, ...patchForm } : f));
+
+  return (
+    <AdminShell user={user} breadcrumb={form?.name || "Event"}>
+      <AdminContent>
+        <div className="flex flex-col" style={{ gap: 18 }}>
+          <Link
+            href="/admin/events"
+            className="flex items-center"
+            style={{
+              ...t.label,
+              fontSize: 10,
+              gap: 8,
+              alignSelf: "flex-start",
+              color: c.muted,
+              textDecoration: "none",
+            }}
+          >
+            <span style={{ display: "flex", transform: "rotate(90deg)" }}>
+              <Icon name="chevron-down" size={13} />
+            </span>
+            All events
+          </Link>
+
+          <div className="flex flex-wrap items-end justify-between" style={{ gap: 16 }}>
+            <div className="flex flex-col min-w-0" style={{ gap: 9, maxWidth: 640 }}>
+              <span style={{ ...t.label, color: c.accent }}>EDIT EVENT</span>
+              <h1 style={{ ...t.title, fontSize: "clamp(1.5rem, 2.6vw, 2rem)", color: c.text }}>
+                {form?.name || (loading ? "Loading…" : "Event")}
+              </h1>
+              {form && (
+                <div className="flex items-center flex-wrap" style={{ gap: 10 }}>
+                  {form.status && (
+                    <span
+                      style={{
+                        ...t.label,
+                        fontSize: 9,
+                        color: c.accent,
+                        padding: "4px 9px",
+                        border: `1px solid ${c.accent}`,
+                      }}
+                    >
+                      {titleCase(form.status)}
+                    </span>
+                  )}
+                  <span style={{ ...t.bodySmall, fontSize: 11, color: c.faint }}>
+                    {regs.length} registered · {checkedIn} checked in
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center" style={{ gap: 12 }}>
+              {savedFlash && <span style={{ ...t.label, fontSize: 9, color: c.accent }}>SAVED ✓</span>}
+              <AdminButton onClick={() => void saveDetails()} disabled={saving || !form} icon="check">
+                {saving ? "SAVING…" : "SAVE CHANGES"}
+              </AdminButton>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              role="status"
+              style={{
+                ...t.bodySmall,
+                padding: "11px 14px",
+                color: c.danger,
+                backgroundColor: c.dangerWash,
+                border: `1px solid ${c.danger}`,
+              }}
+            >
+              {error}
+            </div>
+          )}
+        </div>
+
+        {loading && <span style={{ ...t.bodySmall, color: c.muted }}>Loading this event…</span>}
+
+        {form && (
+          <div
+            className="grid gap-6"
+            style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 26rem), 1fr))" }}
+          >
+            {/* Details */}
+            <div
+              className="flex flex-col"
+              style={{
+                gap: 18,
+                padding: "22px 20px",
+                backgroundColor: c.panel,
+                border: `1px solid ${c.rule}`,
+                alignSelf: "start",
+              }}
+            >
+              <SectionLabel>Details</SectionLabel>
+
+              <EditField label="TITLE" value={form.name} onChange={(v) => set({ name: v })} />
+              <EditField
+                label="TYPE (comma-separated)"
+                value={form.typeStr}
+                onChange={(v) => set({ typeStr: v })}
+              />
+              <EditField
+                label="DATE & TIME"
+                type="datetime-local"
+                value={form.startDate}
+                onChange={(v) => set({ startDate: v })}
+              />
+              <EditField label="VENUE" value={form.venue} onChange={(v) => set({ venue: v })} />
+
+              <div className="flex flex-col" style={{ gap: 7 }}>
+                <span style={{ ...t.label, fontSize: 10, color: c.faint }}>STATUS</span>
+                <select
+                  value={form.statusOverride}
+                  onChange={(e) => set({ statusOverride: e.target.value })}
+                  style={{
+                    ...t.bodySmall,
+                    padding: "11px 13px",
+                    background: "transparent",
+                    color: c.text,
+                    border: `1px solid ${c.ruleStrong}`,
+                    outline: "none",
+                  }}
+                >
+                  <option value="">Auto (from dates)</option>
+                  <option value="UPCOMING">Upcoming</option>
+                  <option value="ONGOING">Ongoing</option>
+                  <option value="FINISHED">Finished</option>
+                </select>
+              </div>
+
+              <SectionLabel>Programme</SectionLabel>
+              <EditField
+                label="OVERVIEW"
+                value={form.overview}
+                onChange={(v) => set({ overview: v })}
+                multiline
+              />
+              <EditField
+                label="MAIN OBJECTIVE"
+                value={form.mainObjective}
+                onChange={(v) => set({ mainObjective: v })}
+                multiline
+              />
+              <EditField
+                label="SPECIFIC OBJECTIVES (one per line)"
+                value={form.specificObjectivesStr}
+                onChange={(v) => set({ specificObjectivesStr: v })}
+                multiline
+              />
+              <EditField
+                label="TARGET PARTICIPANTS"
+                value={form.targetParticipants}
+                onChange={(v) => set({ targetParticipants: v })}
+              />
+              <EditField
+                label="REGISTRATION FEES"
+                value={form.registrationFees}
+                onChange={(v) => set({ registrationFees: v })}
+              />
+            </div>
+
+            {/* Cover + attendance */}
+            <div className="flex flex-col" style={{ gap: 24, alignSelf: "start" }}>
+              <div
+                className="flex flex-col"
+                style={{
+                  gap: 16,
+                  padding: "22px 20px",
+                  backgroundColor: c.panel,
+                  border: `1px solid ${c.rule}`,
+                }}
+              >
+                <SectionLabel>Cover image</SectionLabel>
+                <div
+                  className="flex flex-col items-center justify-center"
+                  style={{
+                    gap: 8,
+                    height: 200,
+                    backgroundColor: "#1e1d22",
+                    border: `1px solid ${c.rule}`,
+                    backgroundImage: form.image ? `url(${form.image})` : undefined,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
+                >
+                  {!form.image && (
+                    <>
+                      <Icon name="image" size={26} style={{ color: c.faint }} />
+                      <span style={{ ...t.label, fontSize: 10, color: c.faint }}>NO COVER IMAGE</span>
+                    </>
+                  )}
+                  <div className="flex" style={{ gap: 8 }}>
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      className="flex items-center cursor-pointer"
+                      style={{
+                        ...t.label,
+                        fontSize: 10,
+                        gap: 6,
+                        padding: "6px 10px",
+                        color: c.text,
+                        background: "rgba(0,0,0,0.5)",
+                        border: `1px solid ${c.ruleStrong}`,
+                      }}
+                    >
+                      <Icon name="upload" size={12} /> REPLACE
+                    </button>
+                    {form.image && (
+                      <button
+                        onClick={() => void removeCover()}
+                        className="flex items-center cursor-pointer"
+                        style={{
+                          ...t.label,
+                          fontSize: 10,
+                          gap: 6,
+                          padding: "6px 10px",
+                          color: c.accent,
+                          background: "rgba(0,0,0,0.5)",
+                          border: `1px solid ${c.ruleStrong}`,
+                        }}
+                      >
+                        <Icon name="trash" size={12} /> REMOVE
+                      </button>
+                    )}
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={onPickCover} />
+                </div>
+              </div>
+
+              <div
+                className="flex flex-col"
+                style={{
+                  gap: 16,
+                  padding: "22px 20px",
+                  backgroundColor: c.panel,
+                  border: `1px solid ${c.rule}`,
+                }}
+              >
+                <SectionLabel>Registrations &amp; attendance</SectionLabel>
+
+                <div className="flex" style={{ gap: 28 }}>
+                  {([["REGISTERED", regs.length], ["CHECKED IN", checkedIn]] as const).map(([l, n]) => (
+                    <div key={l} className="flex flex-col" style={{ gap: 5 }}>
+                      <span style={{ fontFamily: font.display, fontSize: 26, fontWeight: 500, color: c.text }}>
+                        {n}
+                      </span>
+                      <span style={{ ...t.label, fontSize: 9, color: c.faint }}>{l}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div
+                  className="flex items-center"
+                  style={{ gap: 9, padding: "0 11px", border: `1px solid ${c.ruleStrong}` }}
+                >
+                  <span style={{ color: c.faint, display: "flex" }}>
+                    <Icon name="search" size={14} />
+                  </span>
+                  <input
+                    value={regQuery}
+                    onChange={(e) => setRegQuery(e.target.value)}
+                    placeholder="Find an attendee…"
+                    style={{
+                      ...t.bodySmall,
+                      flex: 1,
+                      minWidth: 0,
+                      padding: "10px 0",
+                      color: c.text,
+                      background: "transparent",
+                      border: "none",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div style={{ border: `1px solid ${c.rule}`, maxHeight: 460, overflowY: "auto" }}>
+                  <div
+                    className="flex items-center"
+                    style={{ padding: "10px 14px", borderBottom: `1px solid ${c.rule}` }}
+                  >
+                    <span className="flex-1" style={{ ...t.label, fontSize: 9, color: c.faint }}>
+                      ATTENDEE
+                    </span>
+                    <span style={{ width: 44, textAlign: "center", ...t.label, fontSize: 9, color: c.faint }}>
+                      REG
+                    </span>
+                    <span style={{ width: 44, textAlign: "center", ...t.label, fontSize: 9, color: c.faint }}>
+                      ATT
+                    </span>
+                  </div>
+
+                  {regs.length === 0 && (
+                    <div style={{ padding: 14 }}>
+                      <span style={{ ...t.bodySmall, color: c.muted }}>No registrations yet.</span>
+                    </div>
+                  )}
+                  {regs.length > 0 && shownRegs.length === 0 && (
+                    <div style={{ padding: 14 }}>
+                      <span style={{ ...t.bodySmall, color: c.muted }}>
+                        Nobody matches “{regQuery.trim()}”.
+                      </span>
+                    </div>
+                  )}
+
+                  {shownRegs.map((r, i) => {
+                    const attended = !!r.attendance;
+                    return (
+                      <div
+                        key={r.id}
+                        className="flex items-center"
+                        style={{
+                          padding: "10px 14px",
+                          borderBottom: i < shownRegs.length - 1 ? `1px solid ${c.rule}` : "none",
+                        }}
+                      >
+                        <div className="flex flex-col flex-1 min-w-0" style={{ gap: 2 }}>
+                          <span
+                            style={{
+                              ...t.bodySmall,
+                              fontWeight: 600,
+                              color: c.text,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {r.fullName}
+                          </span>
+                          <span
+                            style={{
+                              ...t.mono,
+                              color: c.faint,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {r.schoolEmail}
+                          </span>
+                        </div>
+                        <div style={{ width: 44 }} className="flex justify-center">
+                          <CheckBox on onClick={undefined} c={c} />
+                        </div>
+                        <div style={{ width: 44 }} className="flex justify-center">
+                          <CheckBox
+                            on={attended}
+                            onClick={attended ? undefined : () => void checkIn(r.studentNumber)}
+                            c={c}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center justify-between flex-wrap" style={{ gap: 10 }}>
+                  <button
+                    onClick={exportCsv}
+                    className="flex items-center cursor-pointer"
+                    style={{
+                      ...t.label,
+                      fontSize: 10,
+                      gap: 6,
+                      padding: "7px 11px",
+                      color: c.text,
+                      background: "none",
+                      border: `1px solid ${c.ruleStrong}`,
+                    }}
+                  >
+                    <Icon name="download" size={12} /> EXPORT CSV
+                  </button>
+                  <AdminButton variant="ghost" onClick={() => router.push("/admin/events")}>
+                    BACK TO EVENTS
+                  </AdminButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </AdminContent>
+    </AdminShell>
+  );
+}
+
+function CheckBox({
+  on,
+  onClick,
+  c,
+}: {
+  on: boolean;
+  onClick?: () => void;
+  c: ReturnType<typeof useDS>["c"];
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={!onClick}
+      className="flex items-center justify-center"
+      style={{
+        width: 18,
+        height: 18,
+        backgroundColor: on ? c.accent : "transparent",
+        border: `1px solid ${on ? c.accent : c.ruleStrong}`,
+        cursor: onClick ? "pointer" : "default",
+      }}
+    >
+      {on && <Icon name="check" size={12} style={{ color: "#fff" }} />}
+    </button>
+  );
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = "text",
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  multiline?: boolean;
+}) {
+  const { c } = useDS();
+  const base: React.CSSProperties = {
+    ...t.bodySmall,
+    width: "100%",
+    padding: "11px 13px",
+    background: "transparent",
+    color: c.text,
+    border: `1px solid ${c.ruleStrong}`,
+    outline: "none",
+  };
+  return (
+    <div className="flex flex-col" style={{ gap: 7 }}>
+      <span style={{ ...t.label, fontSize: 10, color: c.faint }}>{label}</span>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={4}
+          style={{ ...base, resize: "vertical" }}
+        />
+      ) : (
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} style={base} />
+      )}
+    </div>
+  );
+}
