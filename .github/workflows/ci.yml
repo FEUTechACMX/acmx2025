@@ -52,6 +52,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Node-only unit tests: no database, no dev server. Covers the upload
+      # sniffer, the role gate's 401/403 split and event status derivation.
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
 

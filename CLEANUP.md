@@ -22,7 +22,9 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 
 | Metric | At audit | Now |
 |---|---|---|
-| `eslint src` | 6 errors, 14 warnings | **0 errors, 11 warnings** |
+| `eslint src` | 6 errors, 14 warnings | **0 errors, 10 warnings** (now with an unused-vars rule the preset had dropped) |
+| tests | none | **45**, via `npm test`, in CI |
+| `!important` in `globals.css` | 68 | **0** |
 | dependencies | 18 + 12 | **9 + 10** |
 | lines in `src/` | 24,905 | **22,957** (net of ~200 lines of new walk-in code) |
 | `next build` | not run | **passes on Turbopack** (`--webpack` opt-out removed) |
@@ -69,6 +71,7 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | 2.8 | Service-role client built per request, before the auth check | Moved to module scope; the gate is now the handler's first statement |
 | 3.7 | `EventsManager` shipped a placeholder as a primary action | The `alert()` is gone; NEW EVENT links to `/events`, where creation actually lives. It moves into the console once `EventCreationModal` is ported off Tailwind (§8.1) |
 | 6.5 | Two Button and two Modal implementations | Not parallel systems — `UI/Button.tsx` and `Modal/Modal.tsx` had **zero importers**. Both deleted |
+| 13.1 | No tests, at all | A Vitest slice: **45 tests over 3 files**, node environment, no database. Covers the upload sniffer (`lib/uploads.ts`, extracted from the route so it is testable), `requireRole`'s 401-vs-403 decision, and `getEventStatus`. Wired to `npm test` and added to CI. It paid for itself on the first run by catching a real bug in `isBucket`: `value in BUCKET_KINDS` walks the prototype chain, so `"constructor"` and `"toString"` were accepted as bucket names |
 | 8.1 / 8.2 | Two theming systems; ~68 `!important` overrides | **Closed.** `RegistrationModal` ported faithfully (public flow, geometry untouched); `EventCreationModal` rebuilt on `ds/Modal` (officer-only, so redesigned rather than repainted — it also gains a focus trap, scroll lock and dirty-guard it never had). With no subjects left, the whole override block came out: **105 lines deleted, 0 `!important` and 0 `.dark-exempt` rules remain**. Three of the deleted rules were element selectors on `input`/`select`/`textarea` whose `!important` beat the DS `Field`'s inline styles, so every form field in the app rendered the legacy background and text colour; verified fixed |
 | 10.2 | ESLint had no unused-vars rule at all | The Next 16 preset drops `no-unused-vars`, which is why a dead import survived a refactor. Configured as a warning; it immediately found 25 more, including 17 dead `const user = auth.user` bindings left by the §5.4 codemod. All cleared |
 
