@@ -13,6 +13,102 @@ import { prisma } from "./prisma";
 /** Variants always come back in editor order, then alphabetically. */
 export const variantOrder = [{ order: "asc" as const }, { label: "asc" as const }];
 
+/* ── Payload validation ─────────────────────────────────────────
+ *
+ * `readVariants`, `readCategory` and `readStatus` below are *coercers*: they take
+ * anything and produce something safe, defaulting silently. That is right for an
+ * absent field and wrong for a present-but-invalid one — an officer who mistypes
+ * a category should be told, not quietly given APPAREL. So the route validates
+ * what was actually sent, then coerces (CLEANUP.md §6.4).
+ *
+ * The caps exist because nothing bounded these strings: `name`, the three notes,
+ * and the image list were written to the database at whatever length arrived.
+ */
+
+export const ITEM_LIMITS = {
+  name: 160,
+  slug: 160,
+  blurb: 300,
+  description: 8000,
+  note: 2000,
+  imageUrl: 600,
+  images: 24,
+  variants: 40,
+  variantLabel: 40,
+  stock: 100_000,
+  price: 1_000_000,
+} as const;
+
+/**
+ * Validates a merch item payload. Only keys present in `body` are checked, so it
+ * serves both the create route and the PATCH editor. Returns the first problem
+ * as a sentence, or null.
+ */
+export function validateItemInput(body: Record<string, unknown>): string | null {
+  const text = (key: string, label: string, max: number) => {
+    if (body[key] === undefined || body[key] === null) return null;
+    if (typeof body[key] !== "string") return `${label} must be text.`;
+    return (body[key] as string).trim().length > max
+      ? `${label} must be ${max} characters or fewer.`
+      : null;
+  };
+
+  const problems = [
+    text("name", "Name", ITEM_LIMITS.name),
+    text("slug", "Slug", ITEM_LIMITS.slug),
+    text("blurb", "Blurb", ITEM_LIMITS.blurb),
+    text("description", "Description", ITEM_LIMITS.description),
+    text("pickupNote", "Pickup note", ITEM_LIMITS.note),
+    text("paymentNote", "Payment note", ITEM_LIMITS.note),
+    text("restockNote", "Restock note", ITEM_LIMITS.note),
+  ];
+  const firstText = problems.find(Boolean);
+  if (firstText) return firstText;
+
+  if (body.price !== undefined) {
+    const price = Number(body.price);
+    if (!Number.isFinite(price) || price < 0) return "Price must be zero or more.";
+    if (price > ITEM_LIMITS.price) return "That price looks like a typo.";
+  }
+
+  if (body.category !== undefined && !MERCH_CATEGORIES.includes(body.category as MerchCategory)) {
+    return `Category must be one of: ${MERCH_CATEGORIES.join(", ")}.`;
+  }
+
+  if (body.status !== undefined && !MERCH_STATUSES.includes(body.status as MerchStatus)) {
+    return `Status must be one of: ${MERCH_STATUSES.join(", ")}.`;
+  }
+
+  if (body.images !== undefined) {
+    if (!Array.isArray(body.images)) return "Images must be a list.";
+    if (body.images.length > ITEM_LIMITS.images)
+      return `An item can hold at most ${ITEM_LIMITS.images} photos.`;
+    if (body.images.some((i) => typeof i !== "string"))
+      return "Every image must be a URL string.";
+    if (body.images.some((i) => (i as string).length > ITEM_LIMITS.imageUrl))
+      return `Image URLs must be ${ITEM_LIMITS.imageUrl} characters or fewer.`;
+  }
+
+  if (body.variants !== undefined) {
+    if (!Array.isArray(body.variants)) return "Variants must be a list.";
+    if (body.variants.length > ITEM_LIMITS.variants)
+      return `An item can hold at most ${ITEM_LIMITS.variants} sizes.`;
+    for (const v of body.variants) {
+      const variant = (v ?? {}) as Record<string, unknown>;
+      const label = String(variant.label ?? "").trim();
+      if (label.length > ITEM_LIMITS.variantLabel)
+        return `Size labels must be ${ITEM_LIMITS.variantLabel} characters or fewer.`;
+      if (variant.stock !== undefined) {
+        const stock = Number(variant.stock);
+        if (!Number.isFinite(stock)) return `Stock for "${label}" must be a number.`;
+        if (stock > ITEM_LIMITS.stock) return `Stock for "${label}" looks like a typo.`;
+      }
+    }
+  }
+
+  return null;
+}
+
 export type ItemWithVariants = MerchItem & { variants: MerchVariant[] };
 
 export function serializeVariant(v: MerchVariant): MerchVariantDTO {

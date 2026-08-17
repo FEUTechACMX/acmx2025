@@ -5,6 +5,7 @@ import { isAdmin } from "@/types/auth";
 import { committeeScope } from "@/lib/committee-access";
 import {
   capLeads,
+  validateCommitteeInput,
   committeeInclude,
   readFacts,
   readMembers,
@@ -63,7 +64,16 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = (await req.json()) ?? {};
+    const body = (await req.json().catch(() => null)) ?? {};
+    if (typeof body !== "object") {
+      return NextResponse.json({ error: "Malformed request." }, { status: 400 });
+    }
+
+    const invalid = validateCommitteeInput(body as Record<string, unknown>);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
+    }
+
     const scalars = readScalars(body);
 
     if (!scalars.name) {

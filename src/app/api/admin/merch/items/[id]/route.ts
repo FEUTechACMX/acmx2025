@@ -6,6 +6,7 @@ import {
   readCategory,
   readStatus,
   readVariants,
+  validateItemInput,
   serializeItem,
   uniqueSlug,
   variantOrder,
@@ -35,6 +36,11 @@ export async function PATCH(
     });
     if (!existing) {
       return NextResponse.json({ error: "Item not found." }, { status: 404 });
+    }
+
+    const invalid = validateItemInput(body as Record<string, unknown>);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
     }
 
     const name = body.name !== undefined ? String(body.name).trim() : existing.name;

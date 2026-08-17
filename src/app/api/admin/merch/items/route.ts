@@ -8,6 +8,7 @@ import {
   readVariants,
   serializeItem,
   uniqueSlug,
+  validateItemInput,
   variantOrder,
 } from "@/lib/merch";
 
@@ -47,17 +48,23 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response;
 
   try {
-    const body = (await req.json()) ?? {};
-    const name = String(body.name ?? "").trim();
+    const parsed = (await req.json().catch(() => null)) ?? {};
+    if (typeof parsed !== "object") {
+      return NextResponse.json({ error: "Malformed request." }, { status: 400 });
+    }
+    const body = parsed as Record<string, unknown>;
 
+    const name = String(body.name ?? "").trim();
     if (!name) {
       return NextResponse.json({ error: "An item needs a name." }, { status: 400 });
     }
 
-    const price = Number(body.price);
-    if (!Number.isFinite(price) || price < 0) {
-      return NextResponse.json({ error: "Price must be zero or more." }, { status: 400 });
+    const invalid = validateItemInput(body);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
     }
+
+    const price = Number(body.price);
 
     // Everything sells in at least one variant — things without sizes get the
     // implicit "ONE SIZE" row so the cart always has something to point at.
@@ -66,7 +73,8 @@ export async function POST(req: NextRequest) {
 
     const item = await prisma.merchItem.create({
       data: {
-        slug: await uniqueSlug(body.slug || name),
+        // `validateItemInput` has already confirmed slug is a string if present.
+        slug: await uniqueSlug(String(body.slug || name)),
         name,
         category: readCategory(body.category),
         blurb: body.blurb ? String(body.blurb).trim() : null,

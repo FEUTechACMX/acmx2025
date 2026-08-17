@@ -29,6 +29,7 @@ import {
   isLeadPosition,
   slugify,
 } from "@/types/committee";
+import { email } from "./validation";
 import { prisma } from "./prisma";
 
 /** Child rows always come back in editor order. */
@@ -340,6 +341,92 @@ export function readYear(raw: unknown): number | null {
 }
 
 /** The scalar half of a create/update payload, shared by POST and PATCH. */
+/* ── Payload validation ─────────────────────────────────────────
+ *
+ * Same division as merch: the `read*` helpers above coerce anything into
+ * something safe, which is right for an absent field and wrong for a present
+ * one that is malformed. This checks what was actually sent (CLEANUP.md §6.4).
+ *
+ * `contactEmail` and `applyUrl` are the ones that mattered: both were stored
+ * verbatim and then rendered as a `mailto:` and a link on the public committee
+ * page, so an unparseable value became a dead control for every visitor.
+ */
+
+export const COMMITTEE_LIMITS = {
+  name: 120,
+  kicker: 120,
+  mandate: 4000,
+  blurb: 2000,
+  callBody: 4000,
+  contactEmail: 200,
+  applyUrl: 600,
+  children: 60,
+  members: 200,
+} as const;
+
+export function validateCommitteeInput(body: Record<string, unknown>): string | null {
+  const text = (key: string, label: string, max: number) => {
+    if (body[key] === undefined || body[key] === null) return null;
+    if (typeof body[key] !== "string") return `${label} must be text.`;
+    return (body[key] as string).trim().length > max
+      ? `${label} must be ${max} characters or fewer.`
+      : null;
+  };
+
+  const capped = [
+    text("name", "Name", COMMITTEE_LIMITS.name),
+    text("kicker", "Kicker", COMMITTEE_LIMITS.kicker),
+    text("mandate", "Mandate", COMMITTEE_LIMITS.mandate),
+    text("blurb", "Blurb", COMMITTEE_LIMITS.blurb),
+    text("callBody", "Call for applications", COMMITTEE_LIMITS.callBody),
+    text("contactEmail", "Contact email", COMMITTEE_LIMITS.contactEmail),
+    text("applyUrl", "Application link", COMMITTEE_LIMITS.applyUrl),
+  ].find(Boolean);
+  if (capped) return capped;
+
+  if (body.contactEmail !== undefined && body.contactEmail !== null) {
+    const problem = email("Contact email")(body.contactEmail);
+    if (problem) return problem;
+  }
+
+  if (body.applyUrl !== undefined && body.applyUrl !== null) {
+    const s = String(body.applyUrl).trim();
+    if (s) {
+      try {
+        const parsed = new URL(s);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          return "Application link must be an http or https link.";
+        }
+      } catch {
+        return "Application link must be a full link, starting with https://";
+      }
+    }
+  }
+
+  if (body.openSeats !== undefined && body.openSeats !== null) {
+    const n = Number(body.openSeats);
+    if (!Number.isFinite(n) || n < 0) return "Open seats cannot be negative.";
+    if (n > 500) return "That number of open seats looks like a typo.";
+  }
+
+  for (const key of ["responsibilities", "projects", "facts"] as const) {
+    if (body[key] === undefined) continue;
+    if (!Array.isArray(body[key])) return `${key} must be a list.`;
+    if ((body[key] as unknown[]).length > COMMITTEE_LIMITS.children) {
+      return `A committee can hold at most ${COMMITTEE_LIMITS.children} ${key}.`;
+    }
+  }
+
+  if (body.members !== undefined) {
+    if (!Array.isArray(body.members)) return "Members must be a list.";
+    if (body.members.length > COMMITTEE_LIMITS.members) {
+      return `A committee can hold at most ${COMMITTEE_LIMITS.members} members.`;
+    }
+  }
+
+  return null;
+}
+
 export function readScalars(body: Record<string, unknown>) {
   const { recruiting, openSeats } = reconcileRecruiting(
     readRecruiting(body.recruiting),

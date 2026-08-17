@@ -5,6 +5,7 @@ import { isAdmin } from "@/types/auth";
 import { committeeAccess, restrictToLeadFields } from "@/lib/committee-access";
 import {
   capLeads,
+  validateCommitteeInput,
   committeeInclude,
   readFacts,
   readMembers,
@@ -80,8 +81,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const admin = isAdmin(user.role);
-    const raw = (await req.json()) ?? {};
+    const raw = (await req.json().catch(() => null)) ?? {};
+    if (typeof raw !== "object") {
+      return NextResponse.json({ error: "Malformed request." }, { status: 400 });
+    }
     const body: Record<string, unknown> = admin ? raw : restrictToLeadFields(raw);
+
+    // Validated after the narrowing, so a lead is judged on the fields that
+    // actually survive it rather than on everything they sent.
+    const invalid = validateCommitteeInput(body);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
+    }
 
     const existing = await prisma.committee.findUnique({ where: { id } });
     if (!existing) {
