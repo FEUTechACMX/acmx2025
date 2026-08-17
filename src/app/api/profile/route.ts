@@ -46,7 +46,7 @@ export async function GET() {
       prisma.attendance.count({ where: { userId: dbUser.id } }),
       prisma.registration.count({ where: { userId: dbUser.id } }),
       prisma.session.findMany({
-        where: { userId: dbUser.studentId, expiresAt: { gte: new Date() } },
+        where: { userId: dbUser.id, expiresAt: { gte: new Date() } },
         orderBy: { expiresAt: "desc" },
       }),
     ]);

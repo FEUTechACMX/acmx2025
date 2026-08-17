@@ -18,6 +18,39 @@ type Registration = {
   attendance: { timeIn: string; timeOut: string | null } | null;
 };
 
+/**
+ * The walk-in sheet. Somebody turns up at the door who never registered, so an
+ * officer registers them and checks them in as one action.
+ *
+ * Membership is deliberately *not* a field here. The registration endpoint
+ * decides MEMBER vs NON_MEMBER by matching the student number and school email
+ * against real accounts, so an officer cannot promote a walk-in by ticking a
+ * box — they can only describe who turned up.
+ */
+type WalkIn = {
+  studentNumber: string;
+  fullName: string;
+  schoolEmail: string;
+  contactNumber: string;
+  facebookLink: string;
+  yearLevel: string;
+  section: string;
+  professor: string;
+  degreeProgram: string;
+};
+
+const EMPTY_WALK_IN: WalkIn = {
+  studentNumber: "",
+  fullName: "",
+  schoolEmail: "",
+  contactNumber: "",
+  facebookLink: "",
+  yearLevel: "",
+  section: "",
+  professor: "",
+  degreeProgram: "",
+};
+
 type Form = {
   name: string;
   typeStr: string;
@@ -72,6 +105,11 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
   const [error, setError] = useState<string | null>(null);
   const [regQuery, setRegQuery] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [walkIn, setWalkIn] = useState<WalkIn>(EMPTY_WALK_IN);
+  const [walkInBusy, setWalkInBusy] = useState(false);
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [walkInMsg, setWalkInMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -181,6 +219,101 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
           r.studentNumber === studentNumber ? { ...r, attendance: { timeIn: now, timeOut: null } } : r
         )
       );
+    }
+  };
+
+  /**
+   * Pull an existing account into the walk-in form. A hit means they're a
+   * member and we can stop retyping their details; a miss is not an error —
+   * it just means the officer fills the form in by hand for a non-member.
+   */
+  const lookupMember = async () => {
+    const q = walkIn.studentNumber.trim();
+    if (!q) return;
+    setLookupBusy(true);
+    setWalkInMsg(null);
+    try {
+      const res = await fetch(`/api/admin/users/${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (res.ok) {
+        setWalkIn((w) => ({
+          ...w,
+          studentNumber: data.studentNumber || w.studentNumber,
+          fullName: data.fullName || "",
+          schoolEmail: data.schoolEmail || "",
+          contactNumber: data.contactNumber || "",
+          facebookLink: data.facebookLink || "",
+          yearLevel: data.yearLevel || "",
+          degreeProgram: data.degreeProgram || "",
+        }));
+        setWalkInMsg({ ok: true, text: "Member found — details filled in." });
+      } else if (res.status === 404) {
+        setWalkInMsg({
+          ok: false,
+          text: "No account with that student number. Fill the rest in by hand to register them as a non-member.",
+        });
+      } else {
+        setWalkInMsg({ ok: false, text: data.error || "Lookup failed." });
+      }
+    } catch {
+      setWalkInMsg({ ok: false, text: "Lookup failed." });
+    } finally {
+      setLookupBusy(false);
+    }
+  };
+
+  /**
+   * Register the walk-in, then check them in. The check-in is reported
+   * separately because the registration is the part that must not be lost — if
+   * attendance fails, the officer can still tick them off in the list above.
+   */
+  const submitWalkIn = async () => {
+    const missing = (
+      [
+        ["studentNumber", "student number"],
+        ["fullName", "full name"],
+        ["schoolEmail", "school email"],
+        ["yearLevel", "year level"],
+      ] as const
+    ).find(([key]) => !walkIn[key].trim());
+
+    if (missing) {
+      setWalkInMsg({ ok: false, text: `A ${missing[1]} is required.` });
+      return;
+    }
+
+    setWalkInBusy(true);
+    setWalkInMsg(null);
+    try {
+      const res = await fetch("/api/registrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...walkIn, eventId }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setWalkInMsg({ ok: false, text: data.error || "Registration failed." });
+        return;
+      }
+
+      const att = await fetch(`/api/events/${eventId}/attendance/manual`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentNumber: walkIn.studentNumber.trim(), action: "in" }),
+      });
+
+      setWalkIn(EMPTY_WALK_IN);
+      setWalkInMsg(
+        att.ok
+          ? { ok: true, text: "Registered and checked in." }
+          : { ok: false, text: "Registered — but the check-in didn't record. Tick them off in the list above." }
+      );
+      void load();
+    } catch {
+      setWalkInMsg({ ok: false, text: "Registration failed." });
+    } finally {
+      setWalkInBusy(false);
     }
   };
 
@@ -580,6 +713,134 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
                   </button>
                   <AdminButton variant="ghost" onClick={() => router.push("/admin/events")}>
                     BACK TO EVENTS
+                  </AdminButton>
+                </div>
+              </div>
+
+              <div
+                className="flex flex-col"
+                style={{
+                  gap: 16,
+                  padding: "22px 20px",
+                  backgroundColor: c.panel,
+                  border: `1px solid ${c.rule}`,
+                }}
+              >
+                <div className="flex flex-col" style={{ gap: 6 }}>
+                  <SectionLabel>Walk-in registration</SectionLabel>
+                  <span style={{ ...t.bodySmall, color: c.muted }}>
+                    For someone at the door who never registered. Look up their student
+                    number to fill this in, or type it out for a non-member. Saving
+                    registers them and checks them in.
+                  </span>
+                </div>
+
+                <div className="flex flex-col" style={{ gap: 7 }}>
+                  <span style={{ ...t.label, fontSize: 10, color: c.faint }}>STUDENT NUMBER</span>
+                  <div className="flex" style={{ gap: 9 }}>
+                    <input
+                      value={walkIn.studentNumber}
+                      onChange={(e) => setWalkIn((w) => ({ ...w, studentNumber: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void lookupMember();
+                        }
+                      }}
+                      placeholder="2023100123"
+                      style={{
+                        ...t.bodySmall,
+                        flex: 1,
+                        minWidth: 0,
+                        padding: "11px 13px",
+                        background: "transparent",
+                        color: c.text,
+                        border: `1px solid ${c.ruleStrong}`,
+                        outline: "none",
+                      }}
+                    />
+                    <button
+                      onClick={() => void lookupMember()}
+                      disabled={lookupBusy || !walkIn.studentNumber.trim()}
+                      className="flex items-center cursor-pointer"
+                      style={{
+                        ...t.label,
+                        fontSize: 10,
+                        gap: 6,
+                        padding: "0 13px",
+                        color: c.text,
+                        background: "none",
+                        border: `1px solid ${c.ruleStrong}`,
+                        opacity: lookupBusy || !walkIn.studentNumber.trim() ? 0.45 : 1,
+                      }}
+                    >
+                      <Icon name="search" size={12} /> {lookupBusy ? "…" : "LOOK UP"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 13 }}>
+                  <EditField
+                    label="FULL NAME"
+                    value={walkIn.fullName}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, fullName: v }))}
+                  />
+                  <EditField
+                    label="SCHOOL EMAIL"
+                    value={walkIn.schoolEmail}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, schoolEmail: v }))}
+                  />
+                  <EditField
+                    label="YEAR LEVEL"
+                    type="number"
+                    value={walkIn.yearLevel}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, yearLevel: v }))}
+                  />
+                  <EditField
+                    label="DEGREE PROGRAM"
+                    value={walkIn.degreeProgram}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, degreeProgram: v }))}
+                  />
+                  <EditField
+                    label="SECTION"
+                    value={walkIn.section}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, section: v }))}
+                  />
+                  <EditField
+                    label="PROFESSOR"
+                    value={walkIn.professor}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, professor: v }))}
+                  />
+                  <EditField
+                    label="CONTACT NUMBER"
+                    value={walkIn.contactNumber}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, contactNumber: v }))}
+                  />
+                  <EditField
+                    label="FACEBOOK LINK"
+                    value={walkIn.facebookLink}
+                    onChange={(v) => setWalkIn((w) => ({ ...w, facebookLink: v }))}
+                  />
+                </div>
+
+                {walkInMsg && (
+                  <span style={{ ...t.bodySmall, color: walkInMsg.ok ? c.accent : "#e5484d" }}>
+                    {walkInMsg.text}
+                  </span>
+                )}
+
+                <div className="flex items-center" style={{ gap: 10 }}>
+                  <AdminButton icon="check" onClick={() => void submitWalkIn()} disabled={walkInBusy}>
+                    {walkInBusy ? "SAVING…" : "REGISTER & CHECK IN"}
+                  </AdminButton>
+                  <AdminButton
+                    variant="ghost"
+                    onClick={() => {
+                      setWalkIn(EMPTY_WALK_IN);
+                      setWalkInMsg(null);
+                    }}
+                  >
+                    CLEAR
                   </AdminButton>
                 </div>
               </div>

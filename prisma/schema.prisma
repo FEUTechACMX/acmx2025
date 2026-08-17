@@ -28,7 +28,6 @@ model User {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registration   Registration[]
-  schedules      Schedule[]
   Transaction    Transaction[]
   sessions       Session[]
   cartLines      MerchCartLine[]
@@ -37,11 +36,20 @@ model User {
   committeeSeats CommitteeMember[]
 }
 
+/// An opaque server-side session. `userId` is a real `User.id` — it used to
+/// reference `studentId` while every other relation in this schema joined on
+/// `id`, which forced call sites into `where: { userId: user.studentId }` and
+/// read like a bug at every one of them.
 model Session {
-  id            String @id @default(cuid())
-  userId        String
-  user      User   @relation(fields: [userId], references: [studentId])
-  expiresAt     DateTime
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Sessions are looked up by user on every revoke and on every password
+  /// change; without this each of those is a sequential scan.
+  @@index([userId])
 }
 
 model Event {
@@ -309,18 +317,6 @@ model CommitteeMember {
   @@index([userId])
 }
 
-model Schedule {
-  id        String   @id @default(cuid())
-  section   String
-  time      String
-  day       String
-  professor String
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-}
-
 model Transaction {
   transaction_id String          @id @default(cuid())
   user_id        String
@@ -377,16 +373,6 @@ model Attendance {
   role           RegistrationRole
   createdAt      DateTime         @default(now())
   registration   Registration     @relation(fields: [registrationId], references: [id])
-}
-
-model Lesson {
-  id          String   @id @default(cuid())
-  title       String
-  author      String
-  fileUrl     String
-  slideCount  Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 /// Featured videos shown in the dashboard hero slideshow. Admins upload a

@@ -38,7 +38,7 @@ export async function DELETE(req: Request) {
     if (all === true) {
       const { count } = await prisma.session.deleteMany({
         where: {
-          userId: user.studentId,
+          userId: user.id,
           ...(currentSessionId ? { id: { not: currentSessionId } } : {}),
         },
       });
@@ -67,7 +67,7 @@ export async function DELETE(req: Request) {
     }
 
     const { count } = await prisma.session.deleteMany({
-      where: { id, userId: user.studentId },
+      where: { id, userId: user.id },
     });
 
     if (count === 0) {

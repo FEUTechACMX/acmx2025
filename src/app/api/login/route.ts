@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const user = await login(studentId, password);
 
     // Step 2: create session in DB and get sessionId
-    const sessionId = await createSession(user.studentId);
+    const sessionId = await createSession(user.id);
 
     // Step 3: create response and set cookie
     const res = NextResponse.json({ success: true, user });

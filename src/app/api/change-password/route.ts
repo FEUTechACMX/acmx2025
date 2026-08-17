@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       prisma.user.update({ where: { id: user.id }, data: { password: hashed } }),
       prisma.session.deleteMany({
         where: {
-          userId: user.studentId,
+          userId: user.id,
           ...(currentSessionId ? { id: { not: currentSessionId } } : {}),
         },
       }),

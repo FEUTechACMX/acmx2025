@@ -23,11 +23,6 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const latestSchedule = await prisma.schedule.findFirst({
-      where: { userId: dbUser.id },
-      orderBy: { createdAt: "desc" },
-    });
-
     const fullName = [
       dbUser.firstName,
       dbUser.middleName,
@@ -46,8 +41,10 @@ export async function GET(
       facebookLink: dbUser.facebookLink,
       yearLevel: String(dbUser.yearLevel),
       degreeProgram: dbUser.degreeProgram,
-      section: latestSchedule?.section ?? "",
-      professor: latestSchedule?.professor ?? "",
+      // Filled in per event by the officer taking the walk-in — nothing on the
+      // account records which section or professor a member is under.
+      section: "",
+      professor: "",
     });
   } catch (err) {
     console.error("Error fetching user details:", err);

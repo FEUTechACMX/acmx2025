@@ -24,8 +24,13 @@ export async function login(studentId: string, password: string) {
   return safeUser;
 }
 
-//Create session
-// services/identityService.ts
+/**
+ * Opens a session for an account.
+ *
+ * `userId` is a real `User.id`. It used to be the student number, because
+ * `Session.userId` referenced `User.studentId` — see the migration
+ * 20260817010000_session_references_user_id.
+ */
 export async function createSession(userId: string) {
   // Clean up expired sessions to prevent table bloat
   await prisma.session.deleteMany({

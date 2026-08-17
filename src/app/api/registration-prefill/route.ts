@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +13,6 @@ export async function GET() {
         { status: 401 }
       );
     }
-
-    // Get section & professor from most recent schedule
-    const latestSchedule = await prisma.schedule.findFirst({
-      where: { userId: dbUser.id },
-      orderBy: { createdAt: "desc" },
-    });
 
     const fullName = [
       dbUser.firstName,
@@ -39,8 +32,10 @@ export async function GET() {
       facebookLink: dbUser.facebookLink,
       yearLevel: String(dbUser.yearLevel),
       degreeProgram: dbUser.degreeProgram,
-      section: latestSchedule?.section ?? "",
-      professor: latestSchedule?.professor ?? "",
+      // Section and professor are per-event details the registrant fills in
+      // themselves — there is no stored source to prefill them from.
+      section: "",
+      professor: "",
     });
   } catch (err) {
     console.error("Error in /api/registration-prefill:", err);

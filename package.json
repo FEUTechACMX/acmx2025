@@ -6,8 +6,12 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "prisma generate"
+    "lint": "eslint src",
+    "postinstall": "prisma generate",
+    "seed:members": "node prisma/seed-members-2526.mjs",
+    "seed:events": "node prisma/seed-events.mjs",
+    "seed:committees": "node prisma/seed-committees.mjs",
+    "seed:merch": "node prisma/seed-merch.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
@@ -18,8 +22,7 @@
     "next": "16.1.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-markdown": "^10.1.0",
-    "xlsx": "^0.18.5"
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",

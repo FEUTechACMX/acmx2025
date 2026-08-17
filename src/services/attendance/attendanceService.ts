@@ -5,7 +5,6 @@
 //4. Offline Mode is a Must.
 
 import { prisma } from "@/lib/prisma";
-import { getPhilippineTime } from "@/lib/timezone";
 
 //1. Check if User Details Exists in Registration Table
 // Parameters taken are Student ID and Current Event ID
@@ -32,6 +31,17 @@ export async function recordTimeIn(
     throw new Error("User is not Registered");
   }
 
+  // A second scan at the door is a duplicate, not a new record. `registrationId`
+  // is unique, so without this the create raises a raw P2002 that surfaces as a
+  // 500 — a double-tap read as a server failure rather than "already signed in".
+  const existing = await prisma.attendance.findUnique({
+    where: { registrationId: registrant.id },
+    select: { id: true },
+  });
+  if (existing) {
+    throw new Error("Already timed in");
+  }
+
   const attendance = await prisma.attendance.create({
     data: {
       eventId: registrant.eventId,
@@ -43,10 +53,12 @@ export async function recordTimeIn(
       section: registrant.section,
       professor: registrant.professor,
       role: registrant.role,
+      userId: registrant.userId,
       registration: {
         connect: { id: registrant.id },
       },
-      timeIn: getPhilippineTime(),
+      // A UTC instant. Rendered in Manila at display time — see lib/timezone.
+      timeIn: new Date(),
     },
   });
 
@@ -60,14 +72,26 @@ export async function recordTimeOut(
   memberStudentNumber: string,
   currentEventId: string
 ) {
+  // `timeOut: null` guards the update: scanning out twice would otherwise keep
+  // moving the recorded departure later each time.
   const result = await prisma.attendance.updateMany({
-    where: { studentNumber: memberStudentNumber, eventId: currentEventId },
-    data: { timeOut: getPhilippineTime() },
+    where: {
+      studentNumber: memberStudentNumber,
+      eventId: currentEventId,
+      timeOut: null,
+    },
+    data: { timeOut: new Date() },
   });
 
   if (result.count === 0) {
+    const timedIn = await prisma.attendance.findFirst({
+      where: { studentNumber: memberStudentNumber, eventId: currentEventId },
+      select: { id: true },
+    });
     throw new Error(
-      "User has no Attendance record. Must first record a Time In"
+      timedIn
+        ? "Already timed out"
+        : "User has no Attendance record. Must first record a Time In"
     );
   }
 

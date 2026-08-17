@@ -23,17 +23,25 @@ export async function POST(
 
     try {
       if (action === "out") {
-        const result = await recordTimeOut(studentNumber, eventId);
+        await recordTimeOut(studentNumber, eventId);
         return NextResponse.json({ success: true, message: "Time-out recorded." });
-      } else {
-        const attendance = await recordTimeIn(studentNumber, eventId);
-        return NextResponse.json({ success: true, attendance });
       }
-    } catch (err: any) {
-      if (err.message === "User is not Registered") {
+      const attendance = await recordTimeIn(studentNumber, eventId);
+      return NextResponse.json({ success: true, attendance });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to record attendance";
+      if (message === "User is not Registered") {
         return NextResponse.json({ error: "No registration found." }, { status: 404 });
       }
-      return NextResponse.json({ error: err.message || "Failed to record attendance" }, { status: 400 });
+      // A repeated scan is a conflict, not a bad request — the caller did
+      // nothing wrong, the record simply already exists.
+      if (message === "Already timed in") {
+        return NextResponse.json({ error: "Already checked in." }, { status: 409 });
+      }
+      if (message === "Already timed out") {
+        return NextResponse.json({ error: "Already checked out." }, { status: 409 });
+      }
+      return NextResponse.json({ error: message }, { status: 400 });
     }
   } catch (err) {
     console.error("Manual attendance error:", err);

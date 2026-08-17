@@ -9,9 +9,66 @@ to work and lists a short "Known rough edges" section; this file is the full
 defect and debt register, with file/line references and a suggested fix for
 each.
 
-**Verification state:** `npx tsc --noEmit` passes clean. `npx eslint src`
-reports **6 errors, 14 warnings**. No test suite exists, so nothing else is
-machine-verified — the findings below come from reading the code.
+**Verification state at audit time:** `npx tsc --noEmit` passed clean.
+`npx eslint src` reported **6 errors, 14 warnings**. No test suite exists, so
+nothing else was machine-verified — the findings below come from reading the
+code.
+
+---
+
+## 0. Progress
+
+Cleanup began 2026-08-17 on branch `clean-up`.
+
+| Metric | At audit | Now |
+|---|---|---|
+| `eslint src` | 6 errors, 14 warnings | **2 errors, 7 warnings** |
+| dependencies | 18 + 12 | **9 + 10** |
+| lines in `src/` | 24,905 | **22,957** (net of ~200 lines of new walk-in code) |
+| `next build` | not run | **passes** |
+
+### Closed
+
+| § | Item | Note |
+|---|---|---|
+| 2.1 | Public attendance-lookup PII leak | Feature deleted entirely — route, component and call site |
+| 2.2 | Registration endpoints trusted body `userId` | Rewritten: identity is derived from the session, never the payload; full validation via `lib/validation.ts`; event existence checked |
+| 3.1 | `getPhilippineTime()` stored a wrong instant | Helper replaced with UTC storage + Manila formatting. **No backfill needed — `Attendance` had 0 rows** |
+| 3.2 | Duplicate time-in threw a raw P2002 | Now a 409 "Already checked in." |
+| 3.3 | `recordTimeOut` overwrote an existing time-out | Guarded on `timeOut: null`; repeat scans 409 |
+| 4.1 | `Session.userId` referenced `studentId` | Repointed at `User.id`; four compensating call sites simplified |
+| 4.2 | `Session` had no cascade, no index | Both added |
+| 4.3 | Baseline migration was a comment | Replaced with 227 lines of real DDL, statically verified against the later migrations. `migration_lock.toml` was also missing and is now present |
+| 4.5 | Models with no product behind them | `Lesson` and `Schedule` dropped (both verified 0 rows). `Transaction` + `User.points` retained — points economy is planned |
+| 4.6 | `Attendance.userId` never populated | Now written from the registration |
+| 5.2 | Two parallel event-admin systems | Old route, `AdminDaySelector` and `AdminEventPanel` deleted; walk-in registration ported into `EventEditor` |
+| 6.1 | Two registration endpoints | `/complete` is now a re-export of the fixed handler, kept only in case an external caller exists |
+| 6.2 | Six seed scripts | Stale `seed-members.js` (compiled output) and `prisma/seed-members.ts` deleted; remaining seeds wired to `npm run seed:*` |
+| 6.3 | Duplicate NavBar | Empty root `components/` removed |
+| 7.1 | Orphaned components | All six deleted |
+| 7.2 | Dead route files | `proxy.ts`, `server.js` deleted |
+| 7.3 | Unused dependencies | Nine removed, including `xlsx` (unused once the old panel went, and carrying known advisories) |
+| 12.3 | Two lockfiles | `pnpm-lock.yaml` deleted |
+
+### Still open
+
+Everything else, notably: **§5.1** (root layout makes every route dynamic),
+**§8.1/§8.2** (the 50/50 theming split and its ~60 `!important` overrides),
+**§11.1** (Prisma logs every query in production), **§11.2** (N+1 in the admin
+events list), **§13.1/§13.2** (no tests, no CI).
+
+### Carried forward
+
+- **`20260817000000_drop_lesson_and_schedule` and
+  `20260817010000_session_references_user_id` are written but unapplied.** They
+  land on the next `prisma migrate deploy`. Both are safe: all three affected
+  tables were verified empty.
+- **`DOCUMENTATION.md` is now stale** in the places that describe deleted code —
+  its §10 "Known rough edges" lists several items closed above.
+- **Walk-in registration is untested at runtime.** It compiles and builds; the
+  flow has not been exercised against a live event.
+- **`seed-members-2526.mjs` hardcodes an absolute path** into a local Downloads
+  folder, so it only runs on one machine.
 
 ---
 
