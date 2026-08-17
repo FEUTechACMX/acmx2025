@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const auth = await requireRole(req, isAdmin);
   if (!auth.ok) return auth.response;
-  const user = auth.user;
 
   try {
     const users = await prisma.user.findMany({

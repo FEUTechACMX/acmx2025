@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           error:
             access === "VIEW"
               ? "You have view access to this committee. Only its head, co-head or an officer can edit it."
-              : "Unauthorized",
+              : "You don't have access to this committee.",
         },
         { status: 403 }
       );
@@ -206,7 +206,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireRole(req, isAdmin);
   if (!auth.ok) return auth.response;
-  const user = auth.user;
 
   try {
     const { id } = await params;

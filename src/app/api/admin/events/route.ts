@@ -21,7 +21,6 @@ function deriveStatus(
 export async function GET(req: NextRequest) {
   const auth = await requireRole(req, isAdmin);
   if (!auth.ok) return auth.response;
-  const user = auth.user;
 
   try {
     const events = await prisma.event.findMany({

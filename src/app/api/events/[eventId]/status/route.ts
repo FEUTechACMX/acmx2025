@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES, isEventAdmin } from "@/types/auth";
+import { isEventAdmin } from "@/types/auth";
 
 export async function PATCH(
   req: NextRequest,
@@ -10,7 +10,6 @@ export async function PATCH(
   try {
     const auth = await requireRole(req, isEventAdmin);
     if (!auth.ok) return auth.response;
-    const user = auth.user;
 
     const { eventId } = await params;
     const { status } = await req.json();

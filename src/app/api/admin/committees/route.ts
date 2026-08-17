@@ -61,7 +61,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireRole(req, isAdmin);
   if (!auth.ok) return auth.response;
-  const user = auth.user;
 
   try {
     const body = (await req.json()) ?? {};

@@ -19,4 +19,28 @@ export default defineConfig([
     "src/generated/prisma/**",
   ]),
   ...next,
+  {
+    /**
+     * The Next 16 preset drops `no-unused-vars` entirely, so nothing flagged
+     * unused imports — which is how a dead `getCurrentUser` import survived in
+     * `api/profile/route.ts` through a refactor that removed its last call.
+     *
+     * Warn rather than error so this doesn't block a build on a work-in-progress
+     * variable. `args: "none"` because route handlers and React props routinely
+     * accept parameters they don't read, and `_`-prefixed names stay exempt for
+     * deliberate discards.
+     */
+    files: ["**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          args: "none",
+          varsIgnorePattern: "^_",
+          caughtErrors: "none",
+          ignoreRestSiblings: true,
+        },
+      ],
+    },
+  },
 ]);

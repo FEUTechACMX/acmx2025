@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES, isEventAdmin } from "@/types/auth";
+import { isEventAdmin } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +23,6 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireRole(req, isEventAdmin);
     if (!auth.ok) return auth.response;
-    const user = auth.user;
 
     const body = await req.json();
     const { title, subtitle, videoUrl, redirectUrl, order } = body ?? {};

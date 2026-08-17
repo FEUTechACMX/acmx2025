@@ -1,7 +1,11 @@
 import { User } from "@prisma/client";
 import { safeUser } from "@/types/auth";
 
-export function toSafeUser(user: User): safeUser {
+/**
+ * Takes `Omit<User, "password">` rather than `User` so it also accepts the
+ * already-stripped row that `login()` returns. A full `User` still satisfies it.
+ */
+export function toSafeUser(user: Omit<User, "password">): safeUser {
   return {
     studentId: user.studentId,
     name: [user.firstName, user.middleName, user.lastName, user.suffix]

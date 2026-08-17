@@ -64,6 +64,12 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | 13.5 | Build opted out of Turbopack | The `--webpack` flag was masking a real error: `registrations/complete` re-exported `dynamic`, which route segment config forbids. Fixed at the cause; builds on Turbopack |
 | 5.4 | Role gating expressed four different ways | One `requireRole(req, guard)` in `lib/auth.ts`, plus `requireUser` for session-only routes. 27 route files adopted it. A fifth vocabulary turned up during the work — a local `gate()` helper duplicated across the two merch-item routes — and went with the rest |
 | 9.1 | 403 returned where 401 is meant | Falls out of §5.4: 401 when there is no session, 403 only when a real role check fails. Verified against a running server — every gated route answers an unauthenticated caller with 401 and a message, and the only remaining 403s are genuine committee-scope denials |
+| 2.5 | Login returned more of the user than `/api/me` | Projected through `toSafeUser`, whose parameter widened to `Omit<User, "password">` to accept the row `login()` returns |
+| 2.6 | Upload did not validate file type | Content type is now read from the bytes (magic-byte sniff), not from the filename or the caller's `contentType`. Buckets are typed — `videos` takes video, the rest images — and a file whose sniffed kind doesn't match its bucket is refused. SVG is deliberately excluded as script-bearing. `upsert` off: the name is random, so it could only clobber |
+| 2.8 | Service-role client built per request, before the auth check | Moved to module scope; the gate is now the handler's first statement |
+| 3.7 | `EventsManager` shipped a placeholder as a primary action | The `alert()` is gone; NEW EVENT links to `/events`, where creation actually lives. It moves into the console once `EventCreationModal` is ported off Tailwind (§8.1) |
+| 6.5 | Two Button and two Modal implementations | Not parallel systems — `UI/Button.tsx` and `Modal/Modal.tsx` had **zero importers**. Both deleted |
+| 10.2 | ESLint had no unused-vars rule at all | The Next 16 preset drops `no-unused-vars`, which is why a dead import survived a refactor. Configured as a warning; it immediately found 25 more, including 17 dead `const user = auth.user` bindings left by the §5.4 codemod. All cleared |
 
 ### A note on the 19 react-hooks errors
 
@@ -103,6 +109,20 @@ Nine API routes still read the session directly rather than through
 and the rest (`change-password`, `merch/cart`, `merch/checkout`, `merch/notify`,
 `registration-prefill`, `profile`'s third read) already returned 401 with copy
 better than the generic helper's.
+
+### §8.1/§8.2 are much smaller than this document claims
+
+The audit measured the theming split as 53 files legacy vs 54 DS — an even
+migration with a long way to run. Re-measured 2026-08-17: **51 files use the DS,
+4 use legacy Tailwind palette classes, and no file uses both.** Two of those four
+were the dead primitives closed under §6.5 above.
+
+So what actually remains is porting **two live components** —
+`events/EventCreationModal.tsx` and `registration/RegistrationModal.tsx`. Once
+they are on the DS, all 68 `!important` rules and 13 `.dark-exempt` rules in
+`globals.css` have nothing left to override and can be deleted outright. That is
+roughly a day's work, not the project the entry below describes. It is now the
+single largest debt reduction available in the repo.
 
 ### A note on §5.1 and where the session is read
 

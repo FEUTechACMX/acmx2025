@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES, isEventAdmin } from "@/types/auth";
+import { isEventAdmin } from "@/types/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,6 @@ export async function DELETE(
   try {
     const auth = await requireRole(req, isEventAdmin);
     if (!auth.ok) return auth.response;
-    const user = auth.user;
 
     const { id } = await params;
     await prisma.featuredVideo.delete({ where: { id } });

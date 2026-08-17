@@ -86,12 +86,14 @@ export default function EventsManager({ user }: { user: safeUser }) {
           title="Events"
           subtitle="Pick an event to open it — details, cover image, registrations and attendance all live on its own page."
           actions={
-            <AdminButton
-              icon="plus"
-              onClick={() => alert("Event creation lives in the existing create flow.")}
-            >
-              NEW EVENT
-            </AdminButton>
+            /* Creation still lives in EventCreationModal on /events, so this
+               sends you there rather than pretending to open it. It was an
+               alert() before — a dead-end primary action in a shipped console
+               (CLEANUP.md §3.7). It moves in here once that modal is ported off
+               its Tailwind styling (§8.1). */
+            <Link href="/events" style={{ textDecoration: "none" }}>
+              <AdminButton icon="plus">NEW EVENT</AdminButton>
+            </Link>
           }
         />
 

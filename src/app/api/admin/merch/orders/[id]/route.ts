@@ -18,7 +18,6 @@ export async function PATCH(
 ) {
   const auth = await requireRole(req, isAdmin);
   if (!auth.ok) return auth.response;
-  const user = auth.user;
 
   try {
     const { id } = await params;

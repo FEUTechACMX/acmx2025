@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useSyncExternalStore } from "react";
+import { useState, useRef, useSyncExternalStore } from "react";
 import Animation from "./Animation";
 import { gsap } from "gsap";
 

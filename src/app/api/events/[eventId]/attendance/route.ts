@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { EVENT_ADMIN_ROLES, isEventAdmin } from "@/types/auth";
+import { isEventAdmin } from "@/types/auth";
 
 // GET — fetch attendance records (safe fields only)
 export async function GET(
@@ -11,7 +11,6 @@ export async function GET(
   try {
     const auth = await requireRole(req, isEventAdmin);
     if (!auth.ok) return auth.response;
-    const user = auth.user;
 
     const { eventId } = await params;
 

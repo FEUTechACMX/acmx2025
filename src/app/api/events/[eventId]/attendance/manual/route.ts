@@ -10,7 +10,6 @@ export async function POST(
   try {
     const auth = await requireRole(req, isEventAdmin);
     if (!auth.ok) return auth.response;
-    const user = auth.user;
 
     const { eventId } = await params;
     const body = await req.json();

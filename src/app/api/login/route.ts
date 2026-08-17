@@ -4,6 +4,7 @@ import {
   login,
   createSession,
 } from "@/services/identity/identityService";
+import { toSafeUser } from "@/lib/userMapper";
 
 export async function POST(req: Request) {
   const { studentId, password } = await req.json();
@@ -16,7 +17,12 @@ export async function POST(req: Request) {
     const sessionId = await createSession(user.id);
 
     // Step 3: create response and set cookie
-    const res = NextResponse.json({ success: true, user });
+    //
+    // Projected through toSafeUser: `login()` returns the whole row minus the
+    // password, which meant this unauthenticated endpoint handed back
+    // personalEmail, contactNumber, facebookLink, discordName and
+    // supabaseUserId — none of which /api/me will give you (CLEANUP.md §2.5).
+    const res = NextResponse.json({ success: true, user: toSafeUser(user) });
     res.cookies.set({
       name: "session",
       value: sessionId,

@@ -10,7 +10,6 @@ export async function GET(
   try {
     const auth = await requireRole(req, isSecretariatOrAbove);
     if (!auth.ok) return auth.response;
-    const sessionUser = auth.user;
 
     const { studentNumber } = await params;
 
