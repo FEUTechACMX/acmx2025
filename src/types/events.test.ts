@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getEventStatus } from "./events";
+import { getEventStatus, getEventStatusEnum } from "./events";
 
 /**
  * Pinning the status rule down, because it is currently implemented four times
@@ -53,6 +53,30 @@ describe("derived from dates", () => {
   it("treats a single-instant event as ongoing at that instant", () => {
     const t = NOW.toISOString();
     expect(getEventStatus(event({ startDate: t, endDate: t }))).toBe("ongoing");
+  });
+});
+
+describe("getEventStatusEnum — the database spelling", () => {
+  it("agrees with getEventStatus in every case, just uppercased", () => {
+    const cases = [
+      event({ startDate: at(3), endDate: at(4) }),
+      event(),
+      event({ startDate: at(-5), endDate: at(-4) }),
+      event({ statusOverride: "FINISHED" }),
+      event({ subEvents: [event({ startDate: at(3), endDate: at(4) })] }),
+    ];
+    for (const c of cases) {
+      expect(getEventStatusEnum(c)).toBe(getEventStatus(c).toUpperCase());
+    }
+  });
+
+  it("returns the three enum spellings and nothing else", () => {
+    expect(["UPCOMING", "ONGOING", "FINISHED"]).toContain(getEventStatusEnum(event()));
+  });
+
+  it("accepts Date objects as well as ISO strings", () => {
+    const asDates = { startDate: new Date(at(-1)), endDate: new Date(at(1)) };
+    expect(getEventStatusEnum(asDates)).toBe("ONGOING");
   });
 });
 
@@ -119,6 +143,24 @@ describe("multi-day parents derive from their children", () => {
 
   it("ignores an empty subEvents array and uses the dates", () => {
     expect(getEventStatus(event({ subEvents: [] }))).toBe("ongoing");
+  });
+
+  /**
+   * The exact case the four implementations disagreed on before §3.6 was
+   * collapsed: the parent's own dates have passed, but its last day is still
+   * running. Only the shared rule ever got this right.
+   */
+  it("is ongoing when the parent's own dates have passed but a day is still running", () => {
+    const parent = event({
+      startDate: at(-9),
+      endDate: at(-8),
+      subEvents: [
+        event({ startDate: at(-9), endDate: at(-8) }),
+        event({ startDate: at(-1), endDate: at(1) }),
+      ],
+    });
+    expect(getEventStatus(parent)).toBe("ongoing");
+    expect(getEventStatusEnum(parent)).toBe("ONGOING");
   });
 
   it("honours a child's own override when rolling up", () => {

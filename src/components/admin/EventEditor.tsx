@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { safeUser } from "@/types/auth";
+import { getEventStatusEnum } from "@/types/events";
 import { useDS } from "@/components/ds";
 import { type as t, font } from "@/styles/design-system";
 import AdminShell, { AdminContent, AdminButton, SectionLabel } from "./AdminShell";
@@ -76,13 +77,14 @@ const toLocalInput = (iso?: string) => {
 const titleCase = (s: string) => (s ? s[0] + s.slice(1).toLowerCase() : "");
 
 /** Same rule the events list uses: an override wins, otherwise the dates decide. */
+/**
+ * Thin wrapper over the shared rule, keeping this screen's one local quirk:
+ * before the fetch resolves there are no dates, and a badge reading "UPCOMING"
+ * for an event nobody has loaded yet is worse than an empty one.
+ */
 function deriveStatus(override: string | null, start?: string, end?: string): string {
-  if (override) return override;
-  if (!start || !end) return "";
-  const now = Date.now();
-  if (now < new Date(start).getTime()) return "UPCOMING";
-  if (now > new Date(end).getTime()) return "FINISHED";
-  return "ONGOING";
+  if (!start || !end) return override ?? "";
+  return getEventStatusEnum({ statusOverride: override, startDate: start, endDate: end });
 }
 
 /**

@@ -2,20 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { isAdmin } from "@/types/auth";
 import { prisma } from "@/lib/prisma";
+import { getEventStatusEnum } from "@/types/events";
 
 export const dynamic = "force-dynamic";
-
-function deriveStatus(
-  override: string | null,
-  start: Date,
-  end: Date
-): "UPCOMING" | "ONGOING" | "FINISHED" {
-  if (override) return override as "UPCOMING" | "ONGOING" | "FINISHED";
-  const now = new Date();
-  if (now < start) return "UPCOMING";
-  if (now > end) return "FINISHED";
-  return "ONGOING";
-}
 
 // Full event list with registration + attendance counts for the events manager.
 export async function GET(req: NextRequest) {
@@ -59,7 +48,7 @@ export async function GET(req: NextRequest) {
       image: e.image ?? e.cardImage ?? null,
       registered: e._count.registrations,
       attended: attended.get(e.eventId) ?? 0,
-      status: deriveStatus(e.statusOverride, e.startDate, e.endDate),
+      status: getEventStatusEnum(e),
     }));
 
     return NextResponse.json({ events: withAttendance });
