@@ -4,40 +4,17 @@ import bcrypt from "bcryptjs";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { validatePasswordChange, hasErrors } from "@/lib/validation";
+import { passwordChangeByUser } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Best-effort brute-force brake, keyed by user id.
- *
- * This lives in module memory, so it resets on redeploy and is not shared
- * between serverless instances — it will slow a scripted attack against one
- * account, not stop a distributed one. It is a speed bump, not a lock. The
- * real protections are bcrypt's cost factor and the fact that a wrong guess
- * reveals nothing about the stored hash.
+ * The brake now lives in `lib/rate-limit.ts`, shared with `/api/login` — which
+ * had none at all until §2.7. Its honest limits are documented there.
  */
-const attempts = new Map<string, { count: number; firstAt: number }>();
-const WINDOW_MS = 15 * 60 * 1000;
-const MAX_ATTEMPTS = 8;
-
-function tooManyAttempts(userId: string): boolean {
-  const record = attempts.get(userId);
-  if (!record) return false;
-  if (Date.now() - record.firstAt > WINDOW_MS) {
-    attempts.delete(userId);
-    return false;
-  }
-  return record.count >= MAX_ATTEMPTS;
-}
-
-function recordFailure(userId: string) {
-  const record = attempts.get(userId);
-  if (!record || Date.now() - record.firstAt > WINDOW_MS) {
-    attempts.set(userId, { count: 1, firstAt: Date.now() });
-    return;
-  }
-  record.count += 1;
-}
+const tooManyAttempts = (userId: string) =>
+  !passwordChangeByUser.check(userId).allowed;
+const recordFailure = (userId: string) => passwordChangeByUser.fail(userId);
 
 export async function POST(req: Request) {
   try {
@@ -119,7 +96,7 @@ export async function POST(req: Request) {
       }),
     ]);
 
-    attempts.delete(user.id);
+    passwordChangeByUser.reset(user.id);
 
     return NextResponse.json({
       success: true,
