@@ -69,7 +69,7 @@ model Event {
   gallery       String[]       @default([])
   isMultiDay      Boolean        @default(false)
   statusOverride  EventStatus?
-  // Extended details sourced from Event Details.md
+  // Extended details sourced from docs/event-details.md
   type                String[]     @default([])
   overview            String?
   mainObjective       String?

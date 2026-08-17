@@ -32,6 +32,11 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
   const [listRole, setListRole] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Set when the roster outgrew the endpoint's cap. Shown rather than swallowed:
+   * a list that is quietly incomplete is worse than a slow one (§11.4).
+   */
+  const [truncated, setTruncated] = useState<{ shown: number; total: number } | null>(null);
 
   const load = () => {
     fetch("/api/admin/users")
@@ -40,6 +45,7 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
         if (d.error) return;
         setMembers(d.users);
         setCounts(d.counts);
+        setTruncated(d.truncated ? { shown: d.users.length, total: d.total } : null);
         setSelected((prev) => prev ?? d.users[0]?.studentId ?? null);
       })
       .catch(() => {});
@@ -136,10 +142,26 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
     >
       <AdminContent>
         <AdminPageHeader
-          eyebrow={`${members.length} MEMBERS · ${USER_ROLES.length} ROLES`}
+          eyebrow={`${truncated ? truncated.total : members.length} MEMBERS · ${USER_ROLES.length} ROLES`}
           title="People & Roles"
           subtitle="Assign officer roles to members. Pick a person, choose a role — new roles can be added in the Prisma schema anytime."
         />
+
+        {truncated && (
+          <div
+            style={{
+              ...t.bodySmall,
+              padding: "12px 14px",
+              color: c.text,
+              backgroundColor: c.dangerWash,
+              border: `1px solid ${c.danger}`,
+            }}
+          >
+            Showing the first {truncated.shown.toLocaleString()} of{" "}
+            {truncated.total.toLocaleString()} members. Search only covers the
+            loaded set — the roster has outgrown this page and needs proper paging.
+          </div>
+        )}
 
         {/* Filter the roll by role */}
         <div className="flex flex-col" style={{ gap: 10 }}>

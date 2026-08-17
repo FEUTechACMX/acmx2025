@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Events sourced from "Event Details.md". Every field in the markdown is mapped
+// Events sourced from docs/event-details.md. Every field in the markdown is mapped
 // onto a column of the Event table. Multi-day events are stored as a single
 // top-level row (isMultiDay = true); day-by-day breakdowns live in `description`.
 const events = [

@@ -42,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Generated from DOCUMENTATION.md on demand — not a source artefact.
+DOCUMENTATION.pdf

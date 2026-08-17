@@ -72,6 +72,9 @@ Cleanup began 2026-08-17 on branch `clean-up`.
 | 2.8 | Service-role client built per request, before the auth check | Moved to module scope; the gate is now the handler's first statement |
 | 3.7 | `EventsManager` shipped a placeholder as a primary action | The `alert()` is gone; NEW EVENT links to `/events`, where creation actually lives. It moves into the console once `EventCreationModal` is ported off Tailwind (§8.1) |
 | 6.5 | Two Button and two Modal implementations | Not parallel systems — `UI/Button.tsx` and `Modal/Modal.tsx` had **zero importers**. Both deleted |
+| 11.4 (in part) | No pagination anywhere | Done where growth is real, declined where it isn't — see the note below |
+| 5.5 | `/api/admin/*` vs `/api/*` split not principled | There *was* a rule, it was simply never written down: `/api/admin/*` holds the console's own projections (aggregates and fields the public never sees), `/api/<resource>/*` is the resource itself with officer-only *operations* gated inline. Under that rule the routes the entry calls overlapping don't — `admin/events` is a console view, `events/[eventId]/edit` is a write on the resource. Stated in README.md rather than moving files and breaking call sites for a naming argument |
+| 12.5 / 12.6 / 12.7 | Repo hygiene | `tsconfig.tsbuildinfo` removed from the working tree. `README.md` replaced — it was still the create-next-app scaffold — with setup, the command table, pointers to the three docs, and the conventions a newcomer would otherwise have to infer. `Event Details.md` moved to `docs/event-details.md`, with the two references (a schema comment and the seed script) updated. `DOCUMENTATION.pdf` was **tracked**: 867 KB of binary regenerated from the Markdown, now untracked and gitignored |
 | 6.6 | Destructive actions used native `confirm()` | `useConfirm` in `ds/`, built on `ds/Modal`, adopted by all four sites (`CommitteeEditor`, `MediaLibrary`, `MerchandiseManager`, `VideosManager`). It keeps the one good property of `confirm()` — a single `await` at the call site, so the guard stays where the decision is — while gaining the theme, the focus trap, the scroll lock and a `danger` skin. Each prompt also gained the consequence in a sentence, and the non-destructive alternative where one exists ("hiding it instead keeps the record"). The fifth item in the table, `RegistrationModal`'s `alert("Successfully registered!")`, is now an in-modal confirmation panel — the alert fired *after* `onClose`, so a registrant's only acknowledgement was an OS dialog over a page that had already moved on. Both branches verified live: cancelling a real committee delete left all 9 intact, and confirming a throwaway merch item actually removed it |
 | 9.2 (partly) | Response envelopes differ per route family | The defective part is fixed; the cosmetic part is deliberately left. See the note below |
 | 2.7 | Rate limiting on exactly one route | Extracted into `lib/rate-limit.ts` and applied to `/api/login`, which had none — the endpoint an attacker would actually target. Two buckets, because either alone is wrong: **per account** (8 per 15 min) does the real work, **per address** (60 per 15 min) is deliberately loose because the chapter shares campus NAT and a tight IP limit would lock out everyone behind one address. A success resets the account bucket. 429 carries `Retry-After`. `change-password` now shares the implementation instead of holding its own copy. The honest limits — module memory, so per-instance and reset on redeploy — are documented at the top of the file, with a durable store named as the upgrade path. 14 tests |
@@ -128,6 +131,35 @@ Nine API routes still read the session directly rather than through
 and the rest (`change-password`, `merch/cart`, `merch/checkout`, `merch/notify`,
 `registration-prefill`, `profile`'s third read) already returned 401 with copy
 better than the generic helper's.
+
+### §11.4 — where pagination went in, and where it deliberately didn't
+
+Fifteen `findMany` calls had no `take`. They are not the same problem, and the
+trap worth naming is that **adding `take` to a list the UI presents as complete
+turns a slow page into a lying one** — an attendance sheet showing 100 of 300
+without saying so is worse than one that loads slowly.
+
+- **`/api/admin/users` — fixed, because membership grows monotonically** and the
+  register was right that it hurts first. It now has a 2,000 ceiling and returns
+  `total` and `truncated` alongside the rows, and People & Roles shows a notice
+  when the roster outgrows the page. Not true paging: that page searches and
+  filters client-side, which at a few hundred members is *better* than a round
+  trip per keystroke, and paging would mean rebuilding that interaction for a
+  problem the chapter does not have. The role tally also moved from a JS loop
+  over every row to a `groupBy`, so the summary stays correct even when the list
+  is capped — verified by temporarily dropping the cap to 10: the header still
+  read 480 members and the tally still summed to 480.
+- **Per-event lists** (`registrations`, `attendance`, `attendance/stream`) — left
+  alone. These are bounded by one event's attendance, in the hundreds. They do
+  not grow over time the way the roster does, and capping them would put a
+  truncation caveat on the attendance sheet and its CSV export for a ceiling
+  nobody will reach.
+- **Naturally bounded** (`committee` ×2, `merchItem` ×2, `featuredVideo`,
+  `committeeMember`, `event` ×2) — nine committees, a handful of items, a few
+  videos, a few dozen events a year. A `take` here would be ceremony.
+- **`merchOrder`** (`admin/merch/orders`) — the one genuine follow-up. Orders
+  accumulate indefinitely, so this wants the same treatment as users once the
+  store has real traffic. Nothing to page today: the table is empty.
 
 ### §9.2 — the convention, and why the sweep was declined
 

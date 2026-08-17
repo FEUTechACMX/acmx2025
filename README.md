@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ACMX
 
-## Getting Started
+The website of the **FEU Tech ACM Student Chapter** — events and registration,
+the attendance desk, the merchandise store, committee pages and the officer
+console.
 
-First, run the development server:
+Next.js (App Router) · TypeScript · Prisma + PostgreSQL · Supabase Storage.
+
+## Getting started
 
 ```bash
+npm install                 # postinstall runs `prisma generate`
+cp .env.example .env        # then fill it in — every variable is documented there
+npx prisma migrate deploy   # apply the migration history
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.example` is the reference for configuration: each variable says what reads
+it and whether it is a secret. Anything prefixed `NEXT_PUBLIC_` is inlined into
+the browser bundle and is not a place for secrets.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Everyday commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | Does |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` | Production build (Turbopack) |
+| `npm test` | Unit tests (Vitest, no database needed) |
+| `npm run test:watch` | Tests in watch mode |
+| `npm run lint` | ESLint — **warnings fail**, so the count stays at zero |
+| `npm run seed:members` | Seed the member roster |
+| `npm run seed:events` | Seed events from `docs/event-details.md` |
+| `npm run seed:committees` | Seed the committees |
+| `npm run seed:merch` | Seed the store |
 
-## Learn More
+CI runs typecheck, lint, tests and build on every push, plus a job asserting the
+migration history still matches `schema.prisma`.
 
-To learn more about Next.js, take a look at the following resources:
+## The documentation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **[DOCUMENTATION.md](DOCUMENTATION.md)** — how the system is meant to work:
+  the data model, the routes, the roles, the flows. Start here.
+- **[CLEANUP.md](CLEANUP.md)** — the defect and debt register. Every entry is
+  something wrong, duplicated, dead or inconsistent, with what was done about it
+  or why it is still open. Read it before a refactor; it will usually already
+  have an opinion.
+- **[docs/event-details.md](docs/event-details.md)** — the source content the
+  event seed script is built from.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`DOCUMENTATION.pdf` is generated from the Markdown and deliberately untracked.
 
-## Deploy on Vercel
+## A few conventions worth knowing before you write code
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Colour comes from the design system**, `src/styles/design-system.ts`, read
+  through `useDS()`. Not from Tailwind palette classes — `globals.css` used to
+  carry ~68 `!important` rules patching those back into dark mode, and it no
+  longer does. Don't reintroduce the need.
+- **Protected routes go through `requireRole` / `requireUser`** in
+  `src/lib/auth.ts`. 401 when there is no session, 403 when a real role check
+  fails.
+- **Input is validated through `src/lib/validation.ts`**, or a `validate*Input`
+  helper next to the model. The `read*` coercers are for absent fields, not for
+  malformed ones.
+- **`src/proxy.ts` is not a security boundary.** It only sees whether a session
+  cookie exists. Adding a route to its matcher protects nothing; gate it in the
+  page or handler.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Where a new API route belongs.** `/api/admin/*` is for the officer console's
+  own projections — data shaped for the console, including fields and aggregates
+  the public never sees (`admin/events` returns per-event attendance counts;
+  `admin/merch/items` includes `HIDDEN` items and restock demand).
+  `/api/<resource>/*` is the resource itself, public where the resource is
+  public, with officer-only *operations* gated inline via `requireRole`. So
+  `events/create` and `events/[eventId]/edit` sit under `events` because they act
+  on an event, while `admin/events` is a console view of the same data. Reads for
+  the console go under `admin`; writes to a resource stay with the resource.
+
+- **Responses.** Success is `{ ok: true, … }`, failure is
+  `{ error: "A sentence a member could read." }` with a real status code, and an
+  absence is an explicit `null` field rather than an empty object. Four auth
+  routes still answer `success` instead of `ok` — see CLEANUP.md §9.2 for why
+  they were left alone.
