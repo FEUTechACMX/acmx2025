@@ -4,8 +4,29 @@ A single-glance view of the register in `CLEANUP.md`. Crossed out = done.
 Everything still open is left unchecked, with what it actually needs.
 
 **67 of 70 items closed.** Every P0 and every P1 is done, and so is every
-security item (§2.1–§2.8). What remains is one refactor and one item blocked on
-infrastructure.
+security item (§2.1–§2.8).
+
+## Handover
+
+This is the state the codebase is being handed over in. What a new contributor
+most needs to know:
+
+- **Read `README.md` first**, then `DOCUMENTATION.md` for how the system works
+  and `CLEANUP.md` for why things are the way they are. The register usually
+  already has an opinion about the change you are about to make.
+- **CI is the contract.** Typecheck, lint (`--max-warnings 0`, so a warning fails
+  the build), 132 tests and a build run on every push, plus a job asserting the
+  migration history still reproduces `schema.prisma`. If CI is green the branch
+  is safe to build on.
+- **Three conventions carry most of the weight**: colour comes from the design
+  system via `useDS()`, protected routes go through `requireRole`/`requireUser`,
+  and input is validated through `lib/validation.ts`. Each replaced a mess; the
+  README section explains what.
+- **One item is deliberately left open (§10.4)** and one is deliberately deferred
+  to whoever owns deployment (§13.6). Both are described below rather than
+  quietly dropped.
+- **The database is clean.** Every piece of data created while verifying this
+  work has been removed — see the last section.
 
 | | Count |
 |---|---|
@@ -148,8 +169,11 @@ infrastructure.
 - [x] ~~13.3 **P2** `npm run lint` lints nothing in particular~~
 - [x] ~~13.4 **P2** No `seed` script~~
 - [x] ~~13.5 **P2** Build opts out of Turbopack~~
-- [ ] **13.6 — P2 · `output: "standalone"` with no consumer — BLOCKED**
-      Cannot be decided until there is a deployment target.
+- [ ] **13.6 — P2 · `output: "standalone"` with no consumer — HANDED OVER**
+      Deliberately not decided here. `standalone` is the right build mode for a
+      container and wrong for a platform that builds its own; the team taking
+      this on owns deployment, so the choice is theirs to make once they know
+      where it runs. Nothing else depends on it.
 - [x] ~~13.7 **P3** Vercel CLI not installed~~ — installed, 59.1.4
 
 ---
@@ -196,18 +220,24 @@ it predicted.
 
 ---
 
-## Not on the register, and now the biggest gap
+## Deployment
 
-- [ ] **There is no deployment target.** Both Vercel projects were deleted in
-      July 2026. Everything in this cleanup — the security fixes, the
-      design-system migration, the validation, the test suite — is live for
-      nobody. This is worth more than any remaining register item.
+Out of scope for this cleanup, by decision. Both Vercel projects were deleted in
+July 2026 and nothing here assumes a host: the build is clean, the migrations are
+applied, and `output: "standalone"` is the only setting that touches it (13.6).
+The Vercel CLI is installed if that is the route taken.
 
-## Manual cleanup still owed — test data created during verification
+## Test data — cleared
 
-- [ ] `node make-test-event.mjs --delete` — removes the three `[TEST]` events
-      plus their registrations and attendance rows.
-- [ ] Delete `1786967706363-nywacutuxr.png` from the `events` Supabase bucket, a
-      16-byte file left from verifying the upload sniffer.
-- [ ] Delete `make-test-event.mjs` once the above is done. It is the last
-      untracked file in the repo.
+Everything created while verifying has been removed from the live database and
+storage, and both throwaway scripts are deleted.
+
+- [x] ~~Three `[TEST]` events, with their registrations and attendance rows~~
+- [x] ~~The merch item used to exercise the delete-confirmation path~~
+- [x] ~~`1786967706363-nywacutuxr.png` in the `events` bucket~~
+- [x] ~~The tagline and socials written onto a real officer profile, and the
+      empty row left behind~~
+- [x] ~~`make-test-event.mjs` and `cleanup-storage.mjs`~~
+
+Verified after: 0 test events, 0 test merch items, 0 officer profiles, empty
+`events` bucket, 3 board members untouched, no untracked files.
