@@ -51,7 +51,7 @@ const FIELD_RULES: Record<string, Rule[]> = {
   dayOfWeek: [maxLength("Day of week", 20)],
   startDate: [dateTime("Start date")],
   endDate: [dateTime("End date")],
-  price: [money("Officer rate")],
+  priceOfficer: [money("Officer rate")],
   priceMember: [money("Member rate")],
   priceNonMember: [money("Non-member rate")],
   image: [maxLength("Image URL", 600)],
@@ -64,11 +64,11 @@ const FIELD_RULES: Record<string, Rule[]> = {
   mainObjective: [maxLength("Main objective", 4000)],
   specificObjectives: [stringList("Specific objectives", 30, 1000)],
   targetParticipants: [maxLength("Target participants", 2000)],
-  registrationFees: [maxLength("Registration fees", 2000)],
+  feeNote: [maxLength("Fee note", 2000)],
 };
 
 const DATE_FIELDS = new Set(["startDate", "endDate"]);
-const MONEY_FIELDS = new Set(["price", "priceMember", "priceNonMember"]);
+const MONEY_FIELDS = new Set(["priceOfficer", "priceMember", "priceNonMember"]);
 
 // PATCH — update event fields (images, gallery, etc.)
 export async function PATCH(

@@ -66,3 +66,28 @@ export function getEventStatus(event: StatusInput): EventStatus {
 export function getEventStatusEnum(event: StatusInput): EventStatusEnum {
   return getEventStatus(event).toUpperCase() as EventStatusEnum;
 }
+
+/** Who is looking, for pricing purposes. */
+export type PriceTier = "officer" | "member" | "nonmember";
+
+/**
+ * The fee for one tier, formatted.
+ *
+ * One helper because there were two: `getPrice` in EventCards and `getUserPrice`
+ * in SelectedEvent, identical but for their names, and each carrying its own
+ * copy of the rule that the column called `price` was really the officer tier.
+ * That column is now `priceOfficer` (CLEANUP.md 4.4), which is what made the
+ * duplication safe to collapse.
+ */
+export function eventPrice(
+  event: { priceOfficer: number; priceMember: number; priceNonMember: number },
+  tier: PriceTier
+): string {
+  const amount =
+    tier === "officer"
+      ? event.priceOfficer
+      : tier === "member"
+        ? event.priceMember
+        : event.priceNonMember;
+  return amount === 0 ? "Free" : `₱${amount}`;
+}

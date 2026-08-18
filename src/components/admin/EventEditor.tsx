@@ -61,7 +61,7 @@ type Form = {
   mainObjective: string;
   specificObjectivesStr: string;
   targetParticipants: string;
-  registrationFees: string;
+  feeNote: string;
   statusOverride: string; // "", UPCOMING, ONGOING, FINISHED
   image: string | null;
   status: string;
@@ -132,7 +132,7 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
           mainObjective: ev.mainObjective ?? "",
           specificObjectivesStr: (ev.specificObjectives ?? []).join("\n"),
           targetParticipants: ev.targetParticipants ?? "",
-          registrationFees: ev.registrationFees ?? "",
+          feeNote: ev.feeNote ?? "",
           statusOverride: ev.statusOverride ?? "",
           image: ev.image ?? ev.cardImage ?? null,
           status: deriveStatus(ev.statusOverride ?? null, ev.startDate, ev.endDate),
@@ -176,7 +176,7 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
       mainObjective: form.mainObjective,
       specificObjectives: form.specificObjectivesStr.split("\n").map((s) => s.trim()).filter(Boolean),
       targetParticipants: form.targetParticipants,
-      registrationFees: form.registrationFees,
+      feeNote: form.feeNote,
       statusOverride: form.statusOverride || null,
     });
     setSaving(false);
@@ -502,8 +502,8 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
               />
               <EditField
                 label="REGISTRATION FEES"
-                value={form.registrationFees}
-                onChange={(v) => set({ registrationFees: v })}
+                value={form.feeNote}
+                onChange={(v) => set({ feeNote: v })}
               />
             </div>
 

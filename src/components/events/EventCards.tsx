@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { EventWithCount } from "@/types/events";
-import { getEventStatus } from "@/types/events";
+import { getEventStatus, eventPrice } from "@/types/events";
 import { Badge, Subheading, Label, useDS } from "@/components/ds";
 import { type as t, motion } from "@/styles/design-system";
 
@@ -24,12 +24,6 @@ const STATUS_TONE = {
   ongoing: "accent",
   finished: "quiet",
 } as const;
-
-function getPrice(event: EventWithCount, tier: EventCardProps["priceTier"]): string {
-  const amount =
-    tier === "officer" ? event.price : tier === "member" ? event.priceMember : event.priceNonMember;
-  return amount === 0 ? "Free" : `₱${amount}`;
-}
 
 /**
  * Event poster in the system's language: hairline frame, image plate,
@@ -107,7 +101,7 @@ export default function EventCards({ event, priceTier }: EventCardProps) {
             style={{ borderTop: `1px solid ${c.rule}`, paddingTop: "0.75rem" }}
           >
             <Label style={{ color: c.faint }}>{registered} Registered</Label>
-            <Label color={c.accent}>{getPrice(event, priceTier)}</Label>
+            <Label color={c.accent}>{eventPrice(event, priceTier)}</Label>
           </div>
         </div>
       </article>

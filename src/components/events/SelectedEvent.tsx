@@ -1,6 +1,6 @@
 "use client";
 
-import { EventWithCount, getEventStatus } from "@/types/events";
+import { EventWithCount, getEventStatus, eventPrice } from "@/types/events";
 import AttendButton from "./AttendButton";
 import PastEventExperience from "./PastEventExperience";
 import Link from "next/link";
@@ -73,12 +73,6 @@ function BackLink() {
       ← Back to Events
     </Link>
   );
-}
-
-function getUserPrice(event: EventWithCount, tier: "officer" | "member" | "nonmember"): string {
-  const amount =
-    tier === "officer" ? event.price : tier === "member" ? event.priceMember : event.priceNonMember;
-  return amount === 0 ? "Free" : `₱${amount}`;
 }
 
 /**
@@ -239,13 +233,13 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
       ),
     });
   }
-  if (event.registrationFees) {
+  if (event.feeNote) {
     tabs.push({
       key: "fees",
       label: "Fees",
       node: (
         <p style={{ ...t.body, color: c.muted, whiteSpace: "pre-line", margin: 0 }}>
-          {event.registrationFees}
+          {event.feeNote}
         </p>
       ),
     });
@@ -353,7 +347,7 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
 
             <div className="flex flex-col" style={{ gap: "0.9rem" }}>
               <div className="flex items-end" style={{ gap: "0.6rem" }}>
-                <span style={{ ...t.heading, color: c.text }}>{getUserPrice(activeEvent, priceTier)}</span>
+                <span style={{ ...t.heading, color: c.text }}>{eventPrice(activeEvent, priceTier)}</span>
                 <span style={{ ...t.label, color: c.faint, textTransform: "uppercase", paddingBottom: "0.4rem" }}>
                   {tierLabel}
                 </span>
@@ -437,9 +431,9 @@ const SelectedEvent = ({ event }: SelectedEventProps) => {
             <Panel>
               <Label style={{ color: c.faint }}>Rates</Label>
               <div style={{ marginTop: layout.gapTight }}>
-                <DataRow label="Officer" value={getUserPrice(event, "officer")} />
-                <DataRow label="Member" value={getUserPrice(event, "member")} />
-                <DataRow label="Non-Member" value={getUserPrice(event, "nonmember")} />
+                <DataRow label="Officer" value={eventPrice(event, "officer")} />
+                <DataRow label="Member" value={eventPrice(event, "member")} />
+                <DataRow label="Non-Member" value={eventPrice(event, "nonmember")} />
               </div>
             </Panel>
 

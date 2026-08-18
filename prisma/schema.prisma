@@ -61,21 +61,25 @@ model Event {
   dayOfWeek     String
   startDate     DateTime
   endDate       DateTime       @default(now())
-  price           Float          @default(0)
+  /// Amounts are authoritative. `feeNote` may add context, never a number
+  /// that contradicts these (CLEANUP.md 4.4).
+  priceOfficer    Float          @default(0)
   priceMember     Float          @default(0)
   priceNonMember  Float          @default(0)
   image         String?
   cardImage     String?
   gallery       String[]       @default([])
   isMultiDay      Boolean        @default(false)
-  statusOverride  EventStatus?
+  statusOverride  EventStatusOverride?
   // Extended details sourced from docs/event-details.md
   type                String[]     @default([])
   overview            String?
   mainObjective       String?
   specificObjectives  String[]     @default([])
   targetParticipants  String?
-  registrationFees    String?
+  /// Prose that supplements the price columns - what the fee covers, how to
+  /// pay. Not a place to restate an amount.
+  feeNote             String?
   parentId        String?
   parent          Event?         @relation("EventDays", fields: [parentId], references: [eventId])
   subEvents       Event[]        @relation("EventDays")
@@ -412,7 +416,9 @@ enum EventSemester {
   THIRD  @map("3rd")
 }
 
-enum EventStatus {
+/// An officer explicit call, overriding what the dates imply. Null means
+/// derive it - see getEventStatus in src/types/events.ts.
+enum EventStatusOverride {
   UPCOMING
   ONGOING
   FINISHED

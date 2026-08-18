@@ -269,7 +269,7 @@ export default function EventCreationModal({ isOpen, onClose, onCreated }: Event
           dayOfWeek,
           startDate,
           endDate: endDate || startDate,
-          price: Number(price),
+          priceOfficer: Number(price),
           priceMember: Number(priceMember),
           priceNonMember: Number(priceNonMember),
           isMultiDay,
