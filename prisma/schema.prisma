@@ -32,6 +32,7 @@ model User {
   sessions       Session[]
   cartLines      MerchCartLine[]
   merchOrders    MerchOrder[]
+  officerProfile OfficerProfile?
   restockRequests MerchRestockRequest[]
   committeeSeats CommitteeMember[]
 }
@@ -501,4 +502,42 @@ enum TransactionStatus{
   PENDING
   ACCEPTED
   REJECTED
+}
+/// The presentation half of an officer on the public Officers page.
+///
+/// Deliberately *only* what the account cannot already say. Who holds a post is
+/// `User.role`, edited in People & Roles — so a turnover updates the public page
+/// with no deploy, which was the whole complaint in CLEANUP.md 7.4. The name,
+/// course and school email all come from the account too; duplicating them here
+/// would create a second truth that drifts.
+///
+/// A missing row is not an error: an officer with no profile still appears, with
+/// the placeholder portrait and no tagline.
+model OfficerProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  /// One signature line — their focus for the term.
+  tagline String?
+  /// Official portrait. Null renders the labelled placeholder.
+  photo   String?
+  /// When they took the post, e.g. "Aug 2026". Free text: terms are described,
+  /// not computed, and nobody needs to query on it.
+  since   String?
+
+  instagram String?
+  linkedin  String?
+
+  /// Manual ordering *within* a role. Across roles the order comes from
+  /// USER_ROLES, which is already ranked highest to lowest.
+  order Int @default(0)
+
+  /// Lets an officer be held back from the public page without touching their
+  /// account role, which would take their console access with it.
+  published Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

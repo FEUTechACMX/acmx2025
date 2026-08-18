@@ -3,15 +3,15 @@
 A single-glance view of the register in `CLEANUP.md`. Crossed out = done.
 Everything still open is left unchecked, with what it actually needs.
 
-**66 of 70 items closed.** Every P0 and every P1 is done, and so is every
-security item (§2.1–§2.8). What remains is two features and one item blocked on
+**67 of 70 items closed.** Every P0 and every P1 is done, and so is every
+security item (§2.1–§2.8). What remains is one refactor and one item blocked on
 infrastructure.
 
 | | Count |
 |---|---|
-| Closed | 64 |
+| Closed | 65 |
 | Closed in part, remainder a recorded decision | 2 (§9.2, §11.4) |
-| Open | 2 (§7.4, §10.4) |
+| Open | 1 (§10.4) |
 | Blocked | 1 (§13.6) |
 
 ---
@@ -73,15 +73,17 @@ infrastructure.
 - [x] ~~6.7 Five overlapping event list components~~ — not a real finding. They
       compose rather than overlap; closed by measurement.
 
-## 7. Dead code — 3/4
+## 7. Dead code — 4/4
 
 - [x] ~~7.1 Orphaned components~~
 - [x] ~~7.2 Dead route files~~
 - [x] ~~7.3 Unused dependencies~~
-- [ ] **7.4 — P2 · Hardcoded officer roster**
-      Needs an `Officer` model, a migration and an admin screen. A feature, not
-      a cleanup — and the one with real user value left, since every officer
-      turnover is currently a code deploy.
+- [x] ~~7.4 **P2** Hardcoded officer roster~~ — the roster is derived from
+      `User.role`, so a promotion in People & Roles publishes someone with no
+      deploy. `OfficerProfile` holds only what an account cannot say (tagline,
+      portrait, term start, two socials). `officers-data.ts` deleted. Verified
+      end to end: promoting a MEMBER to MEDIA_OFFICER put them on the public page
+      immediately, with no profile row, and reverting removed them.
 
 ## 8. Styling — 4/4
 

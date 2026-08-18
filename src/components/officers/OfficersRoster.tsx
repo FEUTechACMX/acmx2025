@@ -6,7 +6,7 @@ import { Surface } from "@/components/ds";
 import { useDS } from "@/components/ds/useDS";
 import { runBlinkIn } from "@/lib/blink";
 import { type as t, layout, motion } from "@/styles/design-system";
-import { officers as ROSTER, type Officer } from "./officers-data";
+import type { OfficerDTO as Officer } from "@/types/officers";
 
 /* ──────────────────────────────────────────────────────────────
  * OfficersRoster — "The Roster" (character select)
@@ -219,7 +219,7 @@ function JumpTo({
     const q = query.trim().toLowerCase();
     return officers
       .map((o, i) => ({ o, i }))
-      .filter(({ o }) => !q || o.role.toLowerCase().includes(q) || o.name.toLowerCase().includes(q));
+      .filter(({ o }) => !q || o.roleTitle.toLowerCase().includes(q) || o.name.toLowerCase().includes(q));
   }, [officers, query]);
 
   useEffect(() => {
@@ -261,7 +261,7 @@ function JumpTo({
         <span className="flex flex-col items-start" style={{ gap: "0.15rem", minWidth: 0 }}>
           <span style={{ ...t.label, color: c.faint, letterSpacing: "0.16em" }}>Jump To</span>
           <span style={{ ...t.mono, color: c.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "13rem" }}>
-            {pad2(active + 1)} · {current.role}
+            {pad2(active + 1)} · {current.roleTitle}
           </span>
         </span>
         <span style={{ color: c.accent, transform: open ? "rotate(180deg)" : "none", transition: `transform ${motion.fast}` }}>
@@ -319,7 +319,7 @@ function JumpTo({
                 >
                   <span className="flex items-center" style={{ gap: "0.75rem", minWidth: 0 }}>
                     <span style={{ ...t.mono, color: on ? c.accent : c.faint, width: "1.5rem" }}>{pad2(i + 1)}</span>
-                    <span style={{ ...t.body, color: on ? c.text : c.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.role}</span>
+                    <span style={{ ...t.body, color: on ? c.text : c.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.roleTitle}</span>
                   </span>
                   {on ? (
                     <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
@@ -339,8 +339,37 @@ function JumpTo({
 }
 
 /* ── Main ── */
-export default function OfficersRoster({ officers = ROSTER }: { officers?: Officer[] }) {
+export default function OfficersRoster({ officers: provided }: { officers?: Officer[] }) {
   const { c } = useDS();
+
+  /**
+   * The roster comes from the API now, not a hardcoded array (CLEANUP.md §7.4).
+   *
+   * Fetched on the client rather than in the page, because `/officers` is one of
+   * the seven static routes §5.1 bought back and a server read here would hand
+   * that straight back. `provided` stays as a seam for tests and for anyone
+   * rendering a fixed roster.
+   */
+  const [fetched, setFetched] = useState<Officer[] | null>(provided ?? null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (provided) return;
+    let alive = true;
+    fetch("/api/officers")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad status"))))
+      .then((d) => {
+        if (alive) setFetched(d.officers ?? []);
+      })
+      .catch(() => {
+        if (alive) setFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [provided]);
+
+  const officers = useMemo(() => fetched ?? [], [fetched]);
   const total = officers.length;
   const [active, setActive] = useState(0);
   const railRef = useRef<HTMLDivElement>(null);
@@ -406,6 +435,40 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
 
   const officer = officers[active];
 
+  /**
+   * Three ways to have nobody to show, and they are not the same thing: still
+   * loading, the request failed, or the board is genuinely empty because no
+   * account holds an officer role yet. The last one is the state a fresh install
+   * is in, and it should say what to do about it rather than look broken.
+   */
+  if (!officer) {
+    return (
+      <Surface corners="bottom-right">
+        <div
+          className="flex flex-col items-center justify-center text-center"
+          style={{
+            gap: "0.75rem",
+            paddingTop: `calc(${layout.navHeight} + 22vh)`,
+            paddingBottom: "22vh",
+            paddingLeft: layout.gutter,
+            paddingRight: layout.gutter,
+          }}
+        >
+          <span style={{ ...t.label, textTransform: "uppercase", color: c.faint, letterSpacing: "0.25em" }}>
+            {failed ? "Roster unavailable" : fetched === null ? "Loading" : "No officers yet"}
+          </span>
+          <p style={{ ...t.body, color: c.muted, margin: 0, maxWidth: "30rem" }}>
+            {failed
+              ? "The roster could not be loaded. Refreshing usually sorts it."
+              : fetched === null
+                ? "Fetching the roster…"
+                : "Officers appear here once a member is given an officer role in the admin console."}
+          </p>
+        </div>
+      </Surface>
+    );
+  }
+
   return (
     <Surface corners="bottom-right">
       <style>{`
@@ -449,12 +512,12 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
             </div>
 
             <span style={{ ...t.label, textTransform: "uppercase", color: c.accent, border: `1px solid ${c.accent}`, padding: "0.4rem 0.85rem", alignSelf: "flex-start" }}>
-              {officer.role}
+              {officer.roleTitle}
             </span>
 
             <div className="flex flex-col" style={{ gap: "0.5rem" }}>
               <h2 style={{ ...t.display, fontSize: "clamp(2.5rem, 6vw, 5.25rem)", lineHeight: 0.95, color: c.text, margin: 0, overflowWrap: "break-word", maxWidth: "100%" }}>{officer.name}</h2>
-              <span style={{ ...t.body, color: c.muted }}>{officer.role} · {officer.course}</span>
+              <span style={{ ...t.body, color: c.muted }}>{officer.roleTitle} · {officer.course}</span>
             </div>
 
             <p style={{ ...t.body, color: c.muted, maxWidth: "34rem", margin: 0 }}>{officer.tagline}</p>
@@ -464,9 +527,9 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
             {/* signature stats */}
             <div className="flex flex-wrap" style={{ gap: "clamp(1.5rem, 4vw, 3.5rem)" }}>
               {[
-                { k: "Role Since", v: officer.since },
-                { k: "Department", v: officer.department },
-                { k: "Course", v: officer.course.replace(/^BS /, "").replace(" Computer Science", "SCS") },
+                { k: "Role Since", v: officer.since ?? "—" },
+                { k: "Course", v: officer.course.replace(/^BS /, "") },
+                { k: "Year", v: `${officer.yearLevel}` },
               ].map((s) => (
                 <div key={s.k} className="flex flex-col" style={{ gap: "0.5rem" }}>
                   <span style={{ width: "1.4rem", height: 2, background: c.accent }} />
@@ -479,14 +542,14 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
             {/* socials */}
             <div className="flex items-center" style={{ gap: "1rem" }}>
               <span style={{ ...t.label, color: c.faint }}>Connect</span>
-              {officer.socials?.instagram && (
-                <a href={officer.socials.instagram} aria-label="Instagram" style={{ color: c.muted }} className="ofc-social"><IconInstagram /></a>
+              {officer.instagram && (
+                <a href={officer.instagram} aria-label="Instagram" style={{ color: c.muted }} className="ofc-social"><IconInstagram /></a>
               )}
-              {officer.socials?.linkedin && (
-                <a href={officer.socials.linkedin} aria-label="LinkedIn" style={{ color: c.muted }} className="ofc-social"><IconLinkedin /></a>
+              {officer.linkedin && (
+                <a href={officer.linkedin} aria-label="LinkedIn" style={{ color: c.muted }} className="ofc-social"><IconLinkedin /></a>
               )}
-              {officer.socials?.email && (
-                <a href={`mailto:${officer.socials.email}`} aria-label="Email" style={{ color: c.muted }} className="ofc-social"><IconMail /></a>
+              {officer.email && (
+                <a href={`mailto:${officer.email}`} aria-label="Email" style={{ color: c.muted }} className="ofc-social"><IconMail /></a>
               )}
             </div>
           </div>
@@ -542,13 +605,13 @@ export default function OfficersRoster({ officers = ROSTER }: { officers?: Offic
                   key={o.id}
                   ref={(el) => { tokenRefs.current[i] = el; }}
                   onClick={() => setActive(i)}
-                  aria-label={`${o.role} — ${o.name}`}
+                  aria-label={`${o.roleTitle} — ${o.name}`}
                   aria-pressed={on}
                   className="ofc-token flex flex-col items-center flex-shrink-0"
                   style={{ gap: "0.5rem", width: "clamp(6rem, 8vw, 7.5rem)", background: "transparent", border: "none", cursor: "pointer", opacity: on ? 1 : 0.72, padding: "0.25rem 0" }}
                 >
                   <DiamondPortrait officer={o} active={on} size={72} />
-                  <span style={{ ...t.label, fontSize: "clamp(0.5rem, 0.7vw, 0.625rem)", color: on ? c.text : c.muted, textAlign: "center", lineHeight: 1.2 }}>{o.role}</span>
+                  <span style={{ ...t.label, fontSize: "clamp(0.5rem, 0.7vw, 0.625rem)", color: on ? c.text : c.muted, textAlign: "center", lineHeight: 1.2 }}>{o.roleTitle}</span>
                   <span style={{ ...t.bodySmall, fontSize: "0.625rem", color: c.faint, textAlign: "center" }}>{o.name}</span>
                 </button>
               );

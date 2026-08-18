@@ -18,6 +18,7 @@ type NavKey =
   | "merchandise"
   | "media"
   | "people"
+  | "officers"
   | "videos";
 
 const NAV: { key: NavKey; label: string; href: string; icon: IconName }[] = [
@@ -27,6 +28,7 @@ const NAV: { key: NavKey; label: string; href: string; icon: IconName }[] = [
   { key: "merchandise", label: "Merchandise", href: "/admin/merchandise", icon: "bag" },
   { key: "media", label: "Media Library", href: "/admin/media", icon: "media" },
   { key: "people", label: "People & Roles", href: "/admin/people", icon: "people" },
+  { key: "officers", label: "Officers", href: "/admin/officers", icon: "people" },
   { key: "videos", label: "Videos", href: "/admin/videos", icon: "videos" },
 ];
 

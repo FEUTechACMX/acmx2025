@@ -114,3 +114,28 @@ export const ROLE_LABELS: Record<string, string> = {
 export function roleLabel(role?: string): string {
   return (role && ROLE_LABELS[role]) || role || "—";
 }
+
+/**
+ * The roles that appear on the public Officers page, in the order they rank.
+ *
+ * Derived from USER_ROLES rather than listed again, so a role added to the enum
+ * cannot be silently missing from the page. Two exclusions:
+ *
+ * - ADMIN is an access level, not a post on the board. The chapter's president
+ *   holds PRESIDENT; whoever also needs console access holds ADMIN, and that is
+ *   an implementation detail nobody should read about on the public site.
+ * - MEMBER is not an officer.
+ */
+export const BOARD_ROLES = USER_ROLES.filter(
+  (r) => r !== "ADMIN" && r !== "MEMBER"
+);
+
+export function isBoardRole(role?: string): boolean {
+  return !!role && (BOARD_ROLES as readonly string[]).includes(role);
+}
+
+/** Rank of a role on the board — lower sorts first. */
+export function boardRank(role: string): number {
+  const i = (BOARD_ROLES as readonly string[]).indexOf(role);
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+}
