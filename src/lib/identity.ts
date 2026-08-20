@@ -29,6 +29,15 @@ export async function login(studentId: string, password: string) {
   const valid = await verifyPassword(password, user.password);
   if (!valid) throw new Error("Invalid Password");
 
+  // Generic on purpose: PENDING vs REJECTED vs missing must be indistinguishable
+  // from outside (ACMX-BUILD-DIRECTIVE.md §4.5). The login route already maps
+  // every throw onto one REFUSED sentence.
+  if (user.membershipStatus !== "APPROVED") throw new Error("Invalid Credentials");
+
+  // Unclaimed legacy accounts: phone-number password grants nothing (SPEC-D5 §8.3).
+  // Same generic throw — do not reveal "must claim".
+  if (user.mustChangePassword) throw new Error("Invalid Credentials");
+
   // Strip password before returning
   const { password: _, ...safeUser } = user;
   return safeUser;
@@ -56,5 +65,49 @@ export async function createSession(userId: string) {
     },
   });
   return sessionId;
+}
+
+export type PendingUserInput = {
+  studentId: string;
+  password: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  suffix: string;
+  yearLevel: number;
+  degreeProgram: string;
+  personalEmail: string;
+  schoolEmail: string;
+  contactNumber: string;
+  facebookLink: string;
+  discordName: string;
+};
+
+/** Inserts a User as PENDING. Never call this for an existing studentId. */
+export async function createPendingUser(
+  input: PendingUserInput,
+  db: { user: { create: typeof prisma.user.create } } = prisma
+) {
+  const hashed = await bcrypt.hash(input.password, 12);
+  return db.user.create({
+    data: {
+      studentId: input.studentId,
+      password: hashed,
+      firstName: input.firstName,
+      middleName: input.middleName,
+      lastName: input.lastName,
+      suffix: input.suffix || null,
+      yearLevel: input.yearLevel,
+      degreeProgram: input.degreeProgram,
+      personalEmail: input.personalEmail,
+      schoolEmail: input.schoolEmail,
+      contactNumber: input.contactNumber,
+      facebookLink: input.facebookLink,
+      discordName: input.discordName || null,
+      role: "MEMBER",
+      membershipStatus: "PENDING",
+      mustChangePassword: false,
+    },
+  });
 }
 

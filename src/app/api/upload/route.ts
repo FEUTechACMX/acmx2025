@@ -6,6 +6,7 @@ import {
   BUCKET_KINDS,
   MAX_FILE_SIZE,
   isBucket,
+  isPrivateBucket,
   sniff,
   storageName,
 } from "@/lib/uploads";
@@ -34,6 +35,12 @@ export async function POST(req: NextRequest) {
 
     if (!isBucket(bucket)) {
       return NextResponse.json({ error: "Invalid bucket" }, { status: 400 });
+    }
+    if (isPrivateBucket(bucket)) {
+      return NextResponse.json(
+        { error: "That bucket is private. Use the dedicated upload endpoint." },
+        { status: 400 }
+      );
     }
     const expectedKind = BUCKET_KINDS[bucket];
 

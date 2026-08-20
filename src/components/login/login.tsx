@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Surface, Column, PageHeader, Panel, Button, Field, Label, useDS } from "@/components/ds";
-import { layout } from "@/styles/design-system";
+import { layout, type as t } from "@/styles/design-system";
 
-export default function LoginPage() {
+export default function LoginPage({ membershipOpen = false }: { membershipOpen?: boolean }) {
   const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +26,7 @@ export default function LoginPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Login failed");
+        setError(data.message || data.error || "Login failed");
       } else {
         // Full document load, not router.push — the session is cached per
         // document in `sessionClient`, so the nav has to start fresh to see it.
@@ -45,7 +46,7 @@ export default function LoginPage() {
         <PageHeader
           eyebrow={["MEMBERS", "ONLY"]}
           title="SIGN IN"
-          intro="Use your FEU Tech student number and ACM password to access registrations, attendance records, and your member profile."
+          intro="Enter your student number and ACMX password."
         />
 
         <Panel style={{ marginTop: `calc(${layout.gap} * 1.5)`, maxWidth: "28rem", width: "100%" }}>
@@ -68,6 +69,29 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
             />
+
+            <div className="flex flex-col" style={{ gap: "0.45rem" }}>
+              <Link
+                href="/account/claim-account"
+                style={{ ...t.bodySmall, color: c.accent, textDecoration: "none" }}
+              >
+                First time signing in? Claim your account
+              </Link>
+              <Link
+                href="/account/reset-password"
+                style={{ ...t.bodySmall, color: c.accent, textDecoration: "none" }}
+              >
+                Forgot password?
+              </Link>
+              {membershipOpen && (
+                <Link
+                  href="/apply/membership"
+                  style={{ ...t.bodySmall, color: c.muted, textDecoration: "none" }}
+                >
+                  Not a member yet? Become a member
+                </Link>
+              )}
+            </div>
 
             {error && (
               <div style={{ borderLeft: `2px solid ${c.accent}`, paddingLeft: "0.75rem" }}>

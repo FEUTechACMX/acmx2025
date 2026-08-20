@@ -723,6 +723,7 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
                 </div>
               </div>
 
+              {form.status !== "FINISHED" && (
               <div
                 className="flex flex-col"
                 style={{
@@ -850,6 +851,7 @@ export default function EventEditor({ user, eventId }: { user: safeUser; eventId
                   </AdminButton>
                 </div>
               </div>
+              )}
             </div>
           </div>
         )}

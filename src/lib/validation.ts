@@ -72,6 +72,20 @@ export const minLength =
     str(v).length >= min ? null : `${label} must be at least ${min} characters.`;
 
 /**
+ * FEU Tech student number format — digits only, length 8–11.
+ * Format check only (SPEC-D5 §13); never implies the account exists.
+ */
+export const STUDENT_NUMBER_INVALID = "Enter a valid student number.";
+
+export const studentNumber =
+  (_label = "Student number"): Rule =>
+  (v) => {
+    const s = str(v);
+    if (!/^\d{8,11}$/.test(s)) return STUDENT_NUMBER_INVALID;
+    return null;
+  };
+
+/**
  * Deliberately permissive. The only address we can truly verify is one that
  * receives mail, so this rejects the shapes that are certainly wrong and
  * leaves the rest to a confirmation email.
@@ -203,30 +217,98 @@ export function notBefore(
 
 /* ── Passwords ──────────────────────────────────────────────── */
 
-export const PASSWORD_MIN = 8;
-export const PASSWORD_MAX = 128;
+/** Hard gate — SPEC-D5 §8.4 (replaces the old min-8 + digit-only rule). */
+export const PASSWORD_MIN = 10;
+/** bcrypt silently truncates past 72 bytes — reject rather than hash a truncated secret. */
+export const PASSWORD_MAX_BYTES = 72;
+/** Kept for advisory meter / UI that still mentions an upper bound. */
+export const PASSWORD_MAX = 72;
+
+export type PasswordContext = {
+  studentId?: string;
+  contactNumber?: string;
+  schoolEmail?: string;
+  personalEmail?: string;
+};
+
+function byteLength(s: string): number {
+  return new TextEncoder().encode(s).length;
+}
+
+function emailLocalPart(emailAddr: string): string {
+  const at = emailAddr.indexOf("@");
+  return at === -1 ? emailAddr : emailAddr.slice(0, at);
+}
+
+function digitsOnly(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
+const OBVIOUS_PASSWORDS =
+  /^(?:password|qwerty|letmein|welcome|admin|acm|acmx|iloveyou|changeme|secret)[\d!@#$%]*$/i;
 
 /**
- * The hard gate, and the only password rule the server enforces.
- *
- * Length plus a digit, and nothing else. Forced symbol/case rules push people
- * toward `Password1!` and a sticky note; length is what actually costs an
- * attacker. The strength meter below is advisory and deliberately separate —
- * it nudges without blocking.
- *
- * The upper bound is not a security limit, it's a denial-of-service one:
- * bcrypt on a megabyte of input would happily burn the request thread.
+ * ONE shared password-strength validator for registration and claim/reset.
+ * Returns null when acceptable, or a human-readable sentence.
+ */
+export function validatePasswordStrength(
+  value: unknown,
+  context: PasswordContext = {},
+  label = "Password"
+): string | null {
+  const s = typeof value === "string" ? value : "";
+  if (!s) return `${label} is required.`;
+  if (s.length < PASSWORD_MIN) {
+    return `${label} must be at least ${PASSWORD_MIN} characters.`;
+  }
+  if (byteLength(s) > PASSWORD_MAX_BYTES) {
+    return `${label} must be ${PASSWORD_MAX_BYTES} bytes or fewer.`;
+  }
+
+  const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(s)).length;
+  if (classes < 3) {
+    return `${label} needs at least 3 of: lowercase, uppercase, a number, a symbol.`;
+  }
+
+  if (OBVIOUS_PASSWORDS.test(s) || /^(.)\1+$/.test(s) || /^\d+$/.test(s)) {
+    return `${label} is too easy to guess. Choose something less obvious.`;
+  }
+
+  const lower = s.toLowerCase();
+  const studentId = (context.studentId ?? "").trim().toLowerCase();
+  if (studentId && lower.includes(studentId)) {
+    return `${label} cannot contain your student number.`;
+  }
+
+  const phoneDigits = digitsOnly(context.contactNumber ?? "");
+  if (phoneDigits.length >= 7) {
+    const passDigits = digitsOnly(s);
+    if (
+      passDigits.includes(phoneDigits) ||
+      (passDigits.length >= 7 && phoneDigits.includes(passDigits))
+    ) {
+      return `${label} cannot be (or contain) your phone number.`;
+    }
+  }
+
+  for (const addr of [context.schoolEmail, context.personalEmail]) {
+    const local = emailLocalPart((addr ?? "").trim().toLowerCase());
+    if (local.length >= 3 && lower.includes(local)) {
+      return `${label} cannot contain your email name.`;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Structural password Rule for `check()`. Prefer `validatePasswordStrength`
+ * when account context is available (phone / studentId / email).
  */
 export const password =
   (label = "Password"): Rule =>
-  (v) => {
-    const s = typeof v === "string" ? v : "";
-    if (!s) return `${label} is required.`;
-    if (s.length < PASSWORD_MIN) return `${label} must be at least ${PASSWORD_MIN} characters.`;
-    if (s.length > PASSWORD_MAX) return `${label} must be ${PASSWORD_MAX} characters or fewer.`;
-    if (!/\d/.test(s)) return `${label} must contain at least one number.`;
-    return null;
-  };
+  (v) =>
+    validatePasswordStrength(v, {}, label);
 
 export type Strength = { score: 0 | 1 | 2 | 3 | 4; label: string };
 
@@ -237,8 +319,7 @@ export type Strength = { score: 0 | 1 | 2 | 3 | 4; label: string };
 export function passwordStrength(value: string): Strength {
   if (!value) return { score: 0, label: "" };
 
-  const OBVIOUS = /^(?:password|qwerty|letmein|welcome|admin|acm|acmx|iloveyou)\d*!?$/i;
-  if (OBVIOUS.test(value) || /^(.)\1+$/.test(value)) {
+  if (OBVIOUS_PASSWORDS.test(value) || /^(.)\1+$/.test(value)) {
     return { score: 1, label: "Too guessable" };
   }
 
@@ -258,6 +339,7 @@ export type PasswordChangeInput = {
   currentPassword: unknown;
   newPassword: unknown;
   confirmPassword?: unknown;
+  context?: PasswordContext;
 };
 
 /**
@@ -269,19 +351,14 @@ export type PasswordChangeInput = {
  * caller has no second field to mistype, so its absence isn't an error.
  */
 export function validatePasswordChange(input: PasswordChangeInput): FieldErrors {
-  const errors: FieldErrors = check(
-    {
-      currentPassword: input.currentPassword,
-      newPassword: input.newPassword,
-    },
-    {
-      currentPassword: [required("Current password")],
-      newPassword: [password("New password")],
-    }
-  );
+  const errors: FieldErrors = {};
+
+  const current = typeof input.currentPassword === "string" ? input.currentPassword : "";
+  if (!current) errors.currentPassword = "Current password is required.";
 
   const next = typeof input.newPassword === "string" ? input.newPassword : "";
-  const current = typeof input.currentPassword === "string" ? input.currentPassword : "";
+  const strength = validatePasswordStrength(next, input.context ?? {}, "New password");
+  if (strength) errors.newPassword = strength;
 
   if (!errors.newPassword && next === current && next) {
     errors.newPassword = "Your new password must be different from your current one.";

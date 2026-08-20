@@ -17,6 +17,8 @@ type SurfaceProps = {
   corners?: Corners;
   /** Fill the viewport even when content is short. */
   fullHeight?: boolean;
+  /** Clip vs allow page scroll. Dashboard needs auto when content overflows. */
+  overflow?: "hidden" | "auto";
   className?: string;
 };
 
@@ -30,6 +32,7 @@ export default function Surface({
   children,
   corners = "none",
   fullHeight = true,
+  overflow = "hidden",
   className = "",
 }: SurfaceProps) {
   const { c, isDark } = useDS();
@@ -40,7 +43,7 @@ export default function Surface({
 
   return (
     <div
-      className={`relative w-full overflow-hidden ${fullHeight ? "min-h-[100dvh]" : ""} ${className}`}
+      className={`relative w-full ${overflow === "auto" ? "overflow-y-auto" : "overflow-hidden"} ${fullHeight ? "min-h-[100dvh]" : ""} ${className}`}
       style={{ backgroundColor: c.surface }}
     >
       {/* Concrete grain */}

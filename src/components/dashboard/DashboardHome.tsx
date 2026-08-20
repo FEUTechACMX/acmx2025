@@ -12,6 +12,7 @@ import VideoCarousel, { type FeaturedVideo } from "./VideoCarousel";
 import CalendarCard from "./CalendarCard";
 import SchoolCalendarModal from "./SchoolCalendarModal";
 import ManageVideosModal from "./ManageVideosModal";
+import JoStatusCard from "./JoStatusCard";
 
 type EventPreview = {
   id: string;
@@ -84,7 +85,7 @@ export default function DashboardHome({ user }: { user: safeUser }) {
   const eventDates = (data?.upcomingEvents ?? []).map((e) => new Date(e.startDate));
 
   return (
-    <Surface>
+    <Surface overflow="auto">
       <div
         className="dash-root"
         style={{
@@ -133,6 +134,9 @@ export default function DashboardHome({ user }: { user: safeUser }) {
               <div className="glitch-el" style={{ display: "flex", flexDirection: "column" }}>
                 <CalendarCard keyDates={eventDates} onOpen={() => setCalendarOpen(true)} />
               </div>
+              <div className="glitch-el" style={{ display: "flex", flexDirection: "column" }}>
+                <JoStatusCard />
+              </div>
             </div>
           </div>
 
@@ -155,8 +159,8 @@ export default function DashboardHome({ user }: { user: safeUser }) {
         <ManageVideosModal isOpen={manageOpen} onClose={() => setManageOpen(false)} onChanged={fetchVideos} />
       )}
 
-      {/* Mobile: natural vertical scroll, comfortable spacing.
-          Desktop (>=1000px): single viewport, fills height. */}
+      {/* Mobile: natural vertical scroll.
+          Desktop: fill at least the viewport, but allow scroll when content overflows. */}
       <style>{`
         .dash-grid { grid-template-columns: 1fr; }
         .dash-tiles { grid-template-columns: 1fr; }
@@ -164,9 +168,8 @@ export default function DashboardHome({ user }: { user: safeUser }) {
           .dash-tiles { grid-template-columns: repeat(2, 1fr); }
         }
         @media (min-width: 1000px) {
-          .dash-root { height: 100dvh; overflow: hidden; }
-          .dash-grid { grid-template-columns: 2fr 1fr; flex: 1 1 0; min-height: 0; }
-          .dash-rail { min-height: 0; overflow: hidden; }
+          .dash-root { min-height: 100dvh; }
+          .dash-grid { grid-template-columns: 2fr 1fr; }
           .dash-tiles { grid-template-columns: repeat(4, 1fr); }
         }
       `}</style>

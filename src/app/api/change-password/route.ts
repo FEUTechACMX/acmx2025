@@ -52,7 +52,17 @@ export async function POST(req: Request) {
     >;
 
     // Same rules the form just ran — re-run here because the form is skippable.
-    const errors = validatePasswordChange({ currentPassword, newPassword, confirmPassword });
+    const errors = validatePasswordChange({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+      context: {
+        studentId: user.studentId,
+        contactNumber: user.contactNumber,
+        schoolEmail: user.schoolEmail,
+        personalEmail: user.personalEmail,
+      },
+    });
     if (hasErrors(errors)) {
       return NextResponse.json(
         {

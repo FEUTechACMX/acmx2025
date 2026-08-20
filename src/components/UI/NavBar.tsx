@@ -10,6 +10,7 @@ import { useDS } from "@/components/ds";
 import Icon from "@/components/admin/icons";
 import { useCart } from "@/components/merch/cartClient";
 import { type as t, motion, layout } from "@/styles/design-system";
+import { isAdmin } from "@/types/auth";
 
 type NavItem = { label: string; href: string };
 
@@ -221,7 +222,7 @@ export default function NavBar() {
           </div>
 
           {user && <NavLink item={{ label: "Profile", href: "/profile" }} active={isActive("/profile")} />}
-          {user?.role === "ADMIN" && (
+          {isAdmin(user?.role) && (
             <NavLink item={{ label: "Admin", href: "/admin" }} active={isActive("/admin")} />
           )}
         </div>
@@ -339,7 +340,7 @@ export default function NavBar() {
                 </div>
               </>
             )}
-            {user?.role === "ADMIN" && (
+            {isAdmin(user?.role) && (
               <div style={{ borderBottom: `1px solid ${c.rule}` }}>
                 <NavLink item={{ label: "Admin", href: "/admin" }} active={isActive("/admin")} block onClick={() => setIsMenuOpen(false)} />
               </div>

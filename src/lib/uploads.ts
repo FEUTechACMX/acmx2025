@@ -15,10 +15,14 @@ export const BUCKET_KINDS = {
   eventCard: "image",
   merch: "image",
   videos: "video",
+  "membership-proof": "image",
 } as const;
 
 export type Bucket = keyof typeof BUCKET_KINDS;
 export type Kind = (typeof BUCKET_KINDS)[Bucket];
+
+/** Buckets that must never go through the public `/api/upload` + getPublicUrl path. */
+export const PRIVATE_BUCKETS: ReadonlySet<Bucket> = new Set(["membership-proof"]);
 
 export function isBucket(value: unknown): value is Bucket {
   // `value in BUCKET_KINDS` walks the prototype chain, so "constructor" and
@@ -27,6 +31,10 @@ export function isBucket(value: unknown): value is Bucket {
     typeof value === "string" &&
     Object.prototype.hasOwnProperty.call(BUCKET_KINDS, value)
   );
+}
+
+export function isPrivateBucket(value: unknown): value is Bucket {
+  return isBucket(value) && PRIVATE_BUCKETS.has(value);
 }
 
 export type Sniffed = { mime: string; ext: string; kind: Kind };

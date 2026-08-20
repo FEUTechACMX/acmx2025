@@ -103,6 +103,50 @@ export const passwordChangeByUser = createThrottle({
   max: 8,
 });
 
+/** Public membership apply — tight per studentId, looser per address. */
+export const membershipApplyByAccount = createThrottle({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+});
+export const membershipApplyByAddress = createThrottle({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+});
+
+/** Proof-of-payment uploads. */
+export const membershipProofByAddress = createThrottle({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+});
+
+/** Logged-in renewal. Session-gated; still throttle per user. */
+export const membershipRenewByUser = createThrottle({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+});
+
+/** Public fit-card lookups. */
+export const fitCardByAddress = createThrottle({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+});
+
+/** Account claim / reset request — tight per studentId, looser per IP. */
+export const accountRequestByStudent = createThrottle({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+});
+export const accountRequestByAddress = createThrottle({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+});
+
+/** Claim/reset completion attempts. */
+export const accountCompleteByAddress = createThrottle({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+});
+
 /**
  * Best available client address. `x-forwarded-for` is a client-supplied header
  * and therefore spoofable — which is precisely why the per-account bucket is the
