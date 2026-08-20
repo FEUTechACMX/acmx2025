@@ -28,7 +28,15 @@ import { NextRequest, NextResponse } from "next/server";
  */
 
 /** Pages that are pointless for a signed-out visitor. Each still gates itself. */
-const sessionCookieRoutes = ["/settings", "/profile", "/dashboard", "/admin"];
+const sessionCookieRoutes = [
+  "/settings",
+  "/profile",
+  "/dashboard",
+  "/admin",
+  "/apply/membership/renew",
+  "/apply/jo",
+  "/interview/schedule",
+];
 
 /** Pages a signed-in member should never see — they belong on the dashboard. */
 const guestOnlyRoutes = ["/hero"];
@@ -75,5 +83,8 @@ export const config = {
     "/profile/:path*",
     "/dashboard/:path*",
     "/admin/:path*",
+    "/apply/membership/renew",
+    "/apply/jo/:path*",
+    "/interview/:path*",
   ],
 };

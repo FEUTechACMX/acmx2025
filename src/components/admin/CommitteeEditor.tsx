@@ -9,6 +9,7 @@ import { useDS, useConfirm } from "@/components/ds";
 import { type as t, motion } from "@/styles/design-system";
 import AdminShell, { AdminContent, AdminButton, SectionLabel } from "./AdminShell";
 import Icon, { type IconName } from "./icons";
+import CommitteeFitQuestions from "./CommitteeFitQuestions";
 import {
   Avatar,
   BLANK_DRAFT,
@@ -357,6 +358,10 @@ export default function CommitteeEditor({ user, id }: { user: safeUser; id: stri
               </div>
             </div>
           </div>
+        )}
+
+        {draft?.id && (
+          <CommitteeFitQuestions committeeId={draft.id} readOnly={readOnly} />
         )}
 
         {/* Footer actions */}

@@ -15,6 +15,10 @@ type NavKey =
   | "overview"
   | "events"
   | "committees"
+  | "membership"
+  | "membershipStats"
+  | "jo"
+  | "interviews"
   | "merchandise"
   | "media"
   | "people"
@@ -25,10 +29,14 @@ const NAV: { key: NavKey; label: string; href: string; icon: IconName }[] = [
   { key: "overview", label: "Overview", href: "/admin", icon: "overview" },
   { key: "events", label: "Events", href: "/admin/events", icon: "events" },
   { key: "committees", label: "Committees", href: "/admin/committees", icon: "committees" },
+  { key: "membershipStats", label: "Drive stats", href: "/admin/membership/stats", icon: "clipboard" },
+  { key: "membership", label: "Membership", href: "/admin/membership", icon: "user-plus" },
+  { key: "jo", label: "JO applications", href: "/admin/jo", icon: "handshake" },
+  { key: "interviews", label: "JO interviews", href: "/admin/interview-slots", icon: "calendar-plus" },
   { key: "merchandise", label: "Merchandise", href: "/admin/merchandise", icon: "bag" },
   { key: "media", label: "Media Library", href: "/admin/media", icon: "media" },
-  { key: "people", label: "People & Roles", href: "/admin/people", icon: "people" },
-  { key: "officers", label: "Officers", href: "/admin/officers", icon: "people" },
+  { key: "people", label: "People & Roles", href: "/admin/people", icon: "user-cog" },
+  { key: "officers", label: "Officer roster", href: "/admin/officers", icon: "people" },
   { key: "videos", label: "Videos", href: "/admin/videos", icon: "videos" },
 ];
 
@@ -108,24 +116,39 @@ export default function AdminShell({
         }}
       >
         <div className="flex flex-col" style={{ gap: 24 }}>
-          {/* Brand */}
-          <div className="flex items-center" style={{ gap: 10, padding: "0 6px" }}>
-            <span style={{ fontFamily: font.display, fontSize: 18, fontWeight: 700, letterSpacing: "0.22em", color: c.text }}>
-              ACMX
-            </span>
+          {/* Brand — Nexus (President's naming) */}
+          <div className="flex flex-col" style={{ gap: 5, padding: "0 6px" }}>
             <span
               style={{
-                ...t.label,
-                fontSize: 9,
+                fontFamily: font.display,
+                fontSize: 18,
                 fontWeight: 700,
-                letterSpacing: "0.15em",
-                color: "#ffffff",
-                backgroundColor: c.accent,
-                padding: "3px 8px",
+                letterSpacing: "0.2em",
+                color: c.text,
               }}
             >
-              {admin ? "ADMIN" : "COMMITTEE"}
+              NEXUS
             </span>
+            <span style={{ ...t.label, fontSize: 9, letterSpacing: "0.08em", color: c.muted }}>
+              ACM–FIT Officer Portal
+            </span>
+            {!admin && (
+              <span
+                style={{
+                  ...t.label,
+                  fontSize: 9,
+                  fontWeight: 700,
+                  letterSpacing: "0.15em",
+                  color: "#ffffff",
+                  backgroundColor: c.accent,
+                  padding: "3px 8px",
+                  alignSelf: "flex-start",
+                  marginTop: 4,
+                }}
+              >
+                COMMITTEE
+              </span>
+            )}
           </div>
 
           {/* Nav */}
@@ -196,7 +219,7 @@ export default function AdminShell({
           style={{ height: 58, padding: "0 clamp(16px, 3vw, 40px)", borderBottom: `1px solid ${c.rule}` }}
         >
           <div className="flex items-center" style={{ gap: 8 }}>
-            <span style={{ ...t.label, color: c.faint }}>CONSOLE</span>
+            <span style={{ ...t.label, color: c.faint }}>NEXUS</span>
             <span style={{ ...t.label, color: c.faint }}>/</span>
             <span style={{ ...t.label, color: c.text }}>{breadcrumb}</span>
           </div>

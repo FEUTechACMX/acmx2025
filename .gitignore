@@ -45,3 +45,26 @@ next-env.d.ts
 
 # Generated from DOCUMENTATION.md on demand — not a source artefact.
 DOCUMENTATION.pdf
+
+# Internal working / oversight assets — LOCAL ONLY, never pushed.
+# The only doc that ships is CHANGES.md (root) — the developer-facing summary.
+# (/sql ships: it's the schema contract the code depends on, not a private note.)
+/docs/
+/.claude/
+CLAUDE.md
+IMPLEMENTATION_PLAN.md
+report.md
+FLOWS.md
+flows.html
+scripts/build-flows-doc.mjs
+scripts/build-president-doc.mjs
+
+# Generated Word docs — rebuild from scripts/ (build-flows-doc.mjs, build-president-doc.mjs)
+flows.docx
+PRESIDENT-role-access-review.docx
+.flows-doc-tmp/
+
+# Database backups / dumps — NEVER commit (contains member PII)
+*.dump
+*.sql.dump
+*.backup

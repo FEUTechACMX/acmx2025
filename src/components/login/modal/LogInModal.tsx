@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import type { safeUser } from "@/types/auth";
 import { Button, Field, Label, Eyebrow, Heading, Body, useDS } from "@/components/ds";
-import { layout, texture, motion } from "@/styles/design-system";
+import { layout, texture, motion, type as t } from "@/styles/design-system";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [membershipOpen, setMembershipOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const { c, isDark } = useDS();
   const tex = isDark ? texture.dark : texture.light;
@@ -39,6 +41,16 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
       .to(modal, { opacity: 0, duration: 0.02 })
       .to(modal, { opacity: 1, y: 0, duration: 0.25, ease: "power2.out" })
       .to(glitchElements, { opacity: 1, duration: 0.15, stagger: 0.03 }, "-=0.1");
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    void (async () => {
+      const res = await fetch("/api/campaign/windows");
+      const json = await res.json().catch(() => ({}));
+      if (json?.membership?.open === true) setMembershipOpen(true);
+      else setMembershipOpen(false);
+    })();
   }, [isOpen]);
 
   // Close on Escape.
@@ -181,6 +193,32 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
                 </button>
               }
             />
+
+            <div className="flex flex-col" style={{ gap: "0.45rem" }}>
+              <Link
+                href="/account/claim-account"
+                onClick={onClose}
+                style={{ ...t.bodySmall, color: c.accent, textDecoration: "none" }}
+              >
+                First time signing in? Claim your account
+              </Link>
+              <Link
+                href="/account/reset-password"
+                onClick={onClose}
+                style={{ ...t.bodySmall, color: c.accent, textDecoration: "none" }}
+              >
+                Forgot password?
+              </Link>
+              {membershipOpen && (
+                <Link
+                  href="/apply/membership"
+                  onClick={onClose}
+                  style={{ ...t.bodySmall, color: c.muted, textDecoration: "none" }}
+                >
+                  Not a member yet? Become a member
+                </Link>
+              )}
+            </div>
 
             {error && (
               <div style={{ borderLeft: `2px solid ${c.accent}`, paddingLeft: "0.75rem" }}>

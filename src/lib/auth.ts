@@ -105,3 +105,19 @@ export async function requireRole(
 export function requireUser(req?: NextRequest): Promise<AuthResult> {
   return requireRole(req, () => true);
 }
+
+/**
+ * Signed in AND membershipStatus = APPROVED. Uses the same 401 copy as a
+ * missing session so PENDING vs REJECTED is not distinguishable.
+ */
+export async function requireApprovedMember(req?: NextRequest): Promise<AuthResult> {
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth;
+  if (auth.user.membershipStatus !== "APPROVED") {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Not signed in." }, { status: 401 }),
+    };
+  }
+  return auth;
+}

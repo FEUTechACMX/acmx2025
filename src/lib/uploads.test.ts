@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BUCKET_KINDS, isBucket, sniff, storageName } from "./uploads";
+import { BUCKET_KINDS, isBucket, isPrivateBucket, sniff, storageName } from "./uploads";
 
 /** Header bytes only — `sniff` never reads past the first twelve. */
 const png = () =>
@@ -63,7 +63,7 @@ describe("sniff — refusals", () => {
 });
 
 describe("bucket typing", () => {
-  it("accepts the four real buckets", () => {
+  it("accepts the five real buckets", () => {
     for (const b of Object.keys(BUCKET_KINDS)) expect(isBucket(b)).toBe(true);
   });
 
@@ -78,6 +78,13 @@ describe("bucket typing", () => {
     expect(BUCKET_KINDS.events).toBe("image");
     expect(BUCKET_KINDS.eventCard).toBe("image");
     expect(BUCKET_KINDS.merch).toBe("image");
+    expect(BUCKET_KINDS["membership-proof"]).toBe("image");
+  });
+
+  it("marks membership-proof as private (no public upload URL path)", () => {
+    expect(isPrivateBucket("membership-proof")).toBe(true);
+    expect(isPrivateBucket("events")).toBe(false);
+    expect(isPrivateBucket("constructor")).toBe(false);
   });
 });
 

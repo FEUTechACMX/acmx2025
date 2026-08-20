@@ -24,17 +24,46 @@ model User {
   facebookLink   String
   discordName    String?
   role           UserRole       @default(MEMBER)
+  /// Backfill default APPROVED so the existing ~480 rows keep login. New
+  /// applicants are inserted as PENDING by the app, explicitly.
+  membershipStatus MembershipStatus @default(APPROVED)
+  /// Legacy imports DEFAULT true (must claim via school-email link). New
+  /// members from createPendingUser set this false (they chose a password).
+  mustChangePassword Boolean @default(true)
   points         Int            @default(0)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   registration   Registration[]
   Transaction    Transaction[]
   sessions       Session[]
+  accountTokens  AccountToken[]
   cartLines      MerchCartLine[]
   merchOrders    MerchOrder[]
   officerProfile OfficerProfile?
   restockRequests MerchRestockRequest[]
   committeeSeats CommitteeMember[]
+  membershipApplicationsAsPayer MembershipApplication[] @relation("MembershipPayer")
+  membershipDecisions           MembershipApplication[] @relation("MembershipDecider")
+  membershipMemberships         MembershipApplicationMember[]
+  joApplication                 JOApplication?
+  joDecisions                   JOApplication[] @relation("JODecider")
+  interviewSlotsCreated         InterviewSlot[] @relation("InterviewSlotCreator")
+  interviewSlotsAsInterviewer   InterviewSlot[] @relation("InterviewSlotInterviewer")
+}
+
+/// One-time CLAIM / RESET links. Store SHA-256 of the raw token only.
+model AccountToken {
+  id        String           @id @default(cuid())
+  userId    String
+  tokenHash String           @unique
+  kind      AccountTokenKind
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// An opaque server-side session. `userId` is a real `User.id` — it used to
@@ -250,6 +279,8 @@ model Committee {
   projects         CommitteeProject[]
   facts            CommitteeFact[]
   members          CommitteeMember[]
+  questions        CommitteeQuestion[]
+  joApplications   JOApplication[]
 }
 
 /// One row of "what this committee owns". Numbered automatically by `order`,
@@ -502,6 +533,166 @@ enum TransactionStatus{
   PENDING
   ACCEPTED
   REJECTED
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccountTokenKind {
+  CLAIM
+  RESET
+}
+
+enum BundleKind {
+  SOLO
+  PARTNER
+  BUNDLE_5
+  BUNDLE_8
+}
+
+enum ApplicationKind {
+  NEW
+  RENEWAL
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum JOApplicationStatus {
+  PENDING
+  SHORTLISTED
+  ACCEPTED
+  WAITLISTED
+  REJECTED
+}
+
+/// One Membership Drive application. The payer holds the proof; N member rows
+/// cover the bundle. Approve/reject is per-application; B1 forbids flipping an
+/// already-APPROVED User to REJECTED.
+model MembershipApplication {
+  id              String            @id @default(cuid())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  payerUserId     String
+  bundle          BundleKind
+  kind            ApplicationKind
+  proofStorageKey String
+  proofUploadedAt DateTime
+  status          ApplicationStatus @default(PENDING)
+  decidedByUserId String?
+  decidedAt       DateTime?
+  rejectionReason String?
+
+  payer     User                         @relation("MembershipPayer", fields: [payerUserId], references: [id], onDelete: Restrict)
+  decidedBy User?                        @relation("MembershipDecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  members   MembershipApplicationMember[]
+
+  @@index([status])
+  @@index([payerUserId])
+}
+
+/// One person on a membership application.
+/// `createdAsPending` is true only when THIS application inserted the User as
+/// PENDING. B1: reject/approve may only flip membershipStatus when this is true
+/// AND the User is still PENDING.
+model MembershipApplicationMember {
+  id               String @id @default(cuid())
+  applicationId    String
+  userId           String
+  orderIndex       Int    @default(0)
+  createdAsPending Boolean
+
+  application MembershipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, userId])
+  @@index([userId])
+}
+
+/// Exactly three Likert statements per committee, admin-editable. Not hardcoded.
+model CommitteeQuestion {
+  id          String  @id @default(cuid())
+  committeeId String
+  order       Int
+  text        String
+  active      Boolean @default(true)
+
+  committee Committee @relation(fields: [committeeId], references: [id], onDelete: Cascade)
+  answers   JOAnswer[]
+
+  @@unique([committeeId, order])
+}
+
+/// One JO / committee-fit application per User. shareToken is the public card key.
+model JOApplication {
+  id                String             @id @default(cuid())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  userId            String             @unique
+  targetCommitteeId String
+  shareToken        String             @unique
+  status            JOApplicationStatus @default(PENDING)
+  decidedByUserId   String?
+  decidedAt         DateTime?
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  targetCommittee Committee      @relation(fields: [targetCommitteeId], references: [id], onDelete: Restrict)
+  decidedBy       User?          @relation("JODecider", fields: [decidedByUserId], references: [id], onDelete: SetNull)
+  answers         JOAnswer[]
+  booking         InterviewBooking?
+
+  @@index([status])
+}
+
+model JOAnswer {
+  id            String @id @default(cuid())
+  applicationId String
+  questionId    String
+  value         Int
+
+  application JOApplication     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  question    CommitteeQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@unique([applicationId, questionId])
+}
+
+model InterviewSlot {
+  id                String   @id @default(cuid())
+  startsAt          DateTime
+  durationMinutes   Int      @default(30)
+  interviewerUserId String?
+  location          String
+  capacity          Int      @default(1)
+  createdByUserId   String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  interviewer User?              @relation("InterviewSlotInterviewer", fields: [interviewerUserId], references: [id], onDelete: SetNull)
+  createdBy   User               @relation("InterviewSlotCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  bookings    InterviewBooking[]
+
+  @@index([startsAt])
+}
+
+/// One booking per JO application. Slot capacity is enforced in the book
+/// transaction with SELECT … FOR UPDATE, not by this unique alone.
+model InterviewBooking {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  slotId        String
+  applicationId String   @unique
+
+  slot        InterviewSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  application JOApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([slotId, applicationId])
+  @@index([slotId])
 }
 /// The presentation half of an officer on the public Officers page.
 ///

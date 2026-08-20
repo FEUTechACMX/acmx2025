@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import type { safeUser } from "@/types/auth";
-import { USER_ROLES, roleLabel } from "@/types/auth";
+import { USER_ROLES, roleLabel, isSecretariatOrAbove } from "@/types/auth";
 import { useDS } from "@/components/ds";
 import { type as t, font } from "@/styles/design-system";
 import AdminShell, { AdminContent, AdminPageHeader, AdminButton } from "./AdminShell";
@@ -31,6 +31,8 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
   /** "" means every role. Narrows the roll to one role at a time. */
   const [listRole, setListRole] = useState("");
   const [saving, setSaving] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resetNote, setResetNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   /**
    * Set when the roster outgrew the endpoint's cap. Shown rather than swallowed:
@@ -110,6 +112,7 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
     if (!selectedMember || !pendingRole || pendingRole === selectedMember.role) return;
     setSaving(true);
     setError(null);
+    setResetNote(null);
     try {
       const res = await fetch(`/api/admin/users/${selectedMember.studentId}/role`, {
         method: "PATCH",
@@ -130,7 +133,30 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
     }
   };
 
+  const resendAccountLink = async () => {
+    if (!selectedMember) return;
+    setResending(true);
+    setError(null);
+    setResetNote(null);
+    try {
+      const res = await fetch(`/api/admin/users/${selectedMember.studentId}/account-reset`, {
+        method: "POST",
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(d.error || "Could not re-send the account email.");
+      } else {
+        setResetNote(d.message || "Account email sent.");
+      }
+    } catch {
+      setError("Network error");
+    } finally {
+      setResending(false);
+    }
+  };
+
   const dirty = !!selectedMember && pendingRole !== selectedMember.role;
+  const canResendAccount = isSecretariatOrAbove(user?.role);
 
   return (
     <AdminShell
@@ -325,6 +351,29 @@ export default function PeopleRoles({ user }: { user: safeUser }) {
                     </AdminButton>
                   </div>
                 </div>
+
+                {canResendAccount && (
+                  <div
+                    className="flex flex-col"
+                    style={{ gap: 10, paddingTop: 14, borderTop: `1px solid ${c.rule}` }}
+                  >
+                    <span style={{ ...t.label, color: c.faint }}>ACCOUNT SECURITY</span>
+                    <span style={{ ...t.bodySmall, color: c.muted }}>
+                      Re-send a claim or reset link to this member&apos;s school email on file.
+                    </span>
+                    {resetNote && (
+                      <span style={{ ...t.bodySmall, color: c.text }}>{resetNote}</span>
+                    )}
+                    <AdminButton
+                      variant="ghost"
+                      onClick={resendAccountLink}
+                      disabled={resending}
+                      block
+                    >
+                      {resending ? "SENDING…" : "RE-SEND ACCOUNT CLAIM / RESET"}
+                    </AdminButton>
+                  </div>
+                )}
               </div>
             )}
           </div>

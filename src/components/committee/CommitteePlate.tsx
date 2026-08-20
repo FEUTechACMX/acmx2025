@@ -193,43 +193,26 @@ export default function CommitteePlate({
 
           {/* Right rail */}
           <div className="flex flex-col" style={{ gap: 30 }}>
-            {committee.facts.length > 0 && (
-              <section>
-                <SectionLabel>At a glance</SectionLabel>
-                <div className="flex flex-col">
-                  {committee.facts.map((f) => (
-                    <div
-                      key={f.id}
-                      className="flex items-baseline justify-between"
-                      style={{ gap: 16, padding: "11px 0", borderBottom: `1px solid ${c.rule}` }}
-                    >
-                      <Label color={c.faint}>{f.label}</Label>
-                      <span style={{ ...t.mono, color: c.text, textAlign: "right" }}>{f.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
             <RecruitPanel committee={committee} />
 
-            {committee.contactEmail && (
-              <a
-                href={`mailto:${committee.contactEmail}`}
-                className="flex items-center justify-between"
-                style={{
-                  gap: 12,
-                  padding: "14px 16px",
-                  textDecoration: "none",
-                  border: `1px solid ${c.rule}`,
-                }}
-              >
-                <Label color={c.muted}>Email this committee</Label>
-                <span style={{ color: recruiting ? c.accent : c.muted, display: "flex" }}>
-                  <Icon name="arrow-up-right" size={15} />
-                </span>
-              </a>
-            )}
+            <a
+              href="mailto:acmx.feu.it@gmail.com"
+              className="flex items-center justify-between"
+              style={{
+                gap: 12,
+                padding: "14px 16px",
+                textDecoration: "none",
+                border: `1px solid ${c.rule}`,
+              }}
+            >
+              <div className="flex flex-col min-w-0" style={{ gap: 4 }}>
+                <Label color={c.muted}>Contact ACMX</Label>
+                <span style={{ ...t.bodySmall, color: c.text }}>acmx.feu.it@gmail.com</span>
+              </div>
+              <span style={{ color: recruiting ? c.accent : c.muted, display: "flex" }}>
+                <Icon name="arrow-up-right" size={15} />
+              </span>
+            </a>
           </div>
         </div>
 
@@ -337,7 +320,7 @@ function RecruitPanel({ committee }: { committee: CommitteeDTO }) {
       ? "Every seat is filled for this term. Join the waitlist and you'll be first to hear about the next call."
       : "This committee is still being staffed. Details land here once they're published.";
 
-  const cta = live ? "Apply to join" : committee.recruiting === "FULL" ? "Join the waitlist" : "Notify me";
+  const cta = "Become a member";
 
   return (
     <div
@@ -355,27 +338,11 @@ function RecruitPanel({ committee }: { committee: CommitteeDTO }) {
         {committee.callBody || fallback}
       </Body>
 
-      {committee.applyUrl ? (
-        <a
-          href={committee.applyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ textDecoration: "none" }}
-        >
-          <Button variant={live ? "solid" : "ghost"} block>
-            {cta}
-          </Button>
-        </a>
-      ) : (
-        <a
-          href={committee.contactEmail ? `mailto:${committee.contactEmail}` : "#"}
-          style={{ textDecoration: "none", pointerEvents: committee.contactEmail ? "auto" : "none" }}
-        >
-          <Button variant={live ? "solid" : "ghost"} block disabled={!committee.contactEmail}>
-            {cta}
-          </Button>
-        </a>
-      )}
+      <Link href="/apply/membership" style={{ textDecoration: "none" }}>
+        <Button variant={live ? "solid" : "ghost"} block>
+          {cta}
+        </Button>
+      </Link>
 
       {deadline && <Label color={c.faint}>{deadline}</Label>}
     </div>

@@ -1,6 +1,8 @@
-import React from "react";
 import LoginPage from "@/components/login/login";
+import { membershipWindowOpen } from "@/lib/campaign-windows";
 
-export default function page() {
-  return <LoginPage />;
+export const dynamic = "force-dynamic";
+
+export default function Page() {
+  return <LoginPage membershipOpen={membershipWindowOpen()} />;
 }

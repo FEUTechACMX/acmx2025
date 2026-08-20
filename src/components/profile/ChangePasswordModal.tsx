@@ -220,7 +220,7 @@ export default function ChangePasswordModal({
               onBlur={blur("newPassword")}
               error={show("newPassword")}
               disabled={status === "submitting"}
-              hint={`At least ${PASSWORD_MIN} characters, including one number.`}
+              hint={`At least ${PASSWORD_MIN} characters, with a mix of letter cases, numbers, or symbols.`}
               trailing={
                 <button
                   type="button"

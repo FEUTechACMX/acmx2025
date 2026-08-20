@@ -174,7 +174,7 @@ export default function OfficersManager({ user }: { user: safeUser }) {
   return (
     <AdminShell
       user={user}
-      breadcrumb="Officers"
+      breadcrumb="Officer roster"
       searchPlaceholder="Search the board…"
       searchValue={query}
       onSearchChange={setQuery}
@@ -182,8 +182,8 @@ export default function OfficersManager({ user }: { user: safeUser }) {
       <AdminContent>
         <AdminPageHeader
           eyebrow={`${officers.length} ON THE BOARD`}
-          title="Officers"
-          subtitle="The public roster is built from account roles. Assign the role in People & Roles; dress the profile here."
+          title="Public roster"
+          subtitle="Edit who appears on the public Officers page — photo, tagline, socials, and publish. Roles are assigned in People & Roles."
           actions={
             <Link href="/admin/people" style={{ textDecoration: "none" }}>
               <AdminButton variant="ghost" icon="people">

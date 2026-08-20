@@ -39,9 +39,18 @@ export default function Page() {
               style={{ marginTop: layout.gap, gap: "1rem" }}
             >
               <Heading>ACMX</Heading>
-              <Button onClick={() => router.push("/about")} className="w-full sm:w-auto">
-                Learn More
-              </Button>
+              <div className="flex flex-col sm:flex-row w-full sm:w-auto" style={{ gap: "0.75rem" }}>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/apply/membership")}
+                  className="w-full sm:w-auto"
+                >
+                  Become a Member
+                </Button>
+                <Button onClick={() => router.push("/about")} className="w-full sm:w-auto">
+                  Learn More
+                </Button>
+              </div>
             </div>
           </BlinkIn>
         </div>
