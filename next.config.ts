@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // `standalone` output is for self-hosting (Docker/VPS). On Vercel it breaks the
+  // build's file-tracing step (next-server.js.nft.json ENOENT) and Vercel packages
+  // output itself — so apply standalone only when NOT building on Vercel.
+  output: process.env.VERCEL ? undefined : "standalone",
 
   images: {
     /**
